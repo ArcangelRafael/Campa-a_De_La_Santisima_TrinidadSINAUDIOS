@@ -1,5 +1,10 @@
 /* === DIALOGOS.CSS - MOTOR DE NARRATIVA CINEMATOGRÁFICA (EDICIÓN SUPREMA AAA) === */
 
+/* FIX TÁCTICO: Prevenir que los retratos colosales que sobresalen de las cajas generen una barra de desplazamiento horizontal */
+#story-area {
+    overflow-x: hidden !important;
+}
+
 #vn-overlay {
     display: none;
     position: absolute;
@@ -23,18 +28,21 @@
     pointer-events: none;
 }
 
-/* FIX TÁCTICO: Tamaño reducido a 380px para que los botones de VN respiren perfectamente */
+/* Pantalla Completa - Imagen Titánica (550px) */
 #vn-character-img {
     position: relative;
     align-self: flex-end;
     margin-right: 2%;
     margin-bottom: -15px;
-    height: 380px; 
+    height: 550px; 
     z-index: 4005;
     filter: drop-shadow(-10px 10px 20px rgba(0,0,0,0.9)) saturate(1.1);
     animation: respiracionHéroe 5s ease-in-out infinite alternate;
     pointer-events: none;
 }
+
+#vn-character-img.retrato-mediano { height: 380px !important; }
+#vn-character-img.retrato-papa-fs { height: 380px !important; }
 
 #vn-dialogue-box {
     position: relative;
@@ -183,28 +191,34 @@
 .dialogo-pergamino {
     position: relative;
     width: 80%;
-    /* FIX TÁCTICO: Margen superior extremo (280px) para que las mega-imágenes no tapen el texto de arriba. */
-    /* Margen inferior reducido (15px) para compactar el historial. */
-    margin: 280px auto 15px auto; 
+    margin: 260px auto 15px auto; 
     background: linear-gradient(135deg, rgba(20, 15, 10, 0.95) 0%, rgba(5, 5, 5, 0.98) 100%);
     border: 2px solid #ffd700;
     border-radius: 6px;
     padding: 20px;
-    min-height: 110px; 
+    min-height: 150px; 
     display: flex;
     align-items: center;
     box-shadow: 0 10px 25px rgba(0,0,0,0.9);
     cursor: pointer; 
 }
 
+.dialogo-pergamino.borde-papa { margin-top: 100px !important; margin-bottom: 10px !important; min-height: 130px; }
+.dialogo-pergamino.borde-trinitario { margin-top: 100px !important; margin-bottom: 10px !important; min-height: 120px !important; }
+
+/* Configuración especial para Fray Bartolomé (Recuadro compacto y áureo) */
+.dialogo-pergamino.borde-fray { margin-top: 100px !important; margin-bottom: 10px !important; min-height: 120px !important; border-color: #ffd700; box-shadow: 0 10px 25px rgba(0,0,0,0.9), inset 0 0 25px rgba(255, 215, 0, 0.2); }
+
+#alivio-dialogs .dialogo-pergamino { margin-top: 150px !important; margin-bottom: 25px !important; min-height: 110px !important; width: 90%; }
+
 .borde-comandante { border-color: #d4af37; box-shadow: 0 10px 25px rgba(0,0,0,0.9), inset 0 0 15px rgba(212, 175, 55, 0.2); }
 .borde-aliado { border-color: #4c88ff; box-shadow: 0 10px 25px rgba(0,0,0,0.9), inset 0 0 15px rgba(76, 136, 255, 0.15); }
 .borde-enemigo { border-color: #ff4c4c; box-shadow: 0 10px 25px rgba(0,0,0,0.9), inset 0 0 15px rgba(255, 76, 76, 0.15); }
 .borde-neutral { border-color: #c0c0c0; box-shadow: 0 10px 25px rgba(0,0,0,0.9), inset 0 0 15px rgba(192, 192, 192, 0.15); }
-/* El borde del Papa restaurado a purpurado/morado */
 .borde-papa { border-color: #800080; box-shadow: 0 10px 25px rgba(0,0,0,0.9), inset 0 0 25px rgba(128, 0, 128, 0.3); }
+.borde-trinitario { border-color: #1e90ff; box-shadow: 0 10px 25px rgba(0,0,0,0.9), inset 0 0 20px rgba(30, 144, 255, 0.25); }
 
-/* FIX TÁCTICO: Retratos Colosales (480px de alto, el doble de grandes) */
+/* Retratos Colosales (480px de alto) */
 .dialogo-retrato {
     position: absolute;
     bottom: 0;
@@ -219,14 +233,7 @@
 .retrato-izq { left: -140px; transform: scaleX(1); }
 .retrato-der { right: -140px; transform: scaleX(-1); }
 
-/* FIX TÁCTICO: Diseño especial para el Papa (No invade tanto espacio y se queda a la izquierda) */
-.retrato-papa {
-    height: 260px !important;
-    width: 220px !important;
-    bottom: 0 !important;
-    left: -60px !important;
-    transform: scaleX(1) !important;
-}
+.retrato-papa { height: 270px !important; width: 230px !important; bottom: 0 !important; left: 0px !important; transform: scaleX(1) !important; }
 
 /* NOMBRES */
 .dialogo-nombre {
@@ -244,15 +251,16 @@
     z-index: 15;
 }
 
-/* FIX TÁCTICO: Nombres cargados a los extremos opuestos para no tapar los inmensos retratos */
 .nombre-comandante { right: 20px; background: linear-gradient(to bottom, #4a3e12, #1a1604); color: #ffd700; border: 1px solid #ffd700; }
 .nombre-izq-align { right: 20px; background: linear-gradient(to bottom, #002244, #000a1a); color: #4c88ff; border: 1px solid #4c88ff; }
 .nombre-der-align { left: 20px; background: linear-gradient(to bottom, #440000, #1a0000); color: #ff4c4c; border: 1px solid #ff4c4c; }
 .nombre-neutral { left: 50%; transform: translateX(-50%); background: linear-gradient(to bottom, #333, #111); color: #c0c0c0; border: 1px solid #c0c0c0; }
-/* Papa con su color purpurado original */
 .nombre-papa { right: 20px; background: linear-gradient(to bottom, #4d004d, #1a001a); color: #ffccff; border: 1px solid #800080; }
+.nombre-trinitario { right: 20px; background: linear-gradient(to bottom, #001f4d, #000a1a); color: #1e90ff; border: 1px solid #1e90ff; }
 
-/* Soporte retroactivo */
+/* Nombre del Capellán (Oro sacro) */
+.nombre-fray { right: 20px; background: linear-gradient(to bottom, #d4af37, #8b6508); color: #fff; border: 1px solid #ffd700; }
+
 .nombre-izq { right: 20px; background: linear-gradient(to bottom, #002244, #000a1a); color: #4c88ff; border: 1px solid #4c88ff; }
 .nombre-der { left: 20px; background: linear-gradient(to bottom, #440000, #1a0000); color: #ff4c4c; border: 1px solid #ff4c4c; }
 
@@ -264,15 +272,19 @@
     text-shadow: 1px 1px 3px #000;
     color: #f4eacc;
     font-style: italic;
-    min-height: 80px;
+    min-height: 140px; 
     display: flex;
     flex-direction: column;
     justify-content: center;
 }
-/* Padding ajustado para las mega-imágenes */
-.pad-izq { padding-left: 170px; padding-right: 10px; }
-.pad-der { padding-right: 170px; padding-left: 10px; }
+
+.pad-izq { padding-left: 230px; padding-right: 20px; }
+.pad-der { padding-right: 230px; padding-left: 20px; }
 .pad-centro { padding: 0 20px; text-align: center; }
+
+#alivio-dialogs .pad-izq { padding-left: 170px !important; }
+#alivio-dialogs .pad-der { padding-right: 170px !important; }
+#alivio-dialogs .dialogo-texto-container { min-height: 80px !important; }
 
 /* BOTÓN DE SIGUIENTE MEDIEVAL */
 .btn-siguiente-medieval {

@@ -11,12 +11,14 @@ const EstadoBatalla = {
     tipoCombate: "cuna", maxTurnos: 0, turnoActual: 1, bajasEnemigas: 0, accionesPendientes: [],
     reservas: [], tropasVivas: [], enemigos: [], logTurnoGlobal: [], callback: null,
     progresoMuro: 0, hordaMuertosActuales: 0, metaProgresoMuro: 60, turnosFaseBosque: 1,
+    eventoEspecialVictoria: null,
 
     limpiar: function() {
         this.maxTurnos = 0; this.turnoActual = 1; this.bajasEnemigas = 0;
         this.accionesPendientes = []; this.reservas = []; this.tropasVivas = []; this.enemigos = [];
         this.logTurnoGlobal = []; this.callback = null; this.progresoMuro = 0; this.hordaMuertosActuales = 0;
         this.metaProgresoMuro = 60; this.turnosFaseBosque = 1;
+        this.eventoEspecialVictoria = null; 
     }
 };
 
@@ -84,7 +86,7 @@ function restaurarVisualesCombate() {
                     icon.style.cssText = `position:absolute; top:0; left:0; width:100%; height:100%; display:flex; justify-content:center; align-items:center; font-size:${m.tipo==='skull'?'35px':'40px'}; z-index:2; opacity:0.7; color:${m.tipo==='cross'?'#c0c0c0':'#fff'}; text-shadow:${m.tipo==='cross'?'0 0 10px #fff':'none'};`;
                     slot.appendChild(icon);
                 }
-            } else if (EstadoBatalla.tipoCombate === "picas" || EstadoBatalla.tipoCombate === "picas_bosque") {
+            } else if (EstadoBatalla.tipoCombate === "picas" || EstadoBatalla.tipoCombate === "picas_bosque" || EstadoBatalla.tipoCombate === "sacrificio") {
                 if (m.slotPos) {
                     let slotId = `pica-slot-${m.slotPos.split("-")[1]}`; let slot = document.getElementById(slotId);
                     if(slot) {
@@ -147,7 +149,9 @@ function restaurarVisualesCombate() {
         });
     }
 
-    if (EstadoBatalla.tipoCombate === "picas" || EstadoBatalla.tipoCombate === "picas_bosque") { if(typeof actualizarGrillaEnemigosPicas === 'function') actualizarGrillaEnemigosPicas(false); }
+    if (EstadoBatalla.tipoCombate === "picas" || EstadoBatalla.tipoCombate === "picas_bosque" || EstadoBatalla.tipoCombate === "sacrificio") { 
+        if(typeof actualizarGrillaEnemigosPicas === 'function') actualizarGrillaEnemigosPicas(false); 
+    }
 }
 
 function generarResumenFinTurnoLog(numTurno, logArray) {
@@ -177,35 +181,18 @@ function finalizarCombateGlobal() {
     
     let victoria = false;
     if (EstadoBatalla.tipoCombate === "cuna") { victoria = (EstadoBatalla.bajasEnemigas >= CONSTANTES_TACTICAS.CUNA_BAJAS_VICTORIA); }
-    else if (EstadoBatalla.tipoCombate === "picas") {
-        victoria = (EstadoBatalla.progresoMuro >= EstadoBatalla.metaProgresoMuro); EstadoBatalla.hordaMuertosActuales = 0; 
-        if(typeof actualizarGrillaEnemigosPicas === 'function') actualizarGrillaEnemigosPicas(false);
-    }
-    else if (EstadoBatalla.tipoCombate === "picas_bosque") {
+    else if (EstadoBatalla.tipoCombate === "picas" || EstadoBatalla.tipoCombate === "picas_bosque" || EstadoBatalla.tipoCombate === "sacrificio") {
         victoria = (EstadoBatalla.progresoMuro >= EstadoBatalla.metaProgresoMuro); EstadoBatalla.hordaMuertosActuales = 0; 
         if(typeof actualizarGrillaEnemigosPicas === 'function') actualizarGrillaEnemigosPicas(false);
     }
 
-    if ((EstadoBatalla.tipoCombate === "picas" || EstadoBatalla.tipoCombate === "picas_bosque") && victoria) {
-        let overlayAlivio = document.createElement("div"); 
-        overlayAlivio.style.cssText = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:2000; display:flex; justify-content:center; align-items:center;";
-        
-        let autoCombat = document.getElementById("ht-auto-combat")?.checked;
-        let pending = document.querySelectorAll('.pendiente-dados').length > 0;
-        if (!autoCombat && pending) {
-            overlayAlivio.style.display = "none";
-            overlayAlivio.classList.add("victoria-oculta");
-        }
-
-        let huidos = Math.floor(Math.random() * 3) + 2; jugador.enemigosAsesinados = (jugador.enemigosAsesinados || 0) + huidos;
-        
-        let modal = document.createElement("div"); 
-        modal.style.cssText = "background:#111; border:2px solid #ffaa00; padding:30px; max-width:600px; text-align:center; box-shadow: 0 0 30px rgba(255,170,0,0.3); border-radius:8px;";
-        modal.innerHTML = RenderCombate.htmlModalAlivio(huidos);
-        
-        overlayAlivio.appendChild(modal); document.body.appendChild(overlayAlivio);
-        document.getElementById("btn-cerrar-alivio").onclick = () => { document.body.removeChild(overlayAlivio); imprimirPolvoSeAsienta(victoria, soldadosCaidos); };
-    } else { imprimirPolvoSeAsienta(victoria, soldadosCaidos); }
+    if (victoria && typeof EstadoBatalla.eventoEspecialVictoria === 'function') {
+        EstadoBatalla.eventoEspecialVictoria().then(() => {
+            imprimirPolvoSeAsienta(victoria, soldadosCaidos);
+        });
+    } else {
+        imprimirPolvoSeAsienta(victoria, soldadosCaidos);
+    }
 }
 
 function imprimirPolvoSeAsienta(victoria, soldadosCaidos) {
@@ -235,21 +222,31 @@ function imprimirPolvoSeAsienta(victoria, soldadosCaidos) {
     }
 }
 
-// FIX TÁCTICO: Validar la victoria ANTES de intentar avanzar al siguiente turno
 function evaluarContinuacionBatalla() {
     document.querySelectorAll("button").forEach(b => {
         if (b.innerText.includes("REEMPLAZO")) b.style.display = "none";
     });
 
-    // 1. Validar finalización inmediata
+    let actionArea = document.getElementById("action-area");
+    if(actionArea) actionArea.style.display = "flex"; 
+
     if (EstadoBatalla.tipoCombate === "cuna") {
         let maxT = EstadoBatalla.maxTurnos || 7;
-        if(EstadoBatalla.turnoActual > maxT || EstadoBatalla.bajasEnemigas >= CONSTANTES_TACTICAS.CUNA_BAJAS_VICTORIA) {
+        let combatesPosibles = false;
+        
+        EstadoBatalla.tropasVivas.forEach(pos => {
+            let tr = jugador.tropas.find(t => t.idUnico === pos.idUnico);
+            if (tr && tr.hp > 0 && !pos.ignorarMuerto && pos.col <= 2) {
+                combatesPosibles = true;
+            }
+        });
+
+        if(EstadoBatalla.turnoActual > maxT || EstadoBatalla.bajasEnemigas >= CONSTANTES_TACTICAS.CUNA_BAJAS_VICTORIA || !combatesPosibles) {
             restaurarVisualesCombate(); 
             finalizarCombateGlobal();
             return;
         }
-    } else if (EstadoBatalla.tipoCombate === "picas" || EstadoBatalla.tipoCombate === "picas_bosque") {
+    } else if (EstadoBatalla.tipoCombate === "picas" || EstadoBatalla.tipoCombate === "picas_bosque" || EstadoBatalla.tipoCombate === "sacrificio") {
         if(EstadoBatalla.progresoMuro >= EstadoBatalla.metaProgresoMuro) {
             restaurarVisualesCombate(); 
             finalizarCombateGlobal();
@@ -257,7 +254,6 @@ function evaluarContinuacionBatalla() {
         }
     }
 
-    // 2. Comprobar si queda alguien peleando
     let alguienPeleando = EstadoBatalla.tropasVivas.some(pos => {
         if (!pos.idUnico) return false;
         let tr = jugador.tropas.find(t => t.idUnico === pos.idUnico);
@@ -270,7 +266,6 @@ function evaluarContinuacionBatalla() {
         return;
     }
     
-    // 3. Solo si el combate debe continuar, se invoca al siguiente turno
     restaurarVisualesCombate(); 
     
     if(EstadoBatalla.tipoCombate === "cuna") {
@@ -279,5 +274,8 @@ function evaluarContinuacionBatalla() {
         animarDialogoAvancePicas();
     } else if(EstadoBatalla.tipoCombate === "picas_bosque") {
         animarDialogoAvancePicasBosque();
+    } else if(EstadoBatalla.tipoCombate === "sacrificio") {
+        // FIX TÁCTICO: Llamada a la nueva narrativa de sacrificio. (El código de esta función vendrá en la Fase 2)
+        if (typeof animarDialogoAvanceSacrificio === 'function') animarDialogoAvanceSacrificio();
     }
 }

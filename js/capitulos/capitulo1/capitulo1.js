@@ -2,6 +2,10 @@
 
 function escena1() {
     limpiarBotones(); cambiarMusica('bgm-juego'); storyArea.innerHTML = ""; 
+    
+    // FIX TÁCTICO: Arranca el Viento Seco al salir de la zona de mercenarios.
+    if (typeof window.Clima !== "undefined") window.Clima.iniciarViento();
+
     agregarTexto("<h2 style='text-align:center; color:#ffaa00;'>LA MARCHA COMIENZA</h2>");
     agregarTexto("Se escucha el crepitar de una antorcha y el viento silbando entre las grietas de la piedra. Vuestra hueste, ahora reforzada por los mercenarios, inicia la marcha adentrándose en tierras sombrías. Los estandartes trinitarios ondean con fiereza.");
     agregarTexto("[El ejército avanza por caminos inciertos...]", "txt-accion");
@@ -284,6 +288,9 @@ async function evaluarFinCombateCuna(lineaRota, bajas) {
 }
 
 async function ruta_IA_Victoria_Cuna() {
+    // FIX TÁCTICO: Arranca el Viento con Relámpagos al quebrar la línea.
+    if (typeof window.Clima !== "undefined") window.Clima.iniciarVientoRayo();
+
     agregarTexto(`Ruta I.A: La Línea Quebrada`, "mensaje-sistema");
     let caidosAlAbismo = Math.floor(Math.random() * (8 - 6 + 1)) + 6;
     jugador.enemigosAsesinados += caidosAlAbismo;
@@ -633,6 +640,9 @@ function victoriaVanguardia() { cambiarMusica('bgm-victoria'); limpiarBotones();
 function interludiumCapitulo1() {
     storyArea.innerHTML = ""; limpiarBotones();
     
+    // FIX TÁCTICO: Limpiamos por completo el cielo para descansar.
+    if (typeof window.Clima !== "undefined") window.Clima.detenerTodo();
+    
     jugador.liderazgoBase = jugador.liderazgoBase || 0;
     jugador.liderazgo = jugador.liderazgoBase; 
     jugador.ataqueBase = jugador.ataqueReal || 0; 
@@ -698,7 +708,6 @@ async function iniciarParlamentoBosque() {
         texto: `<i>(Desenvainando lentamente su espada, cuyo roce frío hace eco en el bosque)</i>: "¡Pues será con las rameras del infierno cuando el acero de mi espada corte tu asquerosa yugular!"`, claseTexto: "txt-lugarteniente"
     });
 
-    // FIX TÁCTICO: Risa a dos voces de los paganos
     await MotorDialogos.mostrarDialogo({
         personajeImg: "assets/img/personajes/enemigos/generale.webp", nombrePersonaje: "JoanJoz y Lugarteniente", alineacion: "der", bordeClase: "borde-enemigo", nombreClase: "nombre-der",
         texto: `"¡Ahahaahahahaahah...!"`, claseTexto: "txt-joanjoz"
@@ -714,7 +723,6 @@ async function iniciarParlamentoBosque() {
         texto: `"¡Sir Alexandro! Le ordeno estrictamente disciplina ante las malditas serpientes. La ira desordenada es veneno del demonio; no caigáis en su provocación. Purificad vuestra lengua."`, claseTexto: "txt-comandante"
     });
 
-    // FIX TÁCTICO: Restaurada la Letanía sagrada completa en Latín.
     await MotorDialogos.mostrarDialogo({
         personajeImg: "assets/img/personajes/aliados/lider_caballeromontado.webp", nombrePersonaje: "Sir Alexandro", alineacion: "izq", bordeClase: "borde-aliado", nombreClase: "nombre-izq",
         texto: `<i>(agacha la mirada en obediencia, clava la rodilla en tierra y recita las Alabanzas Divinas en reparación por las blasfemias escuchadas)</i>:<br><br>Benedictus Deus.<br>Benedictum Nomen Sanctum eius.<br>Benedictus Iesus Christus, verus Deus et verus homo.<br>Benedictum Nomen Iesu.<br>Benedictum Cor eius sacratissimum.<br>Benedictus Sanguis eius pretiosissimus.<br>Benedictus Iesus in sanctissimo altaris Sacramento.<br>Benedictus Sanctus Spiritus, Paraclitus.<br>Benedicta excelsa Mater Dei, Maria sanctissima.<br>Benedicta sancta eius et immaculata Conceptio.<br>Benedicta eius gloriosa Assumptio.<br>Benedictum nomen Mariae, Virginis et Matris.<br>Benedictus sanctus Ioseph, eius castissimus Sponsus.<br>Benedictus Deus in Angelis et in Sanctis suis. Amen.`, claseTexto: "txt-sagrado"

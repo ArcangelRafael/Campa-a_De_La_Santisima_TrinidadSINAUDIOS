@@ -21,8 +21,6 @@ window.resolverDadosBloque = function(btn, idBloque, isAutoAll = false) {
     let valAl = alDadoEl ? alDadoEl.dataset.val : null;
     let valEn = enDadoEl ? enDadoEl.dataset.val : null;
 
-    // FIX TÁCTICO VISUAL: Construimos el HTML completo antes de inyectarlo para evitar 
-    // que el navegador destruya y reinicie el primer video al intentar sumar el segundo.
     let videosHTML = "";
     
     if (valAl !== null && valAl !== "0") {
@@ -68,6 +66,7 @@ window.resolverDadosBloque = function(btn, idBloque, isAutoAll = false) {
             }
         }
 
+        // FIX TÁCTICO: Solo cuando todos los dados pendientes han sido lanzados y revelados...
         if (document.querySelectorAll('.pendiente-dados').length === 0) {
             document.querySelectorAll('.resumen-oculto').forEach(el => {
                 el.style.display = 'block';
@@ -85,8 +84,14 @@ window.resolverDadosBloque = function(btn, idBloque, isAutoAll = false) {
                 actionArea.style.display = ''; 
                 actionArea.classList.add('txt-animado-salto');
             }
+            
             setTimeout(() => {
                 window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+                
+                // ... mandamos a llamar a la evaluación de bajas y avance de turno
+                if (typeof evaluarBajasYContinuar === 'function') {
+                    evaluarBajasYContinuar();
+                }
             }, 150);
         }
         
@@ -125,6 +130,10 @@ window.resolverDadosBosque = function(btn, idBloque, isAutoAll = false) {
 
     if (!isAutoAll) window.isRollingDados = true; 
 
+    let audioBallesta = new Audio('assets/audio/ballesta.mp3');
+    audioBallesta.volume = 0.8; 
+    audioBallesta.play().catch(e => console.log("Audio de ballesta bloqueado por políticas del navegador.", e));
+
     let overlay = bloque.querySelector('.hover-lanzar-overlay');
     if (overlay) overlay.style.display = 'none';
     
@@ -149,6 +158,14 @@ window.resolverDadosBosque = function(btn, idBloque, isAutoAll = false) {
         if (cons) {
             cons.style.display = 'inline-block';
             cons.classList.add('txt-animado-salto');
+            
+            if (cons.innerHTML.includes('CRÍTICO')) {
+                let lamentos = ['lam1.mp3', 'lam2.mp3', 'lam3.mp3'];
+                let lamentoElegido = lamentos[Math.floor(Math.random() * lamentos.length)];
+                let audioGrito = new Audio(`assets/audio/${lamentoElegido}`);
+                audioGrito.volume = 0.9;
+                audioGrito.play().catch(e=>e);
+            }
         }
 
         bloque.classList.remove('pendiente-dados');
@@ -174,11 +191,17 @@ window.tirarTodosLosDadosBosque = function(btnAll) {
     window.isRollingAll = true;
 
     let pendings = document.querySelectorAll('.pendiente-dados');
-    pendings.forEach(p => {
+    
+    pendings.forEach((p) => {
         let btn = p.querySelector('.btn-lanzar-dados');
         if (btn && !p.classList.contains('rolling')) {
             p.classList.add('rolling'); 
-            resolverDadosBosque(btn, p.id, true);
+            
+            let tiempoRetardo = Math.floor(Math.random() * 5000); 
+            
+            setTimeout(() => {
+                resolverDadosBosque(btn, p.id, true);
+            }, tiempoRetardo);
         }
     });
     

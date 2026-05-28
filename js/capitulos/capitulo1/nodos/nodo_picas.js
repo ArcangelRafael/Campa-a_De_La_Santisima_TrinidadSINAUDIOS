@@ -14,6 +14,9 @@ async function iniciarCombatePicas(formacion, callbackFinalizar) {
     EstadoBatalla.maxTurnos = 4;
     EstadoBatalla.callback = callbackFinalizar;
     
+    // FIX TÁCTICO: Se inyecta la cinemática de alivio al motor genérico.
+    EstadoBatalla.eventoEspecialVictoria = playModalAlivioPicas;
+    
     EstadoBatalla.tropasVivas = [
         { idUnico: formacion.slots["pica-1"], posNombre: "el flanco izquierdo de picas", slotPos: "pica-1" },
         { idUnico: formacion.slots["pica-2"], posNombre: "el centro izquierdo de picas", slotPos: "pica-2" },

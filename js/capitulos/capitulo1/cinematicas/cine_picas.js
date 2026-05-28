@@ -55,9 +55,8 @@ function playCinematicaRelevoPicas(callbackFinal) {
         card.className = `tropa-cinematica ${claseBorde}`;
         card.style.zIndex = "150"; 
         
-        let hpStars = "❤️".repeat(Math.max(0, cab.hp)) + "🖤".repeat(2 - Math.max(0, cab.hp));
-        let etiqueta = cab.clase === 'noble' ? "<span style='color:#ffaa00; font-size:9px;'>(N)</span>" : "";
-        card.innerHTML = `<img src="${cab.img}"><div class="unidad-hp-combate">${hpStars}</div><div class="unidad-nombre-aleatorio">${cab.nombre} <br>${etiqueta}</div>`;
+        // Llamada DRY: Limpieza absoluta
+        card.innerHTML = RenderCombate.htmlFichaCinematica(cab);
 
         let isTop = index < 2; 
         let topPos = isTop ? 10 : 75; 
@@ -89,10 +88,10 @@ function playCinematicaRelevoPicas(callbackFinal) {
     let picasReserva = piquerosVivos.filter(p => !Object.values(slotsFormacionPicas).includes(p.idUnico));
 
     let posicionesFinalesPicas = {
-        "pica-1": { top: "35%", left: "30%" }, 
-        "pica-2": { top: "65%", left: "30%" }, 
-        "pica-3": { top: "20%", left: "45%" }, 
-        "pica-4": { top: "50%", left: "45%" }  
+        "pica-1": { top: "25%", left: "45%" }, 
+        "pica-2": { top: "35%", left: "53%" }, 
+        "pica-3": { top: "50%", left: "45%" }, 
+        "pica-4": { top: "60%", left: "53%" }  
     };
 
     let elementosPicas = [];
@@ -103,9 +102,8 @@ function playCinematicaRelevoPicas(callbackFinal) {
         card.className = `tropa-cinematica ${claseBorde}`;
         card.style.zIndex = "250"; 
         
-        let hpStars = "❤️".repeat(Math.max(0, pica.hp)) + "🖤".repeat(2 - Math.max(0, pica.hp));
-        let etiqueta = pica.clase === 'noble' ? "<span style='color:#ffaa00; font-size:9px;'>(N)</span>" : "";
-        card.innerHTML = `<img src="${pica.img}"><div class="unidad-hp-combate">${hpStars}</div><div class="unidad-nombre-aleatorio">${pica.nombre} <br>${etiqueta}</div>`;
+        // Llamada DRY: Limpieza absoluta
+        card.innerHTML = RenderCombate.htmlFichaCinematica(pica);
 
         let startLeft = -10 - (index * 14); 
         card.style.top = "42%"; 
@@ -132,7 +130,6 @@ function playCinematicaRelevoPicas(callbackFinal) {
         });
     });
 
-    // FIX TÁCTICO: Lógica de 2 columnas exactas para evitar desbordes en Reservas de Picas
     let numMostrados = 0;
     picasReserva.forEach((pica, index) => {
         if (numMostrados >= 8) return; 
@@ -145,9 +142,8 @@ function playCinematicaRelevoPicas(callbackFinal) {
         card.className = `tropa-cinematica ${claseBorde}`;
         card.style.zIndex = "200"; 
         
-        let hpStars = "❤️".repeat(Math.max(0, pica.hp)) + "🖤".repeat(2 - Math.max(0, pica.hp));
-        let etiqueta = pica.clase === 'noble' ? "<span style='color:#ffaa00; font-size:9px;'>(N)</span>" : "";
-        card.innerHTML = `<img src="${pica.img}"><div class="unidad-hp-combate">${hpStars}</div><div class="unidad-nombre-aleatorio">${pica.nombre} <br>${etiqueta}</div>`;
+        // Llamada DRY: Limpieza absoluta
+        card.innerHTML = RenderCombate.htmlFichaCinematica(pica);
 
         let startLeft = -40 - (col * 12); 
         let endLeft = 5 + (col * 12);
@@ -233,4 +229,151 @@ function playCinematicaRelevoPicas(callbackFinal) {
         
         animCaja.appendChild(impactBtn);
     }, 9000); 
+}
+
+function playCinematicaCargaCuna(formacionInfo, callbackFinal) {
+    const animCaja = document.getElementById("animacion-escena1");
+    animCaja.style.display = "block";
+    
+    animCaja.innerHTML = `<h3 id='titulo-cinematica-carga' style="color:#ffaa00; text-shadow:0 0 10px #000; margin-top:30px; text-align:center; letter-spacing:3px; position:relative; z-index:300;">LA CARGA DIVINA</h3>`;
+
+    let niebla = document.createElement("div");
+    niebla.className = "efecto-neblina";
+    animCaja.appendChild(niebla);
+
+    let elementosAnimar = [];
+    let slots = formacionInfo.slots;
+    let duracionCarga = 7000; 
+    let cssTransition = `top ${duracionCarga}ms linear, left ${duracionCarga}ms linear, opacity 1s ease`;
+
+    let hordaCompletaArr = [];
+    let finalLeftColsEnemigos = ["70%", "80%", "90%"];
+    let finalTopRowsEnemigos = ["10%", "28%", "46%", "64%", "82%"];
+
+    for(let r=0; r < finalTopRowsEnemigos.length; r++) {
+        for(let c=0; c < finalLeftColsEnemigos.length; c++) {
+            let esPiqueroEnemigo = (r + c) % 2 === 0;
+            hordaCompletaArr.push({
+                top: finalTopRowsEnemigos[r],
+                left: finalLeftColsEnemigos[c],
+                img: esPiqueroEnemigo ? "enemigo_piquero.webp" : "enemigo.webp",
+                id: `enemigo-cine-${r}-${c}`
+            });
+        }
+    }
+    
+    hordaCompletaArr.forEach(e => {
+        let card = document.createElement("div");
+        card.className = "tropa-cinematica cinematica-enemigo"; 
+        card.id = e.id;
+        card.style.top = e.top;
+        card.style.left = "88%"; 
+        card.style.filter = "sepia(50%) brightness(0.5)"; 
+        card.style.zIndex = "100";
+        card.style.opacity = "0"; 
+
+        card.innerHTML = `<img src="assets/img/personajes/enemigos/${e.img}">`;
+        animCaja.appendChild(card);
+        card.getBoundingClientRect(); 
+        elementosAnimar.push({ el: card, top: e.top, left: e.left, opacity: "1" });
+    });
+
+    let startPos = {
+        "punta": { top: "80%", left: "-30%" },
+        "media-arriba": { top: "10%", left: "-40%" },
+        "media-abajo": { top: "60%", left: "-25%" },
+        "trasera-arriba": { top: "30%", left: "-45%" },
+        "trasera-abajo": { top: "90%", left: "-35%" }
+    };
+
+    let destPos = {
+        "punta": { top: "43%", left: "55%" }, 
+        "media-arriba": { top: "25%", left: "40%" },
+        "media-abajo": { top: "61%", left: "40%" },
+        "trasera-arriba": { top: "12%", left: "25%" }, 
+        "trasera-abajo": { top: "74%", left: "25%" }  
+    };
+
+    for(let pos in slots) {
+        let idTropa = slots[pos];
+        if(idTropa) {
+            let cab = jugador.tropas.find(t => t.idUnico === idTropa);
+            if(cab) {
+                let card = document.createElement("div");
+                let claseBorde = cab.clase === 'noble' ? 'tropa-noble' : 'tropa-mercenaria';
+                card.className = `tropa-cinematica ${claseBorde}`;
+                card.style.zIndex = "250";
+                
+                // Llamada DRY: Limpieza absoluta
+                card.innerHTML = RenderCombate.htmlFichaCinematica(cab);
+
+                let inicial = startPos[pos] || { top: "50%", left: "-20%" };
+                card.style.top = inicial.top; 
+                card.style.left = inicial.left;
+                card.style.opacity = "1"; 
+                animCaja.appendChild(card);
+                card.getBoundingClientRect(); 
+
+                let destino = destPos[pos] || { top: "50%", left: "50%" };
+                elementosAnimar.push({ el: card, top: destino.top, left: destino.left });
+            }
+        }
+    }
+
+    let reservas = jugador.tropas.filter(t => t.tipoGeneral === "caballeros" && t.hp > 0 && !Object.values(slots).includes(t.idUnico));
+    reservas.forEach((cab, index) => {
+        let card = document.createElement("div");
+        let claseBorde = cab.clase === 'noble' ? 'tropa-noble' : 'tropa-mercenaria';
+        card.className = `tropa-cinematica ${claseBorde}`;
+        card.style.zIndex = "150";
+        
+        // Llamada DRY: Limpieza absoluta
+        card.innerHTML = RenderCombate.htmlFichaCinematica(cab);
+
+        let verticalPos = 30 + (index * 15);
+        card.style.top = `${verticalPos}%`; 
+        card.style.left = "-25%"; 
+        card.style.opacity = "1"; 
+        
+        animCaja.appendChild(card);
+        card.getBoundingClientRect(); 
+        elementosAnimar.push({ el: card, top: `${verticalPos}%`, left: "5%" });
+    });
+
+    setTimeout(() => {
+        elementosAnimar.forEach(anim => {
+            anim.el.style.transition = cssTransition; 
+            anim.el.style.top = anim.top;
+            anim.el.style.left = anim.left;
+            if(anim.opacity) anim.el.style.opacity = anim.opacity;
+        });
+    }, 50);
+
+    setTimeout(() => {
+        document.querySelectorAll('.cinematica-enemigo').forEach(e => {
+            e.style.animation = "clashFlash 0.3s infinite alternate";
+            e.style.filter = "sepia(0%) brightness(1)";
+        });
+    }, duracionCarga - 400);
+
+    setTimeout(() => {
+        document.getElementById('titulo-cinematica-carga').style.display = "none";
+        
+        let impactBtn = document.createElement('button');
+        impactBtn.className = "impacto-divino-btn";
+        impactBtn.innerText = "DEUS LO VULT !";
+        
+        impactBtn.onclick = function() {
+            impactBtn.style.display = "none"; 
+            animCaja.style.display = "none";
+            animCaja.innerHTML = "";
+            
+            document.getElementById("formacion-overlay").style.display = "none"; 
+            
+            if(callbackFinal) callbackFinal(); 
+        };
+        
+        animCaja.appendChild(impactBtn);
+
+    }, duracionCarga);
 }

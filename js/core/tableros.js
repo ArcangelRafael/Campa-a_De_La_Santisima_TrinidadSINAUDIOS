@@ -4,7 +4,6 @@ function inyectarTableroCuna() {
     const tablero = document.getElementById("formacion-tablero");
     if (!tablero) return;
     
-    // FIX 1: zona-reservas ahora usa Grid de 2 columnas
     tablero.innerHTML = `
         <div id="zona-reservas" style="display:none; grid-template-columns: repeat(2, 75px); gap:10px; margin-left:15px; align-content:center; justify-content:center; border-right:2px dashed #333; padding-right:15px;"></div>
 
@@ -59,7 +58,6 @@ function inyectarTableroPicas() {
     const tablero = document.getElementById("formacion-picas-tablero");
     if (!tablero) return;
 
-    // FIX 1: zona-reservas-picas ahora usa Grid de 2 columnas
     tablero.innerHTML = `
         <div id="zona-reservas-picas" style="display:none; grid-template-columns: repeat(2, 75px); gap:10px; margin-left:15px; align-content:center; justify-content:center; border-right:2px dashed #333; padding-right:15px;"></div>
 
@@ -73,6 +71,38 @@ function inyectarTableroPicas() {
         </div>
 
         <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; margin-left: auto; margin-right: 20px;">
+            <div id="grid-enemigo-picas" style="display:grid; grid-template-columns: repeat(3, 75px); grid-template-rows: repeat(3, 75px); gap:10px; padding:10px; border:2px solid transparent; box-sizing:border-box;">
+                <div class="slot-enemigo" id="en-pica-0-0"><div class="enemigo-hp-combate">🤍</div><img class="enemigo-img" src="assets/img/personajes/enemigos/enemigo.webp"></div>
+                <div class="slot-enemigo" id="en-pica-0-1"><div class="enemigo-hp-combate">🤍</div><img class="enemigo-img" src="assets/img/personajes/enemigos/enemigo.webp"></div>
+                <div class="slot-enemigo" id="en-pica-0-2"><div class="enemigo-hp-combate">🤍</div><img class="enemigo-img" src="assets/img/personajes/enemigos/enemigo.webp"></div>
+                <div class="slot-enemigo" id="en-pica-1-0"><div class="enemigo-hp-combate">🤍</div><img class="enemigo-img" src="assets/img/personajes/enemigos/enemigo_piquero.webp"></div>
+                <div class="slot-enemigo" id="en-pica-1-1"><div class="enemigo-hp-combate">🤍</div><img class="enemigo-img" src="assets/img/personajes/enemigos/enemigo_piquero.webp"></div>
+                <div class="slot-enemigo" id="en-pica-1-2"><div class="enemigo-hp-combate">🤍</div><img class="enemigo-img" src="assets/img/personajes/enemigos/enemigo.webp"></div>
+                <div class="slot-enemigo" id="en-pica-2-0"><div class="enemigo-hp-combate">🤍</div><img class="enemigo-img" src="assets/img/personajes/enemigos/enemigo.webp"></div>
+                <div class="slot-enemigo" id="en-pica-2-1"><div class="enemigo-hp-combate">🤍</div><img class="enemigo-img" src="assets/img/personajes/enemigos/enemigo.webp"></div>
+                <div class="slot-enemigo" id="en-pica-2-2"><div class="enemigo-hp-combate">🤍</div><img class="enemigo-img" src="assets/img/personajes/enemigos/enemigo.webp"></div>
+            </div>
+        </div>
+    `;
+}
+
+// FIX TÁCTICO: Nuevo tablero exclusivo para el duelo de espadas (3 espacios verticales)
+function inyectarTableroSacrificio() {
+    const tablero = document.getElementById("formacion-picas-tablero");
+    if (!tablero) return;
+
+    tablero.innerHTML = `
+        <div id="zona-reservas-picas" style="display:none; grid-template-columns: repeat(2, 75px); gap:10px; margin-left:15px; align-content:center; justify-content:center; border-right:2px dashed #333; padding-right:15px;"></div>
+
+        <div style="display:flex; flex-direction:column; align-items:flex-end; justify-content:center; flex-grow: 1; margin-right: 15px;">
+            <div style="display:grid; grid-template-columns: 75px; grid-template-rows: repeat(3, 75px); gap:15px; padding:10px; border:2px solid transparent; box-sizing:border-box;">
+                <div class="slot-formacion valid-start" data-pos="sacrificio-1" id="pica-slot-1"></div>
+                <div class="slot-formacion valid-start" data-pos="sacrificio-2" id="pica-slot-2"></div>
+                <div class="slot-formacion valid-start" data-pos="sacrificio-3" id="pica-slot-3"></div>
+            </div>
+        </div>
+
+        <div style="display:flex; flex-direction:column; align-items:flex-start; justify-content:center; margin-right: 40px;">
             <div id="grid-enemigo-picas" style="display:grid; grid-template-columns: repeat(3, 75px); grid-template-rows: repeat(3, 75px); gap:10px; padding:10px; border:2px solid transparent; box-sizing:border-box;">
                 <div class="slot-enemigo" id="en-pica-0-0"><div class="enemigo-hp-combate">🤍</div><img class="enemigo-img" src="assets/img/personajes/enemigos/enemigo.webp"></div>
                 <div class="slot-enemigo" id="en-pica-0-1"><div class="enemigo-hp-combate">🤍</div><img class="enemigo-img" src="assets/img/personajes/enemigos/enemigo.webp"></div>

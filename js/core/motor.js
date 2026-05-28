@@ -4,7 +4,11 @@ let jugador = {
     nombre: "...", denarios: 0, liderazgoBase: 0, liderazgo: 0,     
     estadoFeActual: "FE FIRME", inventario: [], orden: "", tropas: [], 
     nombresUsados: [], 
-    ataqueBase: 0, ataqueReal: 0, defensaBase: 0, defensaReal: 0, vidas: 3 
+    ataqueBase: 0, ataqueReal: 0, defensaBase: 0, defensaReal: 0, vidas: 3,
+    
+    // FIX TÁCTICO: Memoria para eventos narrativos
+    narrativaSacrificioVista: false,
+    mercenarioRedimidoId: null 
 };
 
 let tribulacionesDisponibles = [];
@@ -34,6 +38,7 @@ function reiniciarJugadorBase() {
     jugador.denarios = 0; jugador.liderazgoBase = 0; jugador.liderazgo = 0; 
     jugador.estadoFeActual = "FE FIRME"; jugador.inventario = []; jugador.orden = ""; 
     jugador.tropas = []; jugador.nombresUsados = [];
+    jugador.narrativaSacrificioVista = false; jugador.mercenarioRedimidoId = null;
     inventarioDesbloqueado = false; tiendaDesbloqueada = false;
     let flecha = document.getElementById("flecha-inventario"); if(flecha) flecha.style.display = "none";
     let iconoOrden = document.getElementById("icono-orden"); if(iconoOrden) { iconoOrden.style.display = "none"; iconoOrden.src = ""; }
@@ -82,7 +87,6 @@ async function mostrarAvisoFe(infoFe) {
     
     let narrativa = narrativasFe[infoFe.nombre].replace("{nombre}", jugador.nombre);
     
-    // FIX TÁCTICO: Fray Bartolomé narra el aviso de Fe
     let boxFeHtml = `
     <div style="display:flex; align-items:center; gap:20px; text-align:left;">
         <img src="assets/img/personajes/aliados/fray.webp" style="height:120px; filter:drop-shadow(0 0 10px #ffaa00);" />
@@ -130,6 +134,7 @@ function detenerMusicaTribulacion() {
     if (musicaPausada) { musicaActual = musicaPausada; musicaActual.play(); musicaPausada = null; }
 }
 
+// FIX TÁCTICO: Ahora se lee "hp" de la base de datos, en lugar de quemar siempre un "2".
 function agregarTropa(idTipo, cantidad) {
     let tipo = bdTiposTropa[idTipo];
     for(let i=0; i<cantidad; i++){
@@ -147,13 +152,18 @@ function agregarTropa(idTipo, cantidad) {
             jugador.nombresUsados.push(nomFinal);
             if (tipo.clase === "unico_random") nomFinal = "Hermano Vigía " + nomFinal;
         }
+        
+        let vidaBase = tipo.hp || 2; 
+        
         jugador.tropas.push({
             idUnico: Math.random().toString(36).substr(2, 9),
             idTipo: idTipo,
             tipoGeneral: tipo.tipoG,
             clase: tipo.clase, 
             nombre: nomFinal,
-            hp: 2, atkMax: tipo.atk, defMax: tipo.def, img: tipo.img
+            hpMax: vidaBase, 
+            hp: vidaBase, 
+            atkMax: tipo.atk, defMax: tipo.def, img: tipo.img
         });
     }
 }
@@ -197,7 +207,6 @@ async function dispararTribulacionAleatoria(callbackContinuar) {
     let scout = jugador.tropas.find(t => t.idTipo === "explorador_unico"); 
     let nombreScout = scout ? scout.nombre : "El monje explorador";
 
-    // FIX TÁCTICO: El explorador narra la tribulación desde un cuadro
     let tribHtml = `
     <div style="display:flex; align-items:center; gap:20px; text-align:left;">
         <img src="assets/img/personajes/aliados/vigia.webp" style="height:120px; filter:drop-shadow(0 0 10px #ffaa00);" />

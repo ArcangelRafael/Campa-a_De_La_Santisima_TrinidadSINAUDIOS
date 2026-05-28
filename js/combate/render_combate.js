@@ -99,6 +99,28 @@ const RenderCombate = {
         }
     },
 
+    htmlChoqueSacrificio: function(d) {
+        if (d.autoCombat) {
+            return `<div class='bloque-combate'><b class='txt-hereje'>Duelo a Muerte en ${d.posNombre}:</b><br>${d.tropaNombre} vs ${d.enemigoNombre}
+                <div class='math-log'>⚔️ ATAQUE de ${d.tropaNombre}: ${d.atkBase} (Base)${d.stringHerido} + ${d.dadoGracia} (Gracia) <span class='${d.classMod}'>${d.signoMod} (${d.infoFeNombre})</span> = <b>${d.pAtkAliado}</b><br>🗡️ ATAQUE de ${d.enemigoNombre}: ${d.atkEnemigoBase} (Base) + ${d.dadoFuria} (Furia) = <b>${d.pAtkEnemigo}</b></div>
+                <div style='margin-top:5px;'>${d.phase1Cons}</div>
+            </div>`;
+        } else {
+            return `<div class='bloque-combate pendiente-dados' id='${d.idBc}'>
+                <b class='txt-hereje'>Duelo a Muerte en ${d.posNombre}:</b><br>${d.tropaNombre} vs ${d.enemigoNombre}
+                <div class='math-log'>
+                    ⚔️ ATAQUE de ${d.tropaNombre}: ${d.atkBase} (Base)${d.stringHerido} + <span class='dado-hide al-dado' data-val='${d.dadoGracia}'>__</span> (Gracia) <span class='${d.classMod}'>${d.signoMod} (${d.infoFeNombre})</span> = <b class='total-hide' data-val='${d.pAtkAliado}'>??</b><br>
+                    🗡️ ATAQUE de ${d.enemigoNombre}: ${d.atkEnemigoBase} (Base) + <span class='dado-hide en-dado' data-val='${d.dadoFuria}'>__</span> (Furia) = <b class='total-hide' data-val='${d.pAtkEnemigo}'>??</b>
+                </div>
+                <div class='consecuencia-hide' style='display:none; margin-top:5px;'>${d.phase1Cons}</div>
+                <div class='panel-lanzamiento' style='display:flex; gap:15px; align-items:center; margin-top:10px; padding-top:10px; border-top:1px dashed #555;'>
+                     <button class='btn-lanzar-dados' style='background:#8b0000; border-color:#ff4c4c; color:#fff;' onclick="resolverDadosBloque(this, '${d.idBc}')">DESENVAINAR ESPADAS (LANZAR DADOS)</button>
+                     <div class='video-zona' style='display:flex; gap:10px;'></div>
+                </div>
+            </div>`;
+        }
+    },
+
     htmlCartaBallestero: function(d) {
         if (d.cooldown > 0) {
             return `<div class="item-card-desplegado ${d.claseBorde}" style="filter:grayscale(100%); opacity:0.6;">
@@ -136,12 +158,29 @@ const RenderCombate = {
         return `<div class="enemigo-hp-combate" style="display:block;">🤍</div><img class="enemigo-img" src="assets/img/personajes/enemigos/enemigo.webp" style="width:100%;height:100%;object-fit:cover; border-radius:3px;">`;
     },
 
-    htmlFichaTropaInner: function(tr) {
-        let hpStars = "❤️".repeat(Math.max(0, tr.hp)) + "🖤".repeat(2 - Math.max(0, tr.hp));
+    // FIX TÁCTICO - GLOBALIZACIÓN DRY: Lee la vida de Database.js
+    htmlFichaCinematica: function(tr) {
+        let dbKey = tr.tipoGeneral.replace(/s$/, '') + '_' + (tr.clase === 'mercenaria' ? 'mercenario' : tr.clase);
+        if (tr.clase === 'unico') dbKey = 'sacerdote_unico';
+        if (tr.clase === 'unico_random') dbKey = 'explorador_unico';
+        
+        let maxVida = 2;
+        if (typeof bdTiposTropa !== 'undefined' && bdTiposTropa[dbKey]) {
+            maxVida = bdTiposTropa[dbKey].hp;
+        } else if (tr.hpMax) {
+            maxVida = tr.hpMax;
+        }
+
+        let hpStars = "❤️".repeat(Math.max(0, tr.hp)) + "🖤".repeat(Math.max(0, maxVida - Math.max(0, tr.hp)));
         let etiqueta = tr.clase === 'noble' ? "<span class='txt-sagrado' style='font-size:9px;'>(N)</span>" : "";
+        
         return `<img src="${tr.img}">
                 <div class="unidad-hp-combate" style="display:block !important; z-index:200;">${hpStars}</div>
                 <div class="unidad-nombre-aleatorio" style="display:block; position:absolute; bottom:0; left:0; width:100%; background:rgba(0,0,0,0.75); color:#fff; font-size:8px; padding:2px 0; z-index:200; text-align:center;">${tr.nombre} <br>${etiqueta}</div>`;
+    },
+
+    htmlFichaTropaInner: function(tr) {
+        return this.htmlFichaCinematica(tr); 
     },
 
     htmlResumenTurno: function(numTurno, perforadores, bajas) {
@@ -151,55 +190,6 @@ const RenderCombate = {
         }
         texto += `Enemigos abatidos: <span class="txt-hereje">${bajas}</span>`;
         return `<div class="resumen-turno-box resumen-oculto" style="display:none;">${texto}</div>`;
-    },
-
-    htmlModalAlivio: function(huidos) {
-        setTimeout(async () => {
-            let container = document.getElementById("alivio-dialogs");
-            let btn = document.getElementById("btn-cerrar-alivio");
-            let textFinal = document.getElementById("alivio-text-final");
-            if(!container) return;
-            
-            // FIX TÁCTICO: Diálogos inyectados asíncronamente con el MotorDialogos dentro del modal
-            await MotorDialogos.mostrarDialogoEnContenedor(container, {
-                personajeImg: "assets/img/personajes/aliados/lider_ballesteros.webp", 
-                nombrePersonaje: "Barón Andrew", alineacion: "izq", 
-                bordeClase: "borde-aliado", nombreClase: "nombre-izq-align",
-                texto: `"¡Comendador! ¡Los birotes han llegado y el hierro está sediento! ¡Mis hombres tienen el puente bajo la mira!"`, 
-                claseTexto: "txt-lugarteniente"
-            });
-
-            await MotorDialogos.mostrarDialogoEnContenedor(container, {
-                personajeImg: "assets/img/personajes/aliados/lider_ballesteros.webp", 
-                nombrePersonaje: "Barón Andrew", alineacion: "izq", 
-                bordeClase: "borde-aliado", nombreClase: "nombre-izq-align",
-                texto: `"¡CONDE JUAN-A! ¡Retire a sus perros de esa carnicería de inmediato si no quiere que mis saetas los confundan con herejes! ¡EL PUENTE ES NUESTRO!"`, 
-                claseTexto: "txt-lugarteniente"
-            });
-
-            await MotorDialogos.mostrarDialogoEnContenedor(container, {
-                personajeImg: "assets/img/personajes/aliados/lider_piqueros.webp", 
-                nombrePersonaje: "Conde JuanA", alineacion: "izq", 
-                bordeClase: "borde-aliado", nombreClase: "nombre-izq-align",
-                texto: `"¡MISERICORDIA DIVINA...! ¡ESCUCHAD EL CUERNO, HERMANOS! ¡REPLIEGUE! ¡REPLIEGUE POR LA TRINIDAD!"`, 
-                claseTexto: "txt-lugarteniente"
-            });
-
-            if(textFinal) textFinal.style.display = "block";
-            if(btn) btn.style.display = "inline-block";
-        }, 50);
-
-        // FIX TÁCTICO: Contenedor envuelto en un div con overflow y max-height para habilitar el scrollbar
-        return `
-        <div style="max-height: 80vh; overflow-y: auto; overflow-x: hidden; padding-right: 15px;">
-            <h2 class="txt-sagrado" style='font-family:"Cinzel", serif; margin-top:0;'>¡ALABADO SEA EL SEÑOR!</h2>
-            
-            <div id="alivio-dialogs" style="margin-top: 20px; transform: scale(0.85); transform-origin: top center; margin-bottom: -40px;"></div>
-            
-            <hr class="separador" style='border-color:#444; margin:20px 0;'>
-            <p id="alivio-text-final" class="txt-accion" style='font-size: 0.9em; display:none;'>[Se escucha el bramido de un cuerno de guerra que resuena en todo el desfiladero, marcando el fin de la masacre. Ante el ensordecedor sonido y la inminente lluvia de saetas, <b>${huidos} paganos</b> rompen filas y huyen despavoridos hacia la niebla].</p>
-            <button id="btn-cerrar-alivio" style="display:none; margin-top:20px; padding:10px 30px; font-size:16px; font-weight:bold; background:#222; color:#ffaa00; border:2px solid #ffaa00; border-radius:5px; cursor:pointer; font-family:'Cinzel', serif;">AVANZAR LA CRUZADA</button>
-        </div>`;
     },
 
     htmlPolvoSeAsienta: function(victoria, soldadosCaidos, bajas, feGanada, displayStyle) {

@@ -19,11 +19,25 @@ function cerrarMesaDeGuerra() {
         storyArea.appendChild(parrafo); 
     });
     
+    let pending = document.querySelectorAll('.pendiente-dados').length > 0;
+    if (!pending) {
+        evaluarBajasYContinuar();
+    }
+}
+
+function evaluarBajasYContinuar() {
+    let autoCombat = document.getElementById("ht-auto-combat")?.checked;
+
     if (EstadoBatalla.tipoCombate === "picas" && EstadoBatalla.progresoMuro >= EstadoBatalla.metaProgresoMuro) { 
         evaluarContinuacionBatalla(); 
         return; 
     }
     if (EstadoBatalla.tipoCombate === "picas_bosque" && EstadoBatalla.progresoMuro >= EstadoBatalla.metaProgresoMuro) { 
+        evaluarContinuacionBatalla(); 
+        return; 
+    }
+    // FIX TÁCTICO: Agregado el caso de éxito para el Sacrificio
+    if (EstadoBatalla.tipoCombate === "sacrificio" && EstadoBatalla.progresoMuro >= EstadoBatalla.metaProgresoMuro) { 
         evaluarContinuacionBatalla(); 
         return; 
     }
@@ -39,19 +53,20 @@ function cerrarMesaDeGuerra() {
     if (bajasNuevas.length > 0) {
         let nombresBajas = bajasNuevas.map(b => `<b class='txt-hereje'>${jugador.tropas.find(t=>t.idUnico===b.idUnico).nombre}</b> (${b.posNombre})`).join(", ");
 
-        let pending = document.querySelectorAll('.pendiente-dados').length > 0;
-        let displayStyle = (!autoCombat && pending) ? "none" : "block";
-
-        let alertHtml = RenderCombate.htmlAlertaBajas(nombresBajas, displayStyle);
+        let alertHtml = RenderCombate.htmlAlertaBajas(nombresBajas, 'block');
         agregarTexto(alertHtml, "", true);
         
         limpiarBotones();
         
         let imgLugarteniente = EstadoBatalla.tipoCombate === "cuna" ? "assets/img/personajes/aliados/lider_caballeromontado.webp" : "assets/img/personajes/aliados/lider_piqueros.webp";
         let nomLugarteniente = EstadoBatalla.tipoCombate === "cuna" ? "Sir Alexandro" : "Conde JuanA";
+        
+        if (EstadoBatalla.tipoCombate === "sacrificio") {
+            imgLugarteniente = "assets/img/personajes/aliados/lider_ballesteros.webp";
+            nomLugarteniente = "Barón Andrew";
+        }
 
         let divRefuerzo = document.createElement("div");
-        if (!autoCombat && pending) { divRefuerzo.style.display = "none"; }
         storyArea.appendChild(divRefuerzo);
 
         MotorDialogos.mostrarDialogoEnContenedor(divRefuerzo, {
@@ -81,7 +96,6 @@ function cerrarMesaDeGuerra() {
                     return tr && tr.hp <= 0;
                 });
 
-                // FIX TÁCTICO: Se removió el async de la apertura para evitar que el motor de combate espere al DOM 
                 abrirFormacionReposicion(todasLasBajas, (reforzados) => {
                     document.querySelectorAll("button").forEach(b => {
                         if (b.innerText.includes("REEMPLAZO")) b.style.display = "none";
@@ -116,7 +130,6 @@ function cerrarMesaDeGuerra() {
                         let divLlegada = document.createElement("div");
                         storyArea.appendChild(divLlegada);
                         
-                        // En lugar de await, disparamos la continuación en el THEN
                         MotorDialogos.mostrarDialogoEnContenedor(divLlegada, {
                             personajeImg: imgLugarteniente, 
                             nombrePersonaje: nomLugarteniente, alineacion: "izq", 
@@ -155,13 +168,6 @@ function cerrarMesaDeGuerra() {
                 evaluarContinuacionBatalla(); 
             });
         });
-
-        if (!autoCombat && pending) {
-            setTimeout(() => {
-                let actionArea = document.getElementById("action-area");
-                if(actionArea) actionArea.style.display = "none";
-            }, 10);
-        }
 
     } else { 
         evaluarContinuacionBatalla();

@@ -6,7 +6,6 @@ const SistemaDialogos = {
     intervalo: null,
     callbackActual: null,
 
-    // FIX TÁCTICO: Promesa para encadenar múltiples pantallas completas de VN
     mostrarEscenaAsync: function(opciones) {
         return new Promise((resolve) => {
             opciones.callback = (val) => resolve(val);
@@ -17,6 +16,32 @@ const SistemaDialogos = {
     iniciarEscena: function(opciones) {
         let { personajeImg, nombrePersonaje, texto, requiereInput, placeholderInput, textoErrorVacio, textoBoton, imgClase, callback } = opciones;
 
+        let modoPlano = document.getElementById("ht-textos-planos");
+        if (modoPlano && modoPlano.checked) {
+            if (requiereInput) {
+                let val = prompt((nombrePersonaje ? nombrePersonaje + ": " : "") + texto + "\n\n" + (placeholderInput || "Escribe aquí..."));
+                while (!val || val.trim() === "") {
+                    val = prompt((textoErrorVacio || "No puedes dejar esto vacío.") + "\n\n" + (placeholderInput || "Escribe aquí..."));
+                }
+                if (callback) callback(val.trim());
+            } else {
+                let storyArea = document.getElementById("story-area");
+                if (storyArea) {
+                    let p = document.createElement("p");
+                    p.style.cssText = "margin-bottom: 10px; font-style: italic; color: #c0c0c0;";
+                    if (nombrePersonaje) {
+                        p.innerHTML = `<b style="color: #ffaa00; font-style: normal;">${nombrePersonaje}:</b> ${texto}`;
+                    } else {
+                        p.innerHTML = texto;
+                    }
+                    storyArea.appendChild(p);
+                    storyArea.scrollTop = storyArea.scrollHeight;
+                }
+                if (callback) callback();
+            }
+            return; 
+        }
+
         let overlay = document.getElementById("vn-overlay");
         let imgEl = document.getElementById("vn-character-img");
         let speakerEl = document.getElementById("vn-speaker-name");
@@ -25,13 +50,11 @@ const SistemaDialogos = {
         let inputBox = document.getElementById("vn-input-box");
         let btnNext = document.getElementById("vn-btn-next");
 
-        // Configuramos visuales
         imgEl.src = personajeImg;
-        imgEl.className = imgClase || ""; // Soporte para la clase del Papa
+        imgEl.className = imgClase || ""; 
         speakerEl.innerText = nombrePersonaje;
         textEl.innerHTML = ""; 
         
-        // Configuramos la interfaz
         inputArea.style.display = "none";
         btnNext.style.display = "none";
         if(requiereInput) {
@@ -110,6 +133,24 @@ const MotorDialogos = {
         return new Promise((resolve) => {
             let { personajeImg, nombrePersonaje, alineacion, bordeClase, nombreClase, retratoClase, texto, claseTexto } = opciones;
             let storyArea = document.getElementById("story-area");
+
+            let modoPlano = document.getElementById("ht-textos-planos");
+            if (modoPlano && modoPlano.checked) {
+                let p = document.createElement("p");
+                p.style.cssText = "margin-bottom: 10px; font-style: italic; color: #c0c0c0;";
+                
+                let colorNombre = "#4c88ff"; 
+                if (bordeClase === "borde-enemigo") colorNombre = "#ff4c4c";
+                else if (bordeClase === "borde-papa") colorNombre = "#ffccff";
+                else if (bordeClase === "borde-comandante") colorNombre = "#ffd700";
+
+                p.innerHTML = `<b style="color: ${colorNombre}; font-style: normal;">${nombrePersonaje}:</b> <span class="${claseTexto || ''}">${texto}</span>`;
+                storyArea.appendChild(p);
+                storyArea.scrollTop = storyArea.scrollHeight;
+                
+                setTimeout(() => resolve(), 10);
+                return;
+            }
 
             let box = document.createElement("div");
             box.className = "dialogo-pergamino " + (bordeClase || (alineacion === "izq" ? "borde-aliado" : "borde-enemigo"));
@@ -199,9 +240,27 @@ const MotorDialogos = {
         });
     },
 
+    // FIX TÁCTICO: Se inyectó el motor de máquina de escribir también a los contenedores Modales
     mostrarDialogoEnContenedor: function(contenedor, opciones) {
         return new Promise((resolve) => {
             let { personajeImg, nombrePersonaje, alineacion, bordeClase, nombreClase, retratoClase, texto, claseTexto } = opciones;
+
+            let modoPlano = document.getElementById("ht-textos-planos");
+            if (modoPlano && modoPlano.checked) {
+                let p = document.createElement("p");
+                p.style.cssText = "margin-bottom: 10px; font-style: italic; color: #c0c0c0; text-align: left;";
+                
+                let colorNombre = "#4c88ff"; 
+                if (bordeClase === "borde-enemigo") colorNombre = "#ff4c4c";
+                else if (bordeClase === "borde-papa") colorNombre = "#ffccff";
+                else if (bordeClase === "borde-comandante") colorNombre = "#ffd700";
+
+                p.innerHTML = `<b style="color: ${colorNombre}; font-style: normal;">${nombrePersonaje}:</b> <span class="${claseTexto || ''}">${texto}</span>`;
+                contenedor.appendChild(p);
+                
+                setTimeout(() => resolve(), 10);
+                return;
+            }
 
             let box = document.createElement("div");
             box.className = "dialogo-pergamino " + (bordeClase || (alineacion === "izq" ? "borde-aliado" : "borde-enemigo"));
@@ -225,16 +284,62 @@ const MotorDialogos = {
             
             let textSpan = document.createElement("span");
             if (claseTexto) textSpan.className = claseTexto;
-            textSpan.innerHTML = texto; 
             textContainer.appendChild(textSpan);
             box.appendChild(textContainer);
 
             let btnNext = document.createElement("button");
             btnNext.className = "btn-siguiente-medieval";
             btnNext.innerText = "SIGUIENTE ⮞";
+            btnNext.style.display = "none";
             box.appendChild(btnNext);
 
             contenedor.appendChild(box);
+
+            // Efecto de máquina de escribir adaptado al modal
+            let isTyping = true;
+
+            box.onclick = () => {
+                if (isTyping) {
+                    isTyping = false;
+                    textSpan.innerHTML = texto;
+                    btnNext.style.display = "block";
+                    if(contenedor.parentNode) contenedor.parentNode.scrollTop = contenedor.parentNode.scrollHeight;
+                }
+            };
+
+            let contentArray = texto.split(/(<[^>]*>)/g);
+            let currentChunkIndex = 0;
+            let currentCharIndex = 0;
+
+            let interval = setInterval(() => {
+                if (!isTyping) {
+                    clearInterval(interval);
+                    return;
+                }
+
+                if (currentChunkIndex >= contentArray.length) {
+                    clearInterval(interval);
+                    isTyping = false;
+                    btnNext.style.display = "block";
+                    if(contenedor.parentNode) contenedor.parentNode.scrollTop = contenedor.parentNode.scrollHeight;
+                    return;
+                }
+
+                let chunk = contentArray[currentChunkIndex];
+                if (chunk.startsWith("<")) {
+                    textSpan.innerHTML += chunk; 
+                    currentChunkIndex++;
+                } else {
+                    if (currentCharIndex < chunk.length) {
+                        textSpan.innerHTML += chunk.charAt(currentCharIndex);
+                        currentCharIndex++;
+                    } else {
+                        currentCharIndex = 0;
+                        currentChunkIndex++;
+                    }
+                }
+                if(contenedor.parentNode) contenedor.parentNode.scrollTop = contenedor.parentNode.scrollHeight;
+            }, this.velocidadEscritura);
 
             btnNext.onclick = (e) => {
                 e.stopPropagation();

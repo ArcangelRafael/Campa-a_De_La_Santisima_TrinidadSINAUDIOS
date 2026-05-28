@@ -21,7 +21,7 @@ async function iniciarFaseBosque() {
         agregarTexto("<div class='separador'>***</div>");
         
         await MotorDialogos.mostrarDialogo({
-            personajeImg: "assets/img/personajes/aliados/lider_ballesteros.webp", nombrePersonaje: "Barón Andrew", alineacion: "izq", bordeClase: "borde-aliado", nombreClase: "nombre-izq",
+            personajeImg: "assets/img/personajes/aliados/lider_ballesteros.webp", nombrePersonaje: "Barón Andrew", alineacion: "izq", bordeClase: "borde-aliado", nombreClase: "nombre-izq-align",
             texto: `"¡Huyen! ¡Las ratas paganas corren hacia la niebla! ¡EL BOSQUE ES NUESTRO!"`, claseTexto: "txt-lugarteniente"
         });
         
@@ -47,20 +47,27 @@ async function iniciarFaseBosque() {
 
     jugador.tropas.forEach(t => { if (t.cooldown === undefined) t.cooldown = 0; });
 
-    let ballesterosVivos = jugador.tropas.filter(t => t.tipoGeneral === "ballesteros" && t.hp > 0);
+    let ballesterosVivos = jugador.tropas.filter(t => t.tipoGeneral === "ballesteros" && t.hp > 0 && !t.espadachin);
     let listosParaTirar = ballesterosVivos.filter(b => b.cooldown === 0);
+    let totalPiqueros = jugador.tropas.filter(t => t.tipoGeneral === "piqueros" && t.hp > 0).length;
 
-    if (listosParaTirar.length === 0) {
+    if (listosParaTirar.length > 0) {
+        crearBoton(`🏹 ORDENAR LLUVIA DE SAETAS (${listosParaTirar.length} Listos)`, ejecutarVolleyBosque);
+    } else {
         agregarTexto("<div class='separador'>***</div>");
         
-        await MotorDialogos.mostrarDialogo({
-            personajeImg: "assets/img/personajes/aliados/lider_ballesteros.webp", nombrePersonaje: "Barón Andrew", alineacion: "izq", bordeClase: "borde-aliado", nombreClase: "nombre-izq",
-            texto: `"¡Mis hombres están tensando las cuerdas! ¡No podemos disparar en este turno, cubridnos!"`, claseTexto: "txt-lugarteniente"
-        });
+        if (ballesterosVivos.length > 0) {
+            await MotorDialogos.mostrarDialogo({
+                personajeImg: "assets/img/personajes/aliados/lider_ballesteros.webp", nombrePersonaje: "Barón Andrew", alineacion: "izq", bordeClase: "borde-aliado", nombreClase: "nombre-izq-align",
+                texto: `"¡Mis hombres están tensando las cuerdas! ¡No podemos disparar en este turno, cubridnos!"`, claseTexto: "txt-lugarteniente"
+            });
+        }
         
-        crearBoton("🛡️ PREPARAR MURO DE PICAS", iniciarPicasBosque);
-    } else {
-        crearBoton("🏹 ORDENAR LLUVIA DE SAETAS", ejecutarVolleyBosque);
+        if (totalPiqueros === 0) {
+            crearBoton("🛡️ PREPARAR LA ÚLTIMA LÍNEA (SACRIFICIO)", iniciarNarrativaSacrificio);
+        } else {
+            crearBoton("🛡️ PREPARAR MURO DE PICAS", iniciarPicasBosque);
+        }
     }
 }
 
@@ -68,13 +75,12 @@ function ejecutarVolleyBosque() {
     limpiarBotones(); storyArea.innerHTML = "";
     
     let autoCombat = document.getElementById("ht-auto-combat")?.checked;
-    
     let btnLanzarTodos = autoCombat ? "" : `<br><button class='btn-lanzar-todos' style='margin-top:10px;' onclick='tirarTodosLosDadosBosque(this)'>TIRAR TODOS LOS DADOS</button>`;
     
     agregarTexto(`<h3 class='txt-sagrado' style='text-align:center; position:relative;'>LLUVIA DE SAETAS${btnLanzarTodos}</h3>`);
     agregarTexto(`[Las ballestas crujen al unísono mientras los virotes cortan el aire espeso del bosque...]`, "txt-accion");
 
-    let ballesterosVivos = jugador.tropas.filter(t => t.tipoGeneral === "ballesteros" && t.hp > 0);
+    let ballesterosVivos = jugador.tropas.filter(t => t.tipoGeneral === "ballesteros" && t.hp > 0 && !t.espadachin);
     let htmlGrid = `<div class="grid-desplegado" style="margin-top:20px;">`;
     
     let bajasVolley = 0;
@@ -126,43 +132,58 @@ function ejecutarVolleyBosque() {
     
     agregarTexto(htmlFinal, "", true);
 
-    setTimeout(async () => {
+    setTimeout(() => {
         let container = document.getElementById('inline-action-area');
         if (container) {
-            if (jugador.enemigosAsesinados >= jugador.enemigosObjetivo) {
-                let btn = document.createElement("button");
-                btn.innerHTML = "EVALUAR RESULTADOS";
-                btn.style.cssText = "background: #111; color: #ffaa00; border: 2px solid #ffaa00; padding: 10px 20px; font-family: 'Cinzel', serif; font-weight: bold; cursor: pointer; letter-spacing: 1px;";
-                btn.onclick = () => {
-                    let aa = document.getElementById('action-area'); if(aa) aa.style.display = '';
-                    iniciarFaseBosque();
-                };
-                container.appendChild(btn);
-            } else {
-                // FIX TÁCTICO: Diálogo de Novela Visual Inyectado en el combate
-                let divDialogo = document.createElement("div");
-                container.appendChild(divDialogo);
-                
-                await MotorDialogos.mostrarDialogoEnContenedor(divDialogo, {
-                    personajeImg: "assets/img/personajes/aliados/lider_piqueros.webp", nombrePersonaje: "Conde JuanA", alineacion: "izq", bordeClase: "borde-aliado", nombreClase: "nombre-izq",
-                    texto: `"¡La horda se acerca por el claro! ¡PREPARAD LAS PICAS!"`, claseTexto: "txt-lugarteniente"
-                });
-                
-                let btn = document.createElement("button");
-                btn.innerHTML = "🛡️ PREPARAR MURO DE PICAS";
-                btn.style.cssText = "background: #2d5a2d; color: #fff; border: 2px solid #88ff88; padding: 10px 20px; font-family: 'Cinzel', serif; font-weight: bold; cursor: pointer; margin-top: 10px; letter-spacing: 1px;";
-                btn.onclick = () => {
-                    let aa = document.getElementById('action-area'); if(aa) aa.style.display = '';
-                    iniciarPicasBosque();
-                };
-                container.appendChild(btn);
-            }
+            let btnEvaluar = document.createElement("button");
+            btnEvaluar.innerText = "EVALUAR RESULTADOS";
+            btnEvaluar.style.cssText = "background: #111; color: #ffaa00; border: 2px solid #ffaa00; padding: 10px 20px; font-family: 'Cinzel', serif; font-weight: bold; cursor: pointer; letter-spacing: 1px;";
+            btnEvaluar.onclick = () => {
+                if(window.verificarCombatesPendientes()) {
+                    btnEvaluar.remove(); // Se destruye para evitar clonación de cuadros
+                    finalizarVolleyBosque();
+                }
+            };
+            container.appendChild(btnEvaluar);
         }
     }, 50);
 }
 
+async function finalizarVolleyBosque() {
+    let aa = document.getElementById('action-area'); if(aa) aa.style.display = '';
+    limpiarBotones();
+    
+    agregarTexto(`<div class='separador'>***</div>`);
+    
+    if (jugador.enemigosAsesinados >= jugador.enemigosObjetivo) {
+        evaluarVictoriaDerrotaBosque();
+    } else {
+        let divDialogo = document.createElement("div");
+        storyArea.appendChild(divDialogo);
+        
+        let totalPiqueros = jugador.tropas.filter(t => t.tipoGeneral === "piqueros" && t.hp > 0).length;
+        
+        // FIX TÁCTICO: Memoria inmersiva. El Conde JuanA evalúa a sus tropas vivas antes de hablar.
+        if (totalPiqueros > 0) {
+            await MotorDialogos.mostrarDialogoEnContenedor(divDialogo, {
+                personajeImg: "assets/img/personajes/aliados/lider_piqueros.webp", nombrePersonaje: "Conde JuanA", alineacion: "izq", bordeClase: "borde-aliado", nombreClase: "nombre-izq-align",
+                texto: `"¡La horda se acerca por el claro! ¡PREPARAD LAS PICAS!"`, claseTexto: "txt-lugarteniente"
+            });
+            crearBoton("🛡️ PREPARAR MURO DE PICAS", iniciarPicasBosque);
+        } else {
+            await MotorDialogos.mostrarDialogoEnContenedor(divDialogo, {
+                personajeImg: "assets/img/personajes/aliados/lider_piqueros.webp", nombrePersonaje: "Conde JuanA", alineacion: "izq", bordeClase: "borde-aliado", nombreClase: "nombre-izq-align",
+                texto: `"¡Padre Santo, ten misericordia! ¡Mis falanges han sido masacradas hasta el último mártir! Su sangre riega esta tierra profanada. Barón Andrew... ya no me quedan lanzas para detener a las bestias. ¡Que la Santísima Trinidad os proteja, pues tendréis que arreglároslas con vuestras propias espadas!"`, claseTexto: "txt-lugarteniente"
+            });
+            crearBoton("🛡️ PREPARAR LA ÚLTIMA LÍNEA (SACRIFICIO)", iniciarNarrativaSacrificio);
+        }
+        
+        setTimeout(() => { storyArea.scrollTop = storyArea.scrollHeight; }, 50);
+    }
+}
+
 function iniciarPicasBosque() {
-    let ballesterosVivos = jugador.tropas.filter(t => t.tipoGeneral === "ballesteros" && t.hp > 0);
+    let ballesterosVivos = jugador.tropas.filter(t => t.tipoGeneral === "ballesteros" && t.hp > 0 && !t.espadachin);
     let minCooldown = 1; 
     let recargando = ballesterosVivos.filter(b => b.cooldown > 0);
     
@@ -227,45 +248,88 @@ function iniciarPicasBosque() {
 
 function evaluarPicasBosque(victoria, bajasEnPicas) {
     limpiarBotones(); agregarTexto("<div class='separador'>***</div>");
-    
     jugador.enemigosAsesinados += bajasEnPicas;
     
-    if (victoria) {
-        agregarTexto(`<h3 class='mensaje-sistema' style='text-align:center;'>¡LA LÍNEA RESISTIÓ!</h3>`);
-        agregarTexto(`Los piqueros aguantaron estoicos el embate, dando tiempo valioso a los ballesteros.`);
-        
-        jugador.tropas.forEach(t => {
-            if (t.tipoGeneral === "ballesteros" && t.cooldown > 0) {
-                t.cooldown -= EstadoBatalla.turnosFaseBosque;
-                if (t.cooldown < 0) t.cooldown = 0;
-            }
-        });
+    if (!victoria) {
+        let totalPiqueros = jugador.tropas.filter(t => t.tipoGeneral === "piqueros" && t.hp > 0).length;
+        if (totalPiqueros === 0) {
+            iniciarNarrativaSacrificio(); return;
+        } else {
+            agregarTexto(`<h3 class='txt-hereje'>EL MURO HA CAÍDO</h3>`);
+            agregarTexto(`La horda sobrepasó vuestras lanzas y la masacre es inminente...`);
+            crearBoton("Continuar (Misión Fallida)", () => { crearBoton("Reiniciar Campaña", iniciarJuego); });
+            return;
+        }
+    }
+    
+    agregarTexto(`<h3 class='mensaje-sistema' style='text-align:center;'>¡LA LÍNEA RESISTIÓ!</h3>`);
+    agregarTexto(`Los piqueros aguantaron estoicos el embate, dando tiempo valioso a los ballesteros.`);
+    
+    jugador.tropas.forEach(t => {
+        if (t.tipoGeneral === "ballesteros" && t.cooldown > 0 && !t.espadachin) {
+            t.cooldown -= EstadoBatalla.turnosFaseBosque;
+            if (t.cooldown < 0) t.cooldown = 0;
+        }
+    });
 
-        crearBoton("REPLIEGUE (Abrir Campo de Tiro)", () => {
-            let overlay = document.getElementById("formacion-overlay");
-            if(overlay) overlay.style.display = "flex";
+    crearBoton("REPLIEGUE (Abrir Campo de Tiro)", () => {
+        let overlay = document.getElementById("formacion-overlay");
+        if(overlay) overlay.style.display = "flex";
 
-            let skipCine = document.getElementById("ht-skip-cine")?.checked;
-            if(skipCine) {
-                if(overlay) overlay.style.display = "none";
-                iniciarFaseBosque();
-            } else {
-                if (typeof playCinematicaRepliegueBosque === 'function') {
-                    playCinematicaRepliegueBosque(() => {
-                        if(overlay) overlay.style.display = "none";
-                        iniciarFaseBosque();
-                    });
-                } else {
+        let skipCine = document.getElementById("ht-skip-cine")?.checked;
+        if(skipCine) {
+            if(overlay) overlay.style.display = "none";
+            iniciarFaseBosque();
+        } else {
+            if (typeof playCinematicaRepliegueBosque === 'function') {
+                playCinematicaRepliegueBosque(() => {
                     if(overlay) overlay.style.display = "none";
                     iniciarFaseBosque();
-                }
+                });
+            } else {
+                if(overlay) overlay.style.display = "none";
+                iniciarFaseBosque();
+            }
+        }
+    });
+}
+
+function evaluarVictoriaDerrotaBosque() {
+    limpiarBotones();
+    
+    jugador.tropas.forEach(t => { if (t.espadachin) t.espadachin = false; });
+    
+    if (jugador.enemigosAsesinados >= jugador.enemigosObjetivo) {
+        if (typeof cambiarMusica === 'function') cambiarMusica('bgm-victoria');
+        
+        agregarTexto(`<div class='separador'>***</div>`);
+        agregarTexto(`<h2 class='txt-sagrado' style='text-align:center;'>¡VICTORIA EN EL BOSQUE!</h2>`);
+        agregarTexto(`La horda pagana ha sido quebrada. Los cadáveres infieles alfombran la tierra y el silencio regresa al bosque, roto únicamente por los rezos de vuestros hermanos heridos.`);
+        
+        let totalAliados = jugador.tropas.filter(t => t.hp > 0).length;
+        if (totalAliados < 8) {
+            agregarTexto(`Ha sido una victoria pírrica. Vuestras fuerzas están mermadas y el hedor a sangre atrae moscas y desesperanza.`, "txt-hereje");
+            jugador.liderazgo -= 15;
+            agregarTexto(`[-15 de Fe por bajas críticas]`, "txt-hereje");
+        } else {
+            agregarTexto(`Vuestros soldados alzan sus espadas al cielo en agradecimiento.`, "mensaje-sistema");
+            jugador.liderazgo += 10;
+            agregarTexto(`[+10 de Fe por victoria moral]`, "txt-sagrado");
+        }
+        
+        actualizarHUD();
+        
+        crearBoton("AVANZAR EL PEREGRINAJE", () => {
+            if (typeof nodo_IA_Victoria === 'function') {
+                nodo_IA_Victoria();
+            } else {
+                alert("Victoria confirmada. Continuará...");
             }
         });
     } else {
-        agregarTexto(`<h3 class='txt-hereje'>EL MURO HA CAÍDO</h3>`);
-        agregarTexto(`La horda sobrepasó vuestras lanzas y la masacre es inminente...`);
-        crearBoton("Continuar (Misión Fallida)", () => {
-             crearBoton("Reiniciar Campaña", iniciarJuego);
-        });
+        agregarTexto(`<div class='separador'>***</div>`);
+        agregarTexto(`<h2 class='txt-hereje' style='text-align:center;'>MASACRE EN EL BOSQUE</h2>`);
+        agregarTexto(`Sin protección, vuestros tiradores fueron despedazados. La Cruzada ha fracasado en estas tierras impías.`);
+        crearBoton("REINICIAR", () => location.reload());
     }
 }

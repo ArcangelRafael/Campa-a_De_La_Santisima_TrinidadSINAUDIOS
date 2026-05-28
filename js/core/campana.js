@@ -125,9 +125,13 @@ function generarCartasTropas(listaTropas) {
     listaTropas.forEach(t => {
         let claseBorde = t.clase === 'noble' ? 'tropa-noble' : 'tropa-mercenaria';
         let etiqueta = t.clase === 'noble' ? "<span class='txt-sagrado' style='font-size:10px;'>(Noble)</span>" : "<span style='color:#888; font-size:10px;'>(Mercenario)</span>";
-        let hpStars = "❤️".repeat(Math.max(0, t.hp)) + "🖤".repeat(2 - Math.max(0, t.hp));
         
-        let penalizador = (t.hp < 2 && t.hp > 0) ? 1 : 0;
+        // FIX TÁCTICO: Evaluamos de forma dinámica el límite de vida de cada soldado
+        let maxVida = t.hpMax || 2;
+        let hpStars = "❤️".repeat(Math.max(0, t.hp)) + "🖤".repeat(maxVida - Math.max(0, t.hp));
+        
+        // Si tiene solo 1 vida máxima, la penalidad por "herida" no aplica, ya que a 0 de vida el soldado muere instantáneamente.
+        let penalizador = (t.hp < maxVida && t.hp > 0) ? 1 : 0;
         
         // Aplicamos la matemática del buff/debuff a la interfaz
         let atkReal = Math.max(0, t.atkMax - penalizador + infoFe.mod);

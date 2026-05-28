@@ -24,6 +24,67 @@ function iniciarReclutamiento() {
 function renderizarTienda() {
     const contenedor = document.getElementById("tienda-contenido");
     contenedor.innerHTML = "";
+
+    let cabCount = jugador.tropas.filter(t => t.tipoGeneral === 'caballeros').length;
+    let piqCount = jugador.tropas.filter(t => t.tipoGeneral === 'piqueros').length;
+    let ballCount = jugador.tropas.filter(t => t.tipoGeneral === 'ballesteros').length;
+    
+    // FIX TÁCTICO: Extirpada la clase "txt-comandante" para evitar el parpadeo de los números.
+    let headerReclutamiento = document.createElement("div");
+    headerReclutamiento.style.cssText = "text-align: center; margin-bottom: 20px; position: relative;";
+    headerReclutamiento.innerHTML = `
+        <style>
+            @keyframes pulsoArmada {
+                0% { color: #4c88ff; text-shadow: 0 0 5px #4c88ff; }
+                50% { color: #fff; text-shadow: 0 0 15px #fff; }
+                100% { color: #4c88ff; text-shadow: 0 0 5px #4c88ff; }
+            }
+            .tooltip-armada {
+                display: none;
+                position: absolute;
+                top: 100%;
+                left: 50%;
+                transform: translateX(-50%);
+                background: rgba(10, 10, 15, 0.98);
+                border: 2px solid #4c88ff;
+                padding: 15px;
+                border-radius: 8px;
+                z-index: 500;
+                box-shadow: 0 10px 30px rgba(0,0,0,1);
+                min-width: 380px;
+                cursor: default;
+            }
+            .hover-armada:hover .tooltip-armada {
+                display: block;
+            }
+        </style>
+        <span class="hover-armada txt-sagrado" style="cursor: help; animation: pulsoArmada 2s infinite; font-size: 18px; font-weight: bold; padding: 5px 10px;">
+            🛡️ VER TU COMPAÑÍA ACTUAL
+            <div class="tooltip-armada">
+                <h4 style="margin: 0 0 10px 0; color: #4c88ff; font-family:'Cinzel', serif; border-bottom: 1px solid #333; padding-bottom: 5px;">TROPAS EN FILA</h4>
+                <div style="display:flex; justify-content:center; gap:15px; margin-top:10px;">
+                    <div class="item-card-desplegado soldier-frame" style="min-width:100px; border-color:#d4af37;">
+                        <img src="assets/img/personajes/aliados/caballero_noble.webp">
+                        <div class="unidad-nombre-aleatorio" style="font-size:11px; color:#fff;">Caballeros</div>
+                        <div style="color:#ffd700; font-weight:bold; font-size:18px; margin-top:5px; text-shadow: 0 0 5px #4c88ff;">x${cabCount}</div>
+                    </div>
+                    <div class="item-card-desplegado soldier-frame" style="min-width:100px; border-color:#d4af37;">
+                        <img src="assets/img/personajes/aliados/piquero_noble.webp">
+                        <div class="unidad-nombre-aleatorio" style="font-size:11px; color:#fff;">Piqueros</div>
+                        <div style="color:#ffd700; font-weight:bold; font-size:18px; margin-top:5px; text-shadow: 0 0 5px #4c88ff;">x${piqCount}</div>
+                    </div>
+                    <div class="item-card-desplegado soldier-frame" style="min-width:100px; border-color:#d4af37;">
+                        <img src="assets/img/personajes/aliados/ballestero_noble.webp">
+                        <div class="unidad-nombre-aleatorio" style="font-size:11px; color:#fff;">Ballesteros</div>
+                        <div style="color:#ffd700; font-weight:bold; font-size:18px; margin-top:5px; text-shadow: 0 0 5px #4c88ff;">x${ballCount}</div>
+                    </div>
+                </div>
+            </div>
+        </span>
+    `;
+    
+    contenedor.appendChild(headerReclutamiento);
+
     let grid = document.createElement("div");
     grid.className = "grid-items";
     

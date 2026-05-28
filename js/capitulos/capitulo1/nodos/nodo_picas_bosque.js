@@ -12,6 +12,9 @@ async function iniciarCombatePicasBosque(formacion, callbackFinalizar, metaPP, t
     EstadoBatalla.maxTurnos = turnosFase;
     EstadoBatalla.callback = callbackFinalizar;
     
+    // FIX TÁCTICO: Se extirpó el EstadoBatalla.eventoEspecialVictoria. 
+    // El bosque ya no llamará a la cinemática del puente.
+
     EstadoBatalla.tropasVivas = [
         { idUnico: formacion.slots["pica-1"], posNombre: "el flanco izquierdo de picas", slotPos: "pica-1" },
         { idUnico: formacion.slots["pica-2"], posNombre: "el centro izquierdo de picas", slotPos: "pica-2" },

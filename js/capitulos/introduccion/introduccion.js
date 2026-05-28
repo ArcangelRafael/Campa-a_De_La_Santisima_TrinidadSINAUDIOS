@@ -59,17 +59,17 @@ async function pantallaJuramento() {
     storyArea.innerHTML = ""; limpiarBotones(); let n = jugador.nombre;
     
     await MotorDialogos.mostrarDialogo({
-        personajeImg: "assets/img/personajes/aliados/cabaini.webp", nombrePersonaje: "Caballero Trinitario", alineacion: "izq", bordeClase: "borde-aliado", nombreClase: "nombre-izq-align",
+        personajeImg: "assets/img/personajes/aliados/cabaini.webp", nombrePersonaje: "Caballero Trinitario", alineacion: "izq", bordeClase: "borde-trinitario", nombreClase: "nombre-trinitario",
         texto: `"${n}, ponte de rodillas ante el Altar del Altísimo y bajo la mirada de la Corte Celestial, pon tu mano sobre el Evangelio y escucha el peso de tu corona de espinas. Jura, por la Sangre del Cordero y el Misterio de la Unidad Divina, que desde este instante dejas de pertenecerte a ti mismo para ser instrumento de la Gracia. ¿Juras defender la Fe de Pedro con el acero y el espíritu, sin que el miedo oxide tu hoja ni la soberbia nuble tu juicio?"`, claseTexto: "txt-lugarteniente"
     });
 
     await MotorDialogos.mostrarDialogo({
-        personajeImg: "assets/img/personajes/aliados/cabaini.webp", nombrePersonaje: "Caballero Trinitario", alineacion: "izq", bordeClase: "borde-aliado", nombreClase: "nombre-izq-align",
+        personajeImg: "assets/img/personajes/aliados/cabaini.webp", nombrePersonaje: "Caballero Trinitario", alineacion: "izq", bordeClase: "borde-trinitario", nombreClase: "nombre-trinitario",
         texto: `"¿Juras observar el Voto del Tercio, consagrando la tercera parte de toda ganancia, honor y botín a la libertad de los hermanos que gimen bajo el yugo del infiel? ¿Juras, por la Cruz Roja de la Pasión y la Cruz Azul de la Esperanza que ahora marcas en tu pecho, que si el oro no bastara para romper las cadenas del cautivo, ofrecerás tu propia carne, tus propios años y tu propia libertad, entregándote a la esclavitud para que otro pueda volver a ver la luz de la cristiandad?"`, claseTexto: "txt-lugarteniente"
     });
 
     await MotorDialogos.mostrarDialogo({
-        personajeImg: "assets/img/personajes/aliados/cabaini.webp", nombrePersonaje: "Caballero Trinitario", alineacion: "izq", bordeClase: "borde-aliado", nombreClase: "nombre-izq-align",
+        personajeImg: "assets/img/personajes/aliados/cabaini.webp", nombrePersonaje: "Caballero Trinitario", alineacion: "izq", bordeClase: "borde-trinitario", nombreClase: "nombre-trinitario",
         texto: `"No busques gloria para tu nombre, pues tu nombre muere hoy para renacer en la Orden. No busques tesoros en la tierra, pues tu tesoro es el alma que rescatas del abismo. Levántate, Caballero de la Trinidad. Que el Padre te sostenga, el Hijo te guíe y el Espíritu Santo sea tu escudo en la batalla.<br><br>Gloria Tibi Trinitas, et Captivis Libertas."`, claseTexto: "txt-lugarteniente"
     });
 
@@ -104,39 +104,79 @@ function pantallaIntroduccion() {
     storyArea.scrollTop = 0;
 }
 
+// FIX TÁCTICO: El parpadeo ahora solo se detiene cuando el ratón pasa por encima. Sin límite de tiempo.
+function parpadearElementoHUD(idElemento, colorBrillo) {
+    let el = document.getElementById(idElemento);
+    if (!el) return;
+    
+    let keyframeName = "brilloTemporal_" + Math.random().toString(36).substr(2,9);
+    let style = document.createElement('style');
+    style.innerHTML = `
+        @keyframes ${keyframeName} {
+            0% { box-shadow: 0 0 5px ${colorBrillo}, inset 0 0 5px ${colorBrillo}; background-color: rgba(255,255,255,0.1); }
+            50% { box-shadow: 0 0 25px ${colorBrillo}, inset 0 0 15px ${colorBrillo}; background-color: rgba(255,255,255,0.3); }
+            100% { box-shadow: 0 0 5px ${colorBrillo}, inset 0 0 5px ${colorBrillo}; background-color: rgba(255,255,255,0.1); }
+        }
+        .anim-${keyframeName} { animation: ${keyframeName} 1.5s infinite; border-radius: 5px; cursor: pointer; }
+    `;
+    document.head.appendChild(style);
+    
+    el.classList.add(`anim-${keyframeName}`);
+    
+    let clearAnim = () => {
+        el.classList.remove(`anim-${keyframeName}`);
+        el.removeEventListener('mouseenter', clearAnim);
+        setTimeout(() => style.remove(), 100);
+    };
+    
+    el.addEventListener('mouseenter', clearAnim);
+}
+
 async function pantallaManual() {
     storyArea.innerHTML = ""; limpiarBotones();
+    
     inventarioDesbloqueado = true; tiendaDesbloqueada = true; 
     let flecha = document.getElementById("flecha-inventario"); if(flecha) flecha.style.display = "inline";
 
-    jugador.liderazgo = 15; jugador.liderazgoBase = jugador.liderazgo; 
-    jugador.denarios = Math.floor(Math.random() * 10) + 22; 
-    
+    jugador.liderazgo = 0; jugador.liderazgoBase = 0; 
+    jugador.denarios = 0; 
+    jugador.tropas = [];
     jugador.vidas = 3; 
-    if (jugador.liderazgo <= 9) { jugador.ataqueReal = 2; jugador.defensaReal = 2; } else if (jugador.liderazgo <= 15) { jugador.ataqueReal = 3; jugador.defensaReal = 2; } else { jugador.ataqueReal = 3; jugador.defensaReal = 3; }
+    jugador.ataqueReal = 2; jugador.defensaReal = 2;
     jugador.ataqueBase = jugador.ataqueReal; jugador.defensaBase = jugador.defensaReal;
+    actualizarHUD();
 
+    let cantDenarios = Math.floor(Math.random() * 10) + 24; 
     let cantCab = Math.floor(Math.random() * 3) + 3; 
     let cantBall = Math.floor(Math.random() * 3) + 5; 
     let cantPiq = Math.floor(Math.random() * 4) + 5; 
-    
-    agregarTropa("caballero_noble", cantCab); agregarTropa("ballestero_noble", cantBall); agregarTropa("piquero_noble", cantPiq);
-    agregarTropa("sacerdote_unico", 1); agregarTropa("explorador_unico", 1); actualizarHUD();
-
-    let scout = jugador.tropas.find(t => t.idTipo === "explorador_unico"); let nombreScout = scout ? scout.nombre : "El monje explorador";
+    let nombreScout = "El monje explorador"; 
 
     agregarTexto("<h2 class='txt-sagrado' style='text-align:center;'>AUDIENCIA PAPAL</h2>");
     agregarTexto(`Comendador ${jugador.nombre}, os encontráis ante Su Santidad, el Papa Inocencio III, bajo las inmensas bóvedas de la Basílica de San Juan de Letrán. El Vicario de Cristo os observa con ojos que han visto caer imperios y levantarse mártires.`);
     
     await MotorDialogos.mostrarDialogo({
         personajeImg: "assets/img/personajes/aliados/papInoIII.webp", nombrePersonaje: "Papa Inocencio III", alineacion: "izq", bordeClase: "borde-papa", nombreClase: "nombre-papa", retratoClase: "retrato-papa",
-        texto: `"Hijo mío, he designado a <b>Fray Bartolomé</b> y a <b>${nombreScout}</b> para que marchen a vuestro lado. Su labor será guiar el alma de vuestros hombres y los pasos de vuestra hueste."`, claseTexto: "txt-sagrado"
+        texto: `"Hijo mío, he designado a <b>Fray Bartolomé</b> y a un <b>Hermano Vigía</b> para que marchen a vuestro lado. Su labor será guiar el alma de vuestros hombres y los pasos de vuestra hueste."`, claseTexto: "txt-sagrado"
     });
+    
+    agregarTropa("sacerdote_unico", 1); 
+    agregarTropa("explorador_unico", 1); 
+    actualizarHUD();
+    parpadearElementoHUD("btn-nombre-hud", "#4c88ff");
+    let scout = jugador.tropas.find(t => t.idTipo === "explorador_unico"); 
+    if(scout) nombreScout = scout.nombre;
 
     await MotorDialogos.mostrarDialogo({
         personajeImg: "assets/img/personajes/aliados/papInoIII.webp", nombrePersonaje: "Papa Inocencio III", alineacion: "izq", bordeClase: "borde-papa", nombreClase: "nombre-papa", retratoClase: "retrato-papa",
         texto: `"Además, para proteger la fe, os entrego el mando de los pilares de nuestra cristiandad: <br><br><b>Sir Alexandro</b>, con ${cantCab} Caballeros Nobles.<br><b>Barón Andrew</b>, liderando a ${cantBall} Ballesteros Leales.<br><b>Conde JuanA</b>, al frente de ${cantPiq} Piqueros Inquebrantables."`, claseTexto: "txt-sagrado"
     });
+    
+    agregarTropa("caballero_noble", cantCab); 
+    agregarTropa("ballestero_noble", cantBall); 
+    agregarTropa("piquero_noble", cantPiq);
+    actualizarHUD();
+    parpadearElementoHUD("btn-nombre-hud", "#4c88ff");
 
     await MotorDialogos.mostrarDialogo({
         personajeImg: "assets/img/personajes/aliados/papInoIII.webp", nombrePersonaje: "Papa Inocencio III", alineacion: "izq", bordeClase: "borde-papa", nombreClase: "nombre-papa", retratoClase: "retrato-papa",
@@ -145,19 +185,36 @@ async function pantallaManual() {
 
     await MotorDialogos.mostrarDialogo({
         personajeImg: "assets/img/personajes/aliados/papInoIII.webp", nombrePersonaje: "Papa Inocencio III", alineacion: "izq", bordeClase: "borde-papa", nombreClase: "nombre-papa", retratoClase: "retrato-papa",
-        texto: `"Sin embargo, la guerra es voraz y vuestro número, pequeño. Tomad también esta bolsa con <b>${jugador.denarios} denarios de plata</b>, fruto de las limosnas. Vos, Comendador ${jugador.nombre}, sois el encargado de terminar de forjar vuestra hueste. Afuera aguardan mercenarios dispuestos a vender su espada. Usad el oro con sabiduría."`, claseTexto: "txt-sagrado"
+        texto: `"Sin embargo, la guerra es voraz y vuestro número, pequeño. Tomad también esta bolsa con <b>${cantDenarios} denarios de plata</b>, fruto de las limosnas. Vos, Comendador ${jugador.nombre}, sois el encargado de terminar de forjar vuestra hueste. Afuera aguardan mercenarios dispuestos a vender su espada. Usad el oro con sabiduría."`, claseTexto: "txt-sagrado"
     });
+    
+    jugador.denarios = cantDenarios;
+    actualizarHUD();
+    parpadearElementoHUD("btn-tienda-hud", "#ffaa00");
 
+    await MotorDialogos.mostrarDialogo({
+        personajeImg: "assets/img/personajes/aliados/papInoIII.webp", nombrePersonaje: "Papa Inocencio III", alineacion: "izq", bordeClase: "borde-papa", nombreClase: "nombre-papa", retratoClase: "retrato-papa",
+        texto: `"Y por encima del hierro y la plata, llevad la luz de Cristo en vuestro espíritu. Os otorgo mi bendición y la del Padre Altísimo. Que esta llama de fervor inquebrantable sea el terror de los paganos y el faro de los cautivos. Marchad en Gracia, Comendador."`, claseTexto: "txt-sagrado"
+    });
+    
+    jugador.liderazgo = 15; jugador.liderazgoBase = 15;
+    jugador.ataqueReal = 3; jugador.defensaReal = 2;
+    jugador.ataqueBase = jugador.ataqueReal; jugador.defensaBase = jugador.defensaReal;
+    actualizarHUD();
+    parpadearElementoHUD("stat-fe-container", "#1e90ff");
+
+    // FIX TÁCTICO: Manuale Militis rescrito por completo, integrando las mecánicas que ordenaste.
     agregarTexto("<div class='separador'>***</div>");
     agregarTexto("<b>LA SENDA DE LA CRUZADA (Nuevas Reglas Tácticas):</b>");
     agregarTexto("A lo largo de vuestro peregrinaje, enfrentaréis emboscadas y pruebas del espíritu. Cada decisión moldeará el alma de vuestros hombres y el destino de la campaña.");
     agregarTexto("<div class='separador'>***</div>");
     agregarTexto("<b>INSTRUCCIONES DE CAMPAÑA (Manuale Militis Táctico):</b>");
-    agregarTexto(`<b>1. Tu Ejército:</b> Tu hueste ahora se compone de unidades individuales (Revísalos haciendo click en "MI CAMPAÑA").`);
-    agregarTexto(`<b>2. Nobles vs Mercenarios:</b> Los <b class="txt-sagrado">Nobles (Borde Dorado)</b> tienen mejores estadísticas iniciales y honor. Los <b class="txt-multitud">Mercenarios (Borde Gris)</b> lucharán a tu lado, pero sus atributos son menores y obedecen al tintineo de las monedas.`);
-    agregarTexto(`<b>3. Sistema de Heridas (Permadeath):</b> Cada hombre tiene <b>2 Vidas (❤️)</b>. Cuando tu ejército pierda un enfrentamiento, uno de tus soldados sufrirá daño y perderá 1 Vida, quedando HERIDO. Un soldado herido lucha peor (-1 Ataque y Defensa). Si pierde su última vida, morirá permanentemente.`);
-    agregarTexto(`<b>4. Los Denarios (💰):</b> Úsalos sabiamente en las plazas mercenarias o en la tienda para expandir tu ejército. Si te quedas sin tropas, la Cruzada fracasará.`);
-    agregarTexto(`<b>5. La Fe/Liderazgo (🕊️):</b> Sigue siendo el núcleo moral. Tu devoción o caída en pecado afectará el desempeño de TODO tu ejército:
+    agregarTexto(`<b>1. Tu Ejército y el Oro (💰):</b> Tu hueste se compone de unidades individuales (Haz click en "MI CAMPAÑA"). Los <b class="txt-sagrado">Nobles (Dorado)</b> tienen mejor destreza, mientras que los <b class="txt-multitud">Mercenarios (Gris)</b> son más débiles pero útiles. Usa tus Denarios sabiamente en los campamentos para reclutar hombres, comprar mejoras permanentes para tu compañía o restaurar la salud de tus heridos.`);
+    agregarTexto(`<b>2. La Suerte del Dado (🎲):</b> En cada choque de acero, Dios y el azar dictan sentencia. Tanto tú como el enemigo lanzaréis un dado de 6 caras que sumará su resultado a vuestras estadísticas base de Ataque y Defensa. ¡Un buen tiro puede cambiar el curso de la guerra!`);
+    agregarTexto(`<b>3. El Arte del Combate (⚔️ vs 🛡️):</b> La guerra consta de dos fases implacables. Primero, el <b>Asalto</b>: El Ataque del agresor choca contra la Defensa del agredido (solo el defensor puede morir aquí). Si el defensor sobrevive a la embestida, comienza la <b>Refriega (Cuerpo a Cuerpo)</b>: Ataque contra Ataque, un duelo a muerte donde cualquiera de los dos hombres puede perecer.`);
+    agregarTexto(`<b>4. Los Ballesteros (🏹):</b> Los tiradores son letales a distancia. Necesitan un turno de recarga para tensar cuerdas y asegurar pernos, pero cuando disparan, su proyectil ignora la defensa y abate al enemigo instantáneamente. ¡Protégelos! Si la horda enemiga logra llegar hasta su línea, se verán obligados a pelear cuerpo a cuerpo usando sus bajísimas estadísticas.`);
+    agregarTexto(`<b>5. Sistema de Heridas (❤️):</b> Cada hombre soporta 2 heridas. Al perder su primera Vida, quedará HERIDO y luchará con penalidad (-1 Ataque y Defensa). Si pierde su última vida, será un mártir y morirá permanentemente.`);
+    agregarTexto(`<b>6. La Fe y el Liderazgo (🕊️):</b> Sigue siendo el núcleo moral. Tu devoción o caída en pecado afectará el desempeño de TODO tu ejército:
     <ul>
         <li class="txt-sagrado"><b>126 o más (Estado de Gracia):</b> Anuláis por completo el dado de furia del oponente.</li>
         <li class="mensaje-sistema"><b>101 a 125 (Fervor Celestial):</b> +2 a vuestro cálculo de Ataque y Defensa general.</li>
@@ -173,7 +230,14 @@ async function pantallaManual() {
     } else {
         crearBoton("INICIAR MARCHA", escena1);
     }
-    storyArea.scrollTop = 0;
+    
+    setTimeout(() => {
+        let scrollTarget = storyArea.scrollHeight - storyArea.clientHeight;
+        storyArea.scrollTo({
+            top: scrollTarget,
+            behavior: 'smooth'
+        });
+    }, 150);
 }
 
 iniciarJuego();

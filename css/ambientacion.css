@@ -1,0 +1,45 @@
+/* === AMBIENTACION.CSS - SISTEMA CLIMÁTICO GLOBAL === */
+
+#capa-clima {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none; /* Crucial para no bloquear los clics del jugador */
+    z-index: 9000; /* Muy alto para que pase por encima del pergamino de diálogos */
+    display: none; /* Oculto por defecto */
+}
+
+/* Capa de Lluvia */
+.rain {
+    width: 100%;
+    height: 100%;
+    background: url('../assets/img/ui/rain.webp');
+    animation: rain 0.3s linear infinite;
+}
+
+/* Efecto Relámpago Constante */
+.rain::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    height: 100%;
+    background: #fff;
+    opacity: 0;
+    animation: lighting 6s linear infinite; /* Tormenta realista cada 6 segundos */
+}
+
+@keyframes rain {
+    0% { background-position: 0% 0%; }
+    100% { background-position: 20% 100%; }
+}
+
+@keyframes lighting {
+    0%, 94% { opacity: 0; }
+    95% { opacity: 0.2; } /* Primer destello ligero */
+    96% { opacity: 0; }
+    97% { opacity: 0.35; } /* Segundo destello fuerte */
+    98%, 100% { opacity: 0; }
+}

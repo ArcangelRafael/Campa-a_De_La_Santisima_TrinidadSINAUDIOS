@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="css/modals.css">
     <link rel="stylesheet" href="css/dados.css"> 
     <link rel="stylesheet" href="css/dialogos.css"> 
+    <link rel="stylesheet" href="css/ambientacion.css">
 </head>
 <body>
     <div id="game-container">
@@ -159,6 +160,9 @@
         <label style="display:block; margin:5px 0; background:#222; padding:5px; border:1px solid #ff0; color:#ff0; cursor:pointer; text-align:center;">
             <input type="checkbox" id="ht-skip-cine"> 🎬 Omitir Cinemáticas
         </label>
+        <label style="display:block; margin:5px 0; background:#222; padding:5px; border:1px solid #aaa; color:#aaa; cursor:pointer; text-align:center;">
+            <input type="checkbox" id="ht-textos-planos"> 📜 Textos Planos (Sin VN)
+        </label>
 
         <button onclick="ht_jumpTo('opciones_cap1')" style="width:100%; margin:5px 0; background:#111; color:#f0f; border:1px solid #f0f; padding:5px;">Ir a: Decisión del Puente</button>
         <button onclick="ht_jumpTo('muro_picas')" style="width:100%; margin-bottom:5px; background:#111; color:#f0f; border:1px solid #f0f; padding:5px;">Ir a: Victoria (Muro Picas)</button>
@@ -204,6 +208,7 @@
     <script src="js/capitulos/capitulo1/nodos/nodo_picas.js"></script> 
     <script src="js/capitulos/capitulo1/nodos/nodo_picas_bosque.js"></script> 
     <script src="js/capitulos/capitulo1/nodos/nodo_bosque.js"></script> 
+    <script src="js/capitulos/capitulo1/nodos/nodo_sacrificio.js"></script>
 
     <script src="js/capitulos/capitulo1/cinematicas/cine_cuna.js"></script>
     <script src="js/capitulos/capitulo1/cinematicas/cine_picas.js"></script>
