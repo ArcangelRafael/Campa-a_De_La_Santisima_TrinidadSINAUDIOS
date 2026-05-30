@@ -34,11 +34,12 @@ body {
     min-height: 50px;
 }
 
+/* FIX TÁCTICO: Reducción drástica del "gap" para unificar el HUD al centro */
 .hud-stats-container {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 60px; 
+    gap: 25px; 
     flex-wrap: wrap;
     z-index: 210; 
 }
@@ -86,8 +87,6 @@ body {
     overflow-y: auto;
     font-size: 18px;
     line-height: 1.6;
-    /* FIX TÁCTICO: Se eliminó la llamada a la imagen inexistente (pergamino_bg.webp) */
-    /* El fondo ahora será pura y limpiamente el color oscuro #222 */
     background-color: #222;
     color: #e0d8c0;
     border-bottom: 2px solid #555;
@@ -159,7 +158,6 @@ input[type="text"]:focus { box-shadow: 0 0 10px rgba(139, 0, 0, 0.8); }
     content: 'V'; position: absolute; color: rgba(255, 76, 76, 0.3); font-size: 50px; font-weight: bold; font-family: 'Georgia', serif; z-index: 0; pointer-events: none;
 }
 
-/* FIX CRÍTICO: Diseño estricto y absoluto para las cartas arrastrables. Cero deformaciones. */
 .tropa-draggable {
     cursor: grab;
     width: 75px !important;
@@ -198,7 +196,6 @@ input[type="text"]:focus { box-shadow: 0 0 10px rgba(139, 0, 0, 0.8); }
     pointer-events: none;
 }
 
-/* FIX: HP Siempre visible y posicionado correctamente */
 .tropa-draggable .unidad-hp-combate {
     display: block !important;
     position: absolute !important;
@@ -283,7 +280,6 @@ input[type="text"]:focus { box-shadow: 0 0 10px rgba(139, 0, 0, 0.8); }
 }
 .en-combate { animation: clashFlash 0.3s infinite alternate !important; }
 
-/* ESTADO DE COMBATE ACTIVO: Las cartas se expanden para llenar el hueco de 85x110 */
 .modo-combate .slot-formacion { border: none !important; background: transparent !important; }
 .modo-combate .invisible-slot { border: none !important; background: transparent !important; }
 .modo-combate .slot-lider::before { display: none !important; }

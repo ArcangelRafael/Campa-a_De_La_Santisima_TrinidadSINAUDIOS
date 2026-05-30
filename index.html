@@ -37,6 +37,13 @@
                         💰 Denarios: <span id="stat-denarios"></span>
                     </span>
                 </div>
+                
+                <!-- FIX TÁCTICO: Reloj con estilo orgánico idéntico a Fe y Denarios -->
+                <div class="stat-box" style="color: #c0c0c0; position: relative; cursor: help;" id="stat-tiempo-container">
+                    ⏳ <span id="stat-tiempo">----</span>
+                    <div id="tiempo-tooltip"></div>
+                </div>
+
                 <div class="stat-box" style="color: #ffaa00; position: relative;" id="stat-fe-container">
                     🕊️ Fe: <span id="stat-liderazgo"></span>
                     <div id="fe-tooltip"></div> 
@@ -103,76 +110,6 @@
         </div>
     </div>
 
-    <div id="hacktester-panel" style="position:fixed; bottom:50px; right:10px; background:rgba(0,0,0,0.9); border:2px solid #00ff00; color:#00ff00; padding:15px; z-index:9999; font-family:monospace; font-size:12px; display:none; max-width: 250px; border-radius:8px; box-shadow: 0 0 15px #00ff00; max-height: 80vh; overflow-y: auto;">
-        <h3 style="margin:0 0 10px 0; border-bottom:1px solid #00ff00; padding-bottom:5px; text-align:center;">🛠️ MODO TESTER</h3>
-        
-        <b style="color:#fff;">[TROPAS NOBLES]</b>
-        <div style="display:flex; gap:5px; margin:5px 0;">
-            <button onclick="ht_addTropa('caballero_noble')" style="flex-grow:1; background:#111; color:#0f0; border:1px solid #0f0; padding:5px;">+ Cab.</button>
-            <button onclick="ht_removeTropa('caballero_noble')" style="flex-grow:1; background:#111; color:#0f0; border:1px solid #0f0; padding:5px;">- Cab.</button>
-        </div>
-        <div style="display:flex; gap:5px; margin-bottom:5px;">
-            <button onclick="ht_addTropa('piquero_noble')" style="flex-grow:1; background:#111; color:#0f0; border:1px solid #0f0; padding:5px;">+ Piq.</button>
-            <button onclick="ht_removeTropa('piquero_noble')" style="flex-grow:1; background:#111; color:#0f0; border:1px solid #0f0; padding:5px;">- Piq.</button>
-        </div>
-        <div style="display:flex; gap:5px; margin-bottom:10px;">
-            <button onclick="ht_addTropa('ballestero_noble')" style="flex-grow:1; background:#111; color:#0f0; border:1px solid #0f0; padding:5px;">+ Ball.</button>
-            <button onclick="ht_removeTropa('ballestero_noble')" style="flex-grow:1; background:#111; color:#0f0; border:1px solid #0f0; padding:5px;">- Ball.</button>
-        </div>
-        
-        <b style="color:#fff;">[TROPAS MERCENARIAS]</b>
-        <div style="display:flex; gap:5px; margin:5px 0;">
-            <button onclick="ht_addTropa('caballero_mercenario')" style="flex-grow:1; background:#111; color:#ffaa00; border:1px solid #ffaa00; padding:5px;">+ Cab.</button>
-            <button onclick="ht_removeTropa('caballero_mercenario')" style="flex-grow:1; background:#111; color:#ffaa00; border:1px solid #ffaa00; padding:5px;">- Cab.</button>
-        </div>
-        <div style="display:flex; gap:5px; margin-bottom:5px;">
-            <button onclick="ht_addTropa('piquero_mercenario')" style="flex-grow:1; background:#111; color:#ffaa00; border:1px solid #ffaa00; padding:5px;">+ Piq.</button>
-            <button onclick="ht_removeTropa('piquero_mercenario')" style="flex-grow:1; background:#111; color:#ffaa00; border:1px solid #ffaa00; padding:5px;">- Piq.</button>
-        </div>
-        <div style="display:flex; gap:5px; margin-bottom:10px;">
-            <button onclick="ht_addTropa('ballestero_mercenario')" style="flex-grow:1; background:#111; color:#ffaa00; border:1px solid #ffaa00; padding:5px;">+ Ball.</button>
-            <button onclick="ht_removeTropa('ballestero_mercenario')" style="flex-grow:1; background:#111; color:#ffaa00; border:1px solid #ffaa00; padding:5px;">- Ball.</button>
-        </div>
-
-        <b style="color:#fff;">[SALUD DEL EJÉRCITO]</b>
-        <div style="display:flex; gap:5px; margin:5px 0 10px 0;">
-            <button onclick="ht_modVidasGeneral(-1)" style="flex-grow:1; background:#4a0000; color:#fff; border:1px solid #ff4c4c; padding:5px;">-1 Vida</button>
-            <button onclick="ht_modVidasGeneral(1)" style="flex-grow:1; background:#004a00; color:#fff; border:1px solid #88ff88; padding:5px;">+1 Vida</button>
-        </div>
-        
-        <b style="color:#fff;">[RECURSOS Y FE]</b>
-        <div style="display:flex; gap:5px; margin:5px 0;">
-            <button onclick="ht_addDenarios(50)" style="flex-grow:1; background:#111; color:#ffaa00; border:1px solid #ffaa00; padding:5px;">+50 Den.</button>
-            <button onclick="ht_addDenarios(-10)" style="flex-grow:1; background:#111; color:#ffaa00; border:1px solid #ffaa00; padding:5px;">-10 Den.</button>
-        </div>
-        <div style="display:flex; gap:5px; margin:5px 0 10px 0;">
-            <button onclick="ht_modFe(50)" style="flex-grow:1; background:#111; color:#1e90ff; border:1px solid #1e90ff; padding:5px;">+50 Fe</button>
-            <button onclick="ht_modFe(-10)" style="flex-grow:1; background:#111; color:#1e90ff; border:1px solid #1e90ff; padding:5px;">-10 Fe</button>
-        </div>
-
-        <b style="color:#fff;">[AJUSTES Y ESCENAS]</b>
-        <label style="display:block; margin:5px 0; background:#222; padding:5px; border:1px solid #0ff; color:#0ff; cursor:pointer; text-align:center; font-weight:bold;">
-            <input type="checkbox" id="ht-auto-fill"> 🎲 Auto-Despliegue Aleatorio
-        </label>
-        <label style="display:block; margin:5px 0; background:#222; padding:5px; border:1px solid #ff8c00; color:#ff8c00; cursor:pointer; text-align:center; font-weight:bold;">
-            <input type="checkbox" id="ht-auto-combat"> ⚡ Combate Automático
-        </label>
-        <label style="display:block; margin:5px 0; background:#222; padding:5px; border:1px solid #ff0; color:#ff0; cursor:pointer; text-align:center;">
-            <input type="checkbox" id="ht-skip-cine"> 🎬 Omitir Cinemáticas
-        </label>
-        <label style="display:block; margin:5px 0; background:#222; padding:5px; border:1px solid #aaa; color:#aaa; cursor:pointer; text-align:center;">
-            <input type="checkbox" id="ht-textos-planos"> 📜 Textos Planos (Sin VN)
-        </label>
-
-        <button onclick="ht_jumpTo('opciones_cap1')" style="width:100%; margin:5px 0; background:#111; color:#f0f; border:1px solid #f0f; padding:5px;">Ir a: Decisión del Puente</button>
-        <button onclick="ht_jumpTo('muro_picas')" style="width:100%; margin-bottom:5px; background:#111; color:#f0f; border:1px solid #f0f; padding:5px;">Ir a: Victoria (Muro Picas)</button>
-        <button onclick="ht_jumpTo('repliegue')" style="width:100%; margin-bottom:5px; background:#111; color:#f0f; border:1px solid #f0f; padding:5px;">Ir a: Escena Repliegue</button>
-        <button onclick="ht_jumpTo('bosque_victoria')" style="width:100%; margin-bottom:10px; background:#111; color:#f0f; border:1px solid #f0f; padding:5px;">Ir a: Victoria (Bosque)</button>
-
-        <button onclick="document.getElementById('hacktester-panel').style.display='none'" style="width:100%; background:#500; color:#fff; border:1px solid #f00; padding:8px; font-weight:bold;">CERRAR PANEL</button>
-    </div>
-    <button id="btn-open-ht" onclick="document.getElementById('hacktester-panel').style.display='block'" style="position:fixed; bottom:10px; right:10px; background:#000; border:2px solid #00ff00; color:#00ff00; z-index:9998; font-family:monospace; padding:10px; border-radius:50%; font-size:16px; cursor:pointer;">🛠️</button>
-
     <audio id="bgm-inventario" loop><source src="assets/audio/musica_inventario.mp3" type="audio/mpeg"></audio>
     <audio id="bgm-tienda" loop><source src="assets/audio/musica_tienda.mp3" type="audio/mpeg"></audio>
     <audio id="bgm-campana" loop><source src="assets/audio/musica_campana.mp3" type="audio/mpeg"></audio>
@@ -186,13 +123,17 @@
 
     <script src="js/core/database.js"></script>
     <script src="js/core/tribulaciones.js"></script>
+    <script src="js/core/audio.js"></script>
     <script src="js/core/motor.js"></script>
+    <script src="js/core/cinematicas.js"></script>
     <script src="js/core/inventario.js"></script> 
     <script src="js/core/tienda.js"></script> 
     <script src="js/core/campana.js"></script> 
     <script src="js/core/tableros.js"></script> 
     <script src="js/core/formacion.js"></script> 
-    <script src="js/core/dialogos.js"></script> 
+    <script src="js/core/dialogos.js"></script>
+    <script src="js/core/liturgia.js"></script>
+    <script src="js/core/tiempo.js"></script> 
 
     <script src="js/combate/generador_hordas.js"></script> 
     <script src="js/combate/render_combate.js"></script> 

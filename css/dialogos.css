@@ -205,8 +205,6 @@
 
 .dialogo-pergamino.borde-papa { margin-top: 100px !important; margin-bottom: 10px !important; min-height: 130px; }
 .dialogo-pergamino.borde-trinitario { margin-top: 100px !important; margin-bottom: 10px !important; min-height: 120px !important; }
-
-/* Configuración especial para Fray Bartolomé (Recuadro compacto y áureo) */
 .dialogo-pergamino.borde-fray { margin-top: 100px !important; margin-bottom: 10px !important; min-height: 120px !important; border-color: #ffd700; box-shadow: 0 10px 25px rgba(0,0,0,0.9), inset 0 0 25px rgba(255, 215, 0, 0.2); }
 
 #alivio-dialogs .dialogo-pergamino { margin-top: 150px !important; margin-bottom: 25px !important; min-height: 110px !important; width: 90%; }
@@ -218,7 +216,7 @@
 .borde-papa { border-color: #800080; box-shadow: 0 10px 25px rgba(0,0,0,0.9), inset 0 0 25px rgba(128, 0, 128, 0.3); }
 .borde-trinitario { border-color: #1e90ff; box-shadow: 0 10px 25px rgba(0,0,0,0.9), inset 0 0 20px rgba(30, 144, 255, 0.25); }
 
-/* Retratos Colosales (480px de alto) */
+/* Retratos base (480px de alto) */
 .dialogo-retrato {
     position: absolute;
     bottom: 0;
@@ -230,10 +228,33 @@
     pointer-events: none;
     animation: respiracionRetrato 4s ease-in-out infinite alternate;
 }
-.retrato-izq { left: -140px; transform: scaleX(1); }
-.retrato-der { right: -140px; transform: scaleX(-1); }
+.retrato-izq { --escalaX: 1; left: -140px; }
+.retrato-der { --escalaX: -1; right: -140px; }
+.retrato-papa { height: 270px !important; width: 230px !important; bottom: 0 !important; left: 0px !important; --escalaX: 1; }
 
-.retrato-papa { height: 270px !important; width: 230px !important; bottom: 0 !important; left: 0px !important; transform: scaleX(1) !important; }
+/* === NUEVO: RETRATOS EXORBITANTES (EXCLUSIVO TRIBULACIONES) === */
+.retrato-tribulacion {
+    --escala-trib: 1.85; 
+    transform-origin: bottom center !important;
+    animation: respiracionTribulacion 4s ease-in-out infinite alternate !important;
+    z-index: 10 !important; /* FIX TÁCTICO: Se asegura de que la imagen quede por debajo del texto (z-index 20) */
+}
+
+.retrato-tribulacion.retrato-izq {
+    left: -80px !important; 
+}
+
+.retrato-tribulacion.retrato-der {
+    right: -80px !important;
+}
+
+/* Modificador Exclusivo para Fray Bartolomé (Evitar que su escritorio tape la lectura) */
+.retrato-tribulacion-fray {
+    --escala-trib: 1.05 !important; /* Escala mucho más moderada y respetuosa */
+}
+.retrato-tribulacion-fray.retrato-izq {
+    left: -190px !important; /* Totalmente desplazado a la izquierda para liberar la caja de texto */
+}
 
 /* NOMBRES */
 .dialogo-nombre {
@@ -257,10 +278,7 @@
 .nombre-neutral { left: 50%; transform: translateX(-50%); background: linear-gradient(to bottom, #333, #111); color: #c0c0c0; border: 1px solid #c0c0c0; }
 .nombre-papa { right: 20px; background: linear-gradient(to bottom, #4d004d, #1a001a); color: #ffccff; border: 1px solid #800080; }
 .nombre-trinitario { right: 20px; background: linear-gradient(to bottom, #001f4d, #000a1a); color: #1e90ff; border: 1px solid #1e90ff; }
-
-/* Nombre del Capellán (Oro sacro) */
 .nombre-fray { right: 20px; background: linear-gradient(to bottom, #d4af37, #8b6508); color: #fff; border: 1px solid #ffd700; }
-
 .nombre-izq { right: 20px; background: linear-gradient(to bottom, #002244, #000a1a); color: #4c88ff; border: 1px solid #4c88ff; }
 .nombre-der { left: 20px; background: linear-gradient(to bottom, #440000, #1a0000); color: #ff4c4c; border: 1px solid #ff4c4c; }
 
@@ -276,6 +294,8 @@
     display: flex;
     flex-direction: column;
     justify-content: center;
+    position: relative; 
+    z-index: 20; /* Siempre por encima de las imágenes (10) */
 }
 
 .pad-izq { padding-left: 230px; padding-right: 20px; }
@@ -329,9 +349,14 @@
     100% { box-shadow: 0 5px 20px #ffd700, inset 0 0 20px rgba(255, 215, 0, 0.8); }
 }
 
+/* Animación Base */
 @keyframes respiracionRetrato {
     0% { transform: scale(1) translateY(0) scaleX(var(--escalaX, 1)); filter: drop-shadow(0 5px 10px rgba(0,0,0,0.9)); }
     100% { transform: scale(1.02) translateY(-3px) scaleX(var(--escalaX, 1)); filter: drop-shadow(0 8px 15px rgba(0,0,0,0.7)); }
 }
-.retrato-izq { --escalaX: 1; }
-.retrato-der { --escalaX: -1; }
+
+/* Animación de Fuerza Bruta para Tribulaciones */
+@keyframes respiracionTribulacion {
+    0% { transform: scale(var(--escala-trib)) translateY(0) scaleX(var(--escalaX, 1)); filter: drop-shadow(0 15px 25px rgba(0,0,0,0.95)); }
+    100% { transform: scale(calc(var(--escala-trib) + 0.03)) translateY(-3px) scaleX(var(--escalaX, 1)); filter: drop-shadow(0 20px 40px rgba(0,0,0,0.6)); }
+}

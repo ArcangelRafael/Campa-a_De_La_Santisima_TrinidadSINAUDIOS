@@ -1,63 +1,23 @@
 /* === CINE_PICAS.JS - CINEMÁTICA DEL RELEVO DE PICAS === */
 
-const GEOMETRIA_ANIM = {
-    BRIDGE_TOP_LIMIT: 15, 
-    BRIDGE_BOTTOM_LIMIT: 85, 
-    BRIDGE_CENTER: 50, 
-    LEFT_EXIT_LINE: -20, 
-    RIGHT_ENTRY_LINE: 110, 
-    LEFT_ENTRY_LINE: -10, 
-    RIGHT_EXIT_LINE: 115, 
-    DURACION_MARCHA_PASO: 9000, 
-    CSS_MARCHA_PASO: '9s linear' 
-};
-
 function playCinematicaRelevoPicas(callbackFinal) {
-    const animCaja = document.getElementById("animacion-escena1");
-    animCaja.style.display = "block";
-    
-    animCaja.innerHTML = `<h3 style="color:#ffaa00; text-shadow:0 0 10px #000; margin-top:30px; text-align:center; letter-spacing:3px; position:relative; z-index:300;">EL RELEVO TÁCTICO</h3>`;
+    const animCaja = DirectorCinematico.prepararEscenario("EL RELEVO TÁCTICO", "assets/img/fondos/puente_fondo.webp");
+    if (!animCaja) { if(callbackFinal) callbackFinal(); return; }
 
-    let niebla = document.createElement("div");
-    niebla.className = "efecto-neblina";
-    animCaja.appendChild(niebla);
+    animCaja.style.backgroundSize = "cover";
+    animCaja.style.backgroundPosition = "center bottom";
 
-    if (window.marcadoresBatalla) {
-        window.marcadoresBatalla.forEach(m => {
-            let mk = document.createElement("div");
-            mk.innerHTML = m.tipo === 'skull' ? '☠️' : '✝';
-            mk.style.position = "absolute";
-            mk.style.fontSize = "35px";
-            mk.style.color = m.tipo === 'cross' ? "#c0c0c0" : "#fff";
-            mk.style.textShadow = m.tipo === 'cross' ? "0 0 10px #fff" : "none";
-            mk.style.opacity = "0.6"; 
-            mk.style.zIndex = "5"; 
-            
-            let tops = [15, 32, 50, 68, 85];
-            mk.style.top = `${tops[m.row]}%`;
-            
-            let cols = { "-3": 24, "-2": 36, "-1": 48, "0": 60, "1": 72, "2": 84 };
-            mk.style.left = `${cols[m.col]}%`;
-            
-            animCaja.appendChild(mk);
-        });
-    }
+    DirectorCinematico.renderizarMarcadores(animCaja);
 
+    // 1. CABALLEROS (Salida)
     let caballerosVivos = jugador.tropas.filter(t => t.tipoGeneral === "caballeros" && t.hp > 0).slice(0, 5);
-    
-    let c_arriba = 0; 
-    let c_abajo = 0;  
+    let c_arriba = 0; let c_abajo = 0;  
     let delayBaseCaballero = 100; 
 
     caballerosVivos.forEach((cab, index) => {
-        let card = document.createElement("div");
-        let claseBorde = cab.clase === 'noble' ? 'tropa-noble' : 'tropa-mercenaria';
-        card.className = `tropa-cinematica ${claseBorde}`;
+        let card = DirectorCinematico.crearTarjetaTropa(cab);
         card.style.zIndex = "150"; 
         
-        // Llamada DRY: Limpieza absoluta
-        card.innerHTML = RenderCombate.htmlFichaCinematica(cab);
-
         let isTop = index < 2; 
         let topPos = isTop ? 10 : 75; 
         
@@ -70,19 +30,19 @@ function playCinematicaRelevoPicas(callbackFinal) {
         card.style.top = `${topPos}%`;
         card.style.left = `${startLeft}%`;
         card.style.opacity = "1";
-        card.style.filter = "grayscale(80%) sepia(20%)"; 
         
-        card.style.transition = `left 8.5s linear, filter 8.5s linear`;
+        // FIX TÁCTICO: Se removieron los filtros 'grayscale' y 'brightness' para mantener a la tropa a todo color.
+        card.style.transition = `left 8.5s linear`;
         
         animCaja.appendChild(card);
         card.getBoundingClientRect(); 
 
         setTimeout(() => {
             card.style.left = `${endLeft}%`;
-            card.style.filter = "grayscale(100%) brightness(0.7)";
         }, delayBaseCaballero);
     });
 
+    // 2. PICAS ACTIVAS Y RESERVAS
     let piquerosVivos = jugador.tropas.filter(t => t.tipoGeneral === "piqueros" && t.hp > 0);
     let picasActivas = piquerosVivos.filter(p => Object.values(slotsFormacionPicas).includes(p.idUnico));
     let picasReserva = piquerosVivos.filter(p => !Object.values(slotsFormacionPicas).includes(p.idUnico));
@@ -97,14 +57,9 @@ function playCinematicaRelevoPicas(callbackFinal) {
     let elementosPicas = [];
 
     picasActivas.forEach((pica, index) => {
-        let card = document.createElement("div");
-        let claseBorde = pica.clase === 'noble' ? 'tropa-noble' : 'tropa-mercenaria';
-        card.className = `tropa-cinematica ${claseBorde}`;
+        let card = DirectorCinematico.crearTarjetaTropa(pica);
         card.style.zIndex = "250"; 
         
-        // Llamada DRY: Limpieza absoluta
-        card.innerHTML = RenderCombate.htmlFichaCinematica(pica);
-
         let startLeft = -10 - (index * 14); 
         card.style.top = "42%"; 
         card.style.left = `${startLeft}%`;
@@ -137,14 +92,9 @@ function playCinematicaRelevoPicas(callbackFinal) {
         let col = Math.floor(numMostrados / 4);
         let row = numMostrados % 4;
 
-        let card = document.createElement("div");
-        let claseBorde = pica.clase === 'noble' ? 'tropa-noble' : 'tropa-mercenaria';
-        card.className = `tropa-cinematica ${claseBorde}`;
+        let card = DirectorCinematico.crearTarjetaTropa(pica);
         card.style.zIndex = "200"; 
         
-        // Llamada DRY: Limpieza absoluta
-        card.innerHTML = RenderCombate.htmlFichaCinematica(pica);
-
         let startLeft = -40 - (col * 12); 
         let endLeft = 5 + (col * 12);
         let finalTop = 20 + (row * 18);
@@ -215,25 +165,16 @@ function playCinematicaRelevoPicas(callbackFinal) {
         }
     }, 600); 
 
-    setTimeout(() => {
-        let impactBtn = document.createElement('button');
-        impactBtn.className = "impacto-divino-btn"; 
-        impactBtn.innerText = "DEUS LO VULT !";
-        
-        impactBtn.onclick = function() {
-            impactBtn.style.display = "none"; 
-            animCaja.style.display = "none";
-            animCaja.innerHTML = "";
-            if(callbackFinal) callbackFinal(); 
-        };
-        
-        animCaja.appendChild(impactBtn);
-    }, 9000); 
+    DirectorCinematico.crearBotonContinuar(animCaja, "DEUS LO VULT !", 9000, callbackFinal);
 }
 
 function playCinematicaCargaCuna(formacionInfo, callbackFinal) {
     const animCaja = document.getElementById("animacion-escena1");
     animCaja.style.display = "block";
+    
+    animCaja.style.backgroundImage = "url('assets/img/fondos/puente_fondo.webp')";
+    animCaja.style.backgroundSize = "cover";
+    animCaja.style.backgroundPosition = "center bottom";
     
     animCaja.innerHTML = `<h3 id='titulo-cinematica-carga' style="color:#ffaa00; text-shadow:0 0 10px #000; margin-top:30px; text-align:center; letter-spacing:3px; position:relative; z-index:300;">LA CARGA DIVINA</h3>`;
 
@@ -299,13 +240,8 @@ function playCinematicaCargaCuna(formacionInfo, callbackFinal) {
         if(idTropa) {
             let cab = jugador.tropas.find(t => t.idUnico === idTropa);
             if(cab) {
-                let card = document.createElement("div");
-                let claseBorde = cab.clase === 'noble' ? 'tropa-noble' : 'tropa-mercenaria';
-                card.className = `tropa-cinematica ${claseBorde}`;
+                let card = DirectorCinematico.crearTarjetaTropa(cab);
                 card.style.zIndex = "250";
-                
-                // Llamada DRY: Limpieza absoluta
-                card.innerHTML = RenderCombate.htmlFichaCinematica(cab);
 
                 let inicial = startPos[pos] || { top: "50%", left: "-20%" };
                 card.style.top = inicial.top; 
@@ -322,13 +258,8 @@ function playCinematicaCargaCuna(formacionInfo, callbackFinal) {
 
     let reservas = jugador.tropas.filter(t => t.tipoGeneral === "caballeros" && t.hp > 0 && !Object.values(slots).includes(t.idUnico));
     reservas.forEach((cab, index) => {
-        let card = document.createElement("div");
-        let claseBorde = cab.clase === 'noble' ? 'tropa-noble' : 'tropa-mercenaria';
-        card.className = `tropa-cinematica ${claseBorde}`;
+        let card = DirectorCinematico.crearTarjetaTropa(cab);
         card.style.zIndex = "150";
-        
-        // Llamada DRY: Limpieza absoluta
-        card.innerHTML = RenderCombate.htmlFichaCinematica(cab);
 
         let verticalPos = 30 + (index * 15);
         card.style.top = `${verticalPos}%`; 

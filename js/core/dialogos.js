@@ -1,5 +1,17 @@
 /* === DIALOGOS.JS - SISTEMA DE NOVELA VISUAL === */
 
+function procesarTextosDinamicos(txt) {
+    if (!txt) return txt;
+    if (typeof RelojDivino !== 'undefined' && typeof RelojDivino.obtenerFechaActual === 'function') {
+        let d = RelojDivino.obtenerFechaActual();
+        let horaStr = RelojDivino.horas[RelojDivino.indiceActual] || "";
+        txt = txt.replace(/{FECHA}/g, d.fecha);
+        txt = txt.replace(/{SANTO}/g, d.santo);
+        txt = txt.replace(/{HORA}/g, horaStr);
+    }
+    return txt;
+}
+
 const SistemaDialogos = {
     velocidadEscritura: 35, 
     escribiendo: false,
@@ -15,6 +27,7 @@ const SistemaDialogos = {
 
     iniciarEscena: function(opciones) {
         let { personajeImg, nombrePersonaje, texto, requiereInput, placeholderInput, textoErrorVacio, textoBoton, imgClase, callback } = opciones;
+        texto = procesarTextosDinamicos(texto);
 
         let modoPlano = document.getElementById("ht-textos-planos");
         if (modoPlano && modoPlano.checked) {
@@ -125,7 +138,6 @@ const SistemaDialogos = {
     }
 };
 
-/* === MOTOR DE DIÁLOGOS SECUENCIALES (EN EL PERGAMINO) === */
 const MotorDialogos = {
     velocidadEscritura: 25, 
 
@@ -133,6 +145,7 @@ const MotorDialogos = {
         return new Promise((resolve) => {
             let { personajeImg, nombrePersonaje, alineacion, bordeClase, nombreClase, retratoClase, texto, claseTexto } = opciones;
             let storyArea = document.getElementById("story-area");
+            texto = procesarTextosDinamicos(texto);
 
             let modoPlano = document.getElementById("ht-textos-planos");
             if (modoPlano && modoPlano.checked) {
@@ -240,10 +253,10 @@ const MotorDialogos = {
         });
     },
 
-    // FIX TÁCTICO: Se inyectó el motor de máquina de escribir también a los contenedores Modales
     mostrarDialogoEnContenedor: function(contenedor, opciones) {
         return new Promise((resolve) => {
             let { personajeImg, nombrePersonaje, alineacion, bordeClase, nombreClase, retratoClase, texto, claseTexto } = opciones;
+            texto = procesarTextosDinamicos(texto);
 
             let modoPlano = document.getElementById("ht-textos-planos");
             if (modoPlano && modoPlano.checked) {
@@ -295,7 +308,6 @@ const MotorDialogos = {
 
             contenedor.appendChild(box);
 
-            // Efecto de máquina de escribir adaptado al modal
             let isTyping = true;
 
             box.onclick = () => {

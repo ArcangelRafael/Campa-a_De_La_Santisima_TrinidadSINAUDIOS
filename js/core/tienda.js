@@ -9,11 +9,9 @@ function iniciarReclutamiento() {
     
     const overlay = document.getElementById("tienda-overlay");
     
-    if (musicaActual && musicaActual.id !== "bgm-tienda") {
-        musicaActual.pause(); musicaPausadaTienda = musicaActual;
+    if (typeof cambiarMusica === 'function') {
+        cambiarMusica("bgm-tienda");
     }
-    musicaActual = document.getElementById("bgm-tienda");
-    if (musicaActual) { musicaActual.volume = 0.4; musicaActual.play(); }
 
     renderizarTienda();
     renderizarCarrito(); 
@@ -29,9 +27,10 @@ function renderizarTienda() {
     let piqCount = jugador.tropas.filter(t => t.tipoGeneral === 'piqueros').length;
     let ballCount = jugador.tropas.filter(t => t.tipoGeneral === 'ballesteros').length;
     
-    // FIX TÁCTICO: Extirpada la clase "txt-comandante" para evitar el parpadeo de los números.
     let headerReclutamiento = document.createElement("div");
     headerReclutamiento.style.cssText = "text-align: center; margin-bottom: 20px; position: relative;";
+    
+    // FIX TÁCTICO: Separación estructural. El tooltip ya no está DENTRO del texto que parpadea.
     headerReclutamiento.innerHTML = `
         <style>
             @keyframes pulsoArmada {
@@ -53,34 +52,50 @@ function renderizarTienda() {
                 box-shadow: 0 10px 30px rgba(0,0,0,1);
                 min-width: 380px;
                 cursor: default;
+                animation: none !important;
+                text-shadow: none !important;
             }
-            .hover-armada:hover .tooltip-armada {
+            .hover-armada-container {
+                display: inline-block;
+                position: relative;
+                cursor: help;
+            }
+            .hover-armada-container:hover .tooltip-armada {
                 display: block;
             }
+            .texto-pulso {
+                animation: pulsoArmada 2s infinite;
+                font-size: 18px;
+                font-weight: bold;
+                padding: 5px 10px;
+                display: inline-block;
+            }
         </style>
-        <span class="hover-armada txt-sagrado" style="cursor: help; animation: pulsoArmada 2s infinite; font-size: 18px; font-weight: bold; padding: 5px 10px;">
-            🛡️ VER TU COMPAÑÍA ACTUAL
+        <div class="hover-armada-container">
+            <div class="texto-pulso txt-sagrado">
+                🛡️ VER TU COMPAÑÍA ACTUAL
+            </div>
             <div class="tooltip-armada">
-                <h4 style="margin: 0 0 10px 0; color: #4c88ff; font-family:'Cinzel', serif; border-bottom: 1px solid #333; padding-bottom: 5px;">TROPAS EN FILA</h4>
+                <h4 style="margin: 0 0 10px 0; color: #4c88ff; font-family:'Cinzel', serif; border-bottom: 1px solid #333; padding-bottom: 5px; animation: none !important; text-shadow: none !important;">TROPAS EN FILA</h4>
                 <div style="display:flex; justify-content:center; gap:15px; margin-top:10px;">
-                    <div class="item-card-desplegado soldier-frame" style="min-width:100px; border-color:#d4af37;">
-                        <img src="assets/img/personajes/aliados/caballero_noble.webp">
-                        <div class="unidad-nombre-aleatorio" style="font-size:11px; color:#fff;">Caballeros</div>
-                        <div style="color:#ffd700; font-weight:bold; font-size:18px; margin-top:5px; text-shadow: 0 0 5px #4c88ff;">x${cabCount}</div>
+                    <div class="item-card-desplegado soldier-frame" style="min-width:100px; border-color:#d4af37; animation: none !important;">
+                        <img src="assets/img/personajes/aliados/caballero_noble.webp" style="animation: none !important;">
+                        <div style="font-size:11px; color:#fff; background-color:#111; border:1px solid #555; border-radius:3px; padding:3px; text-align:center; box-shadow:0 0 5px #000; position:relative; z-index:10; margin-top:-8px; font-weight:bold; text-transform:uppercase; animation: none !important; text-shadow: none !important;">CABALLEROS</div>
+                        <div style="color:#ffd700; font-weight:bold; font-size:18px; margin-top:5px; text-shadow: 0 0 5px #4c88ff; animation: none !important;">x${cabCount}</div>
                     </div>
-                    <div class="item-card-desplegado soldier-frame" style="min-width:100px; border-color:#d4af37;">
-                        <img src="assets/img/personajes/aliados/piquero_noble.webp">
-                        <div class="unidad-nombre-aleatorio" style="font-size:11px; color:#fff;">Piqueros</div>
-                        <div style="color:#ffd700; font-weight:bold; font-size:18px; margin-top:5px; text-shadow: 0 0 5px #4c88ff;">x${piqCount}</div>
+                    <div class="item-card-desplegado soldier-frame" style="min-width:100px; border-color:#d4af37; animation: none !important;">
+                        <img src="assets/img/personajes/aliados/piquero_noble.webp" style="animation: none !important;">
+                        <div style="font-size:11px; color:#fff; background-color:#111; border:1px solid #555; border-radius:3px; padding:3px; text-align:center; box-shadow:0 0 5px #000; position:relative; z-index:10; margin-top:-8px; font-weight:bold; text-transform:uppercase; animation: none !important; text-shadow: none !important;">PIQUEROS</div>
+                        <div style="color:#ffd700; font-weight:bold; font-size:18px; margin-top:5px; text-shadow: 0 0 5px #4c88ff; animation: none !important;">x${piqCount}</div>
                     </div>
-                    <div class="item-card-desplegado soldier-frame" style="min-width:100px; border-color:#d4af37;">
-                        <img src="assets/img/personajes/aliados/ballestero_noble.webp">
-                        <div class="unidad-nombre-aleatorio" style="font-size:11px; color:#fff;">Ballesteros</div>
-                        <div style="color:#ffd700; font-weight:bold; font-size:18px; margin-top:5px; text-shadow: 0 0 5px #4c88ff;">x${ballCount}</div>
+                    <div class="item-card-desplegado soldier-frame" style="min-width:100px; border-color:#d4af37; animation: none !important;">
+                        <img src="assets/img/personajes/aliados/ballestero_noble.webp" style="animation: none !important;">
+                        <div style="font-size:11px; color:#fff; background-color:#111; border:1px solid #555; border-radius:3px; padding:3px; text-align:center; box-shadow:0 0 5px #000; position:relative; z-index:10; margin-top:-8px; font-weight:bold; text-transform:uppercase; animation: none !important; text-shadow: none !important;">BALLESTEROS</div>
+                        <div style="color:#ffd700; font-weight:bold; font-size:18px; margin-top:5px; text-shadow: 0 0 5px #4c88ff; animation: none !important;">x${ballCount}</div>
                     </div>
                 </div>
             </div>
-        </span>
+        </div>
     `;
     
     contenedor.appendChild(headerReclutamiento);
@@ -208,8 +223,6 @@ function confirmarCompra() {
     
     faseReclutamientoInicial = false;
     document.getElementById("tienda-overlay").style.display = "none";
-    if (musicaActual) musicaActual.pause();
-    if (musicaPausadaTienda) { musicaActual = musicaPausadaTienda; musicaActual.play(); musicaPausadaTienda = null; }
     
     escena1();
 }
@@ -233,8 +246,6 @@ function cerrarTienda() {
         if(seguro) {
             faseReclutamientoInicial = false;
             document.getElementById("tienda-overlay").style.display = "none";
-            if (musicaActual) musicaActual.pause();
-            if (musicaPausadaTienda) { musicaActual = musicaPausadaTienda; musicaActual.play(); musicaPausadaTienda = null; }
             escena1(); 
         }
     } else {

@@ -16,53 +16,45 @@ async function iniciarNarrativaSacrificio() {
 
         let noblesListos = jugador.tropas.filter(t => t.tipoGeneral === "ballesteros" && (t.clase === "noble" || t.idUnico === jugador.mercenarioRedimidoId) && t.hp > 0 && !t.espadachin);
         if (noblesListos.length > 0) {
-            crearBoton("DESPLEGAR LA ÚLTIMA LÍNEA", () => {
-                if (typeof abrirFormacionSacrificio !== "function") { alert("Error Táctico."); return; }
-                abrirFormacionSacrificio((formacionInfo) => {
-                    if (formacionInfo.total === 0) {
-                        agregarTexto("<h3 class='txt-hereje'>LA COBARDÍA REINA</h3>");
-                        agregarTexto("Nadie dio un paso al frente. La horda masacró el campamento.");
-                        crearBoton("CONTINUAR", evaluarVictoriaDerrotaBosque);
-                    } else {
-                        for(let pos in formacionInfo.slots) {
-                            if(formacionInfo.slots[pos]) {
-                                let tr = jugador.tropas.find(t => t.idUnico === formacionInfo.slots[pos]);
-                                if(tr) tr.espadachin = true;
-                            }
-                        }
-                        
-                        // FIX TÁCTICO: Fórmula de aguante con base de 3 mártires
-                        let metaRequerida = Math.min(3, noblesListos.length);
-                        let cantTurnos = Math.max(1, Math.ceil(metaRequerida / formacionInfo.total)); 
-                        let metaPP = cantTurnos * formacionInfo.total * 10;
-                        
-                        let overlay = document.getElementById("formacion-overlay");
-                        if(overlay) overlay.style.display = "flex";
-                        document.getElementById("formacion-roster").style.display = "none";
-                        document.getElementById("formacion-tablero").style.display = "none";
-                        document.getElementById("btn-iniciar-formacion-picas").style.display = "none";
-                        
-                        if (document.getElementById("ht-skip-cine")?.checked) {
-                            if(overlay) overlay.style.display = "none";
-                            iniciarCombateSacrificio(formacionInfo, finalizarCombateSacrificio, metaPP, cantTurnos);
-                        } else {
-                            if(typeof playCinematicaSacrificioBosque === "function") {
-                                playCinematicaSacrificioBosque(formacionInfo, () => {
-                                    if(overlay) overlay.style.display = "none";
-                                    iniciarCombateSacrificio(formacionInfo, finalizarCombateSacrificio, metaPP, cantTurnos);
-                                });
-                            } else {
-                                if(overlay) overlay.style.display = "none";
-                                iniciarCombateSacrificio(formacionInfo, finalizarCombateSacrificio, metaPP, cantTurnos);
-                            }
+            crearBoton("DESPLEGAR LA ÚLTIMA LÍNEA", async () => {
+                let formacionInfo = await abrirFormacionSacrificio();
+                
+                if (formacionInfo.total === 0) {
+                    agregarTexto("<h3 class='txt-hereje'>LA COBARDÍA REINA</h3>");
+                    agregarTexto("Nadie dio un paso al frente. La horda masacró el campamento.");
+                    crearBoton("CONTINUAR", async () => await evaluarVictoriaDerrotaBosque());
+                } else {
+                    for(let pos in formacionInfo.slots) {
+                        if(formacionInfo.slots[pos]) {
+                            let tr = jugador.tropas.find(t => t.idUnico === formacionInfo.slots[pos]);
+                            if(tr) tr.espadachin = true;
                         }
                     }
-                });
+                    
+                    let metaRequerida = Math.min(3, noblesListos.length);
+                    let cantTurnos = Math.max(1, Math.ceil(metaRequerida / formacionInfo.total)); 
+                    let metaPP = cantTurnos * formacionInfo.total * 10;
+                    
+                    let overlay = document.getElementById("formacion-overlay");
+                    if(overlay) overlay.style.display = "flex";
+                    document.getElementById("formacion-roster").style.display = "none";
+                    document.getElementById("formacion-tablero").style.display = "none";
+                    document.getElementById("btn-iniciar-formacion-picas").style.display = "none";
+                    
+                    let skipCine = document.getElementById("ht-skip-cine")?.checked;
+                    if(!skipCine && typeof playCinematicaSacrificioBosque === "function") {
+                        await new Promise(res => playCinematicaSacrificioBosque(formacionInfo, res));
+                    }
+                    if(overlay) overlay.style.display = "none";
+                    
+                    let {victoria, bajas} = await iniciarCombateSacrificio(formacionInfo, metaPP, cantTurnos);
+                    await finalizarCombateSacrificio(victoria, bajas);
+                }
             });
         } else {
             agregarTexto("<h3 class='txt-hereje'>LA LÍNEA HA CEDIDO</h3>");
             agregarTexto("No quedan ballesteros nobles ni voluntarios para sacrificarse. Los mercenarios huyen y la horda avanza...");
-            crearBoton("CONTINUAR", evaluarVictoriaDerrotaBosque);
+            crearBoton("CONTINUAR", async () => await evaluarVictoriaDerrotaBosque());
         }
         return;
     }
@@ -125,24 +117,21 @@ async function iniciarNarrativaSacrificio() {
             texto: `"¡Señor, escoja a la nobleza de ballesteros para ir a dar más tiempo!"`, claseTexto: "txt-sagrado"
         });
         
-        crearBoton("DESPLEGAR LA ÚLTIMA LÍNEA", () => {
-            if (typeof abrirFormacionSacrificio !== "function") {
-                alert("Error Táctico: Falta formacion.js actualizado."); return;
+        crearBoton("DESPLEGAR LA ÚLTIMA LÍNEA", async () => {
+            let formacionInfo = await abrirFormacionSacrificio();
+            
+            if (formacionInfo.total === 0) {
+                agregarTexto("<h3 class='txt-hereje'>COBARDÍA EN LAS FILAS</h3>");
+                agregarTexto("Nadie dio un paso al frente. La horda masacró el campamento.");
+                crearBoton("CONTINUAR", async () => await evaluarVictoriaDerrotaBosque());
+            } else {
+                await continuarNarrativaSacrificio(formacionInfo, mercs);
             }
-            abrirFormacionSacrificio((formacionInfo) => {
-                if (formacionInfo.total === 0) {
-                    agregarTexto("<h3 class='txt-hereje'>COBARDÍA EN LAS FILAS</h3>");
-                    agregarTexto("Nadie dio un paso al frente. La horda masacró el campamento.");
-                    crearBoton("CONTINUAR", evaluarVictoriaDerrotaBosque);
-                } else {
-                    continuarNarrativaSacrificio(formacionInfo, mercs);
-                }
-            });
         });
     } else {
         agregarTexto("<h3 class='txt-hereje'>LA LÍNEA HA CEDIDO</h3>");
         agregarTexto("No quedan ballesteros nobles para sacrificarse. Los mercenarios huyen y la horda avanza...");
-        crearBoton("CONTINUAR", evaluarVictoriaDerrotaBosque);
+        crearBoton("CONTINUAR", async () => await evaluarVictoriaDerrotaBosque());
     }
 }
 
@@ -197,7 +186,7 @@ async function continuarNarrativaSacrificio(formacionInfo, mercs) {
             let slotReplace = possibleSlots[Math.floor(Math.random() * possibleSlots.length)];
             formacionInfo.slots[slotReplace] = mercVoluntario.idUnico;
             
-            arrancarSacrificioConfirmado(formacionInfo);
+            await arrancarSacrificioConfirmado(formacionInfo);
         });
 
         crearBoton("No, mantén la disciplina", async () => {
@@ -206,16 +195,16 @@ async function continuarNarrativaSacrificio(formacionInfo, mercs) {
                 personajeImg: "assets/img/personajes/aliados/jugador.webp", nombrePersonaje: `Comendador ${jugador.nombre}`, alineacion: "izq", bordeClase: "borde-comandante", nombreClase: "nombre-comandante",
                 texto: `"Me aseguraré de que tu lealtad resuene en los ecos. Pero la formación ya está hecha, tal vez te requeriré más adelante."`, claseTexto: "txt-comandante"
             });
-            arrancarSacrificioConfirmado(formacionInfo);
+            await arrancarSacrificioConfirmado(formacionInfo);
         });
     } else {
-        crearBoton("INICIAR EL SACRIFICIO", () => {
-            arrancarSacrificioConfirmado(formacionInfo);
+        crearBoton("INICIAR EL SACRIFICIO", async () => {
+            await arrancarSacrificioConfirmado(formacionInfo);
         });
     }
 }
 
-function arrancarSacrificioConfirmado(formacionInfo) {
+async function arrancarSacrificioConfirmado(formacionInfo) {
     for(let pos in formacionInfo.slots) {
         if(formacionInfo.slots[pos]) {
             let tr = jugador.tropas.find(t => t.idUnico === formacionInfo.slots[pos]);
@@ -223,7 +212,6 @@ function arrancarSacrificioConfirmado(formacionInfo) {
         }
     }
     
-    // FIX TÁCTICO: Meta calculada en base a 3 (o menos si escasean soldados)
     let noblesListos = jugador.tropas.filter(t => t.tipoGeneral === "ballesteros" && (t.clase === "noble" || t.idUnico === jugador.mercenarioRedimidoId) && t.hp > 0 && !t.espadachin);
     let metaRequerida = Math.min(3, noblesListos.length);
     let cantTurnos = Math.max(1, Math.ceil(metaRequerida / formacionInfo.total)); 
@@ -235,49 +223,46 @@ function arrancarSacrificioConfirmado(formacionInfo) {
     document.getElementById("formacion-tablero").style.display = "none";
     document.getElementById("btn-iniciar-formacion-picas").style.display = "none";
     
-    if (document.getElementById("ht-skip-cine")?.checked) {
-        if(overlay) overlay.style.display = "none";
-        iniciarCombateSacrificio(formacionInfo, finalizarCombateSacrificio, metaPP, cantTurnos);
-    } else {
-        if(typeof playCinematicaSacrificioBosque === "function") {
-            playCinematicaSacrificioBosque(formacionInfo, () => {
-                if(overlay) overlay.style.display = "none";
-                iniciarCombateSacrificio(formacionInfo, finalizarCombateSacrificio, metaPP, cantTurnos);
-            });
-        } else {
-            if(overlay) overlay.style.display = "none";
-            iniciarCombateSacrificio(formacionInfo, finalizarCombateSacrificio, metaPP, cantTurnos);
-        }
+    let skipCine = document.getElementById("ht-skip-cine")?.checked;
+    if(!skipCine && typeof playCinematicaSacrificioBosque === "function") {
+        await new Promise(res => playCinematicaSacrificioBosque(formacionInfo, res));
     }
+    
+    if(overlay) overlay.style.display = "none";
+    
+    let {victoria, bajas} = await iniciarCombateSacrificio(formacionInfo, metaPP, cantTurnos);
+    await finalizarCombateSacrificio(victoria, bajas);
 }
 
-async function iniciarCombateSacrificio(formacion, callbackFinalizar, metaPP, turnosFase) {
-    EstadoBatalla.limpiar(); 
-    EstadoBatalla.tipoCombate = "sacrificio";
-    
-    EstadoBatalla.metaProgresoMuro = metaPP;
-    EstadoBatalla.turnosFaseBosque = turnosFase;
-    if(typeof CONSTANTES_TACTICAS !== 'undefined') CONSTANTES_TACTICAS.PICAS_MAX_TURNOS = turnosFase; 
+function iniciarCombateSacrificio(formacion, metaPP, turnosFase) {
+    return new Promise(resolve => {
+        EstadoBatalla.limpiar(); 
+        EstadoBatalla.tipoCombate = "sacrificio";
+        
+        EstadoBatalla.metaProgresoMuro = metaPP;
+        EstadoBatalla.turnosFaseBosque = turnosFase;
+        if(typeof CONSTANTES_TACTICAS !== 'undefined') CONSTANTES_TACTICAS.PICAS_MAX_TURNOS = turnosFase; 
 
-    EstadoBatalla.reservas = jugador.tropas.filter(t => t.tipoGeneral === "ballesteros" && (t.clase === "noble" || t.idUnico === jugador.mercenarioRedimidoId) && t.hp > 0 && !t.espadachin && !Object.values(formacion.slots).includes(t.idUnico));
-    EstadoBatalla.maxTurnos = turnosFase;
-    EstadoBatalla.callback = callbackFinalizar; 
+        EstadoBatalla.reservas = jugador.tropas.filter(t => t.tipoGeneral === "ballesteros" && (t.clase === "noble" || t.idUnico === jugador.mercenarioRedimidoId) && t.hp > 0 && !t.espadachin && !Object.values(formacion.slots).includes(t.idUnico));
+        EstadoBatalla.maxTurnos = turnosFase;
+        
+        EstadoBatalla.callback = (victoria, bajas) => resolve({victoria, bajas}); 
 
-    // FIX TÁCTICO: Ahora el motor de guerra solo procesa 3 choques
-    EstadoBatalla.tropasVivas = [
-        { idUnico: formacion.slots["sacrificio-1"], posNombre: "el frente norte", slotPos: "sacrificio-1" },
-        { idUnico: formacion.slots["sacrificio-2"], posNombre: "el frente central", slotPos: "sacrificio-2" },
-        { idUnico: formacion.slots["sacrificio-3"], posNombre: "el frente sur", slotPos: "sacrificio-3" }
-    ];
+        EstadoBatalla.tropasVivas = [
+            { idUnico: formacion.slots["sacrificio-1"], posNombre: "el frente norte", slotPos: "sacrificio-1" },
+            { idUnico: formacion.slots["sacrificio-2"], posNombre: "el frente central", slotPos: "sacrificio-2" },
+            { idUnico: formacion.slots["sacrificio-3"], posNombre: "el frente sur", slotPos: "sacrificio-3" }
+        ];
 
-    storyArea.innerHTML = "";
-    prepararBotonTurno();
-    animarDialogoAvanceSacrificio();
-    
-    setTimeout(() => { 
-        if(typeof storyArea !== 'undefined') storyArea.scrollTop = 0; 
-        window.scrollTo(0, 0); 
-    }, 50);
+        storyArea.innerHTML = "";
+        prepararBotonTurno();
+        animarDialogoAvanceSacrificio();
+        
+        setTimeout(() => { 
+            if(typeof storyArea !== 'undefined') storyArea.scrollTop = 0; 
+            window.scrollTo(0, 0); 
+        }, 50);
+    });
 }
 
 async function animarDialogoAvanceSacrificio() {
@@ -362,7 +347,6 @@ function resolverDadosVisualesSacrificio() {
     document.getElementById("btn-tirar-dados").style.display = "none";
     let infoFe = obtenerEstadoFe();
 
-    // FIX TÁCTICO: Cada mártir vale 10 puntos fijos hacia la meta
     let ballesterosParticipantes = EstadoBatalla.accionesPendientes.length;
     let puntosGanados = ballesterosParticipantes * 10;
     EstadoBatalla.progresoMuro += puntosGanados;
@@ -374,12 +358,11 @@ function resolverDadosVisualesSacrificio() {
         let slotPicaId = `pica-slot-${pos.slotPos.split("-")[1]}`;
         let slotPica = document.getElementById(slotPicaId);
         
-        let penalidad = (tropa.hp < (tropa.hpMax || 2) && tropa.hp > 0) ? 1 : 0;
-        let stringHerido = penalidad > 0 ? ` <span class="txt-hereje">-1 (Herido)</span>` : "";
+        let poderAtk = GestorEstado.evaluarPoderTropa(tropa, 'atk');
         let dadoGracia = (jugador.liderazgo <= -50) ? 0 : tirarDado();
         let dadoFuria = (jugador.liderazgo >= 126) ? 0 : tirarDado();
         
-        let pAtkAliado = (tropa.atkMax - penalidad) + dadoGracia + infoFe.mod;
+        let pAtkAliado = poderAtk.neto + dadoGracia + infoFe.mod;
         let pAtkEnemigo = enemigo.atk + dadoFuria;
 
         let signoMod = (infoFe.mod >= 0) ? `+${infoFe.mod}` : `${infoFe.mod}`;
@@ -389,6 +372,7 @@ function resolverDadosVisualesSacrificio() {
         let idBc = 'bc_' + Math.random().toString(36).substr(2,9);
         let phase1Cons = "";
 
+        // FIX TÁCTICO: Combate Melee limpio sin audios
         if (pAtkAliado > pAtkEnemigo) {
             EstadoBatalla.bajasEnemigas++;
             EstadoBatalla.hordaMuertosActuales++;
@@ -415,7 +399,7 @@ function resolverDadosVisualesSacrificio() {
 
         let dataRender = {
             posNombre: pos.posNombre, enemigoNombre: enemigo.nombre, tropaNombre: tropa.nombre,
-            atkBase: tropa.atkMax, stringHerido, dadoGracia, classMod, signoMod, infoFeNombre: infoFe.nombre, pAtkAliado,
+            atkBase: poderAtk.base, stringHerido: poderAtk.stringEfectos, dadoGracia, classMod, signoMod, infoFeNombre: infoFe.nombre, pAtkAliado,
             atkEnemigoBase: enemigo.atk, dadoFuria, pAtkEnemigo, phase1Cons, idBc, autoCombat
         };
 
@@ -453,7 +437,10 @@ function resolverDadosVisualesSacrificio() {
     }
 }
 
-function finalizarCombateSacrificio(victoria, bajasEnemigas) {
+async function finalizarCombateSacrificio(victoria, bajasEnemigas) {
+    let overlay = document.getElementById("formacion-overlay");
+    if(overlay) overlay.style.display = "none";
+
     limpiarBotones(); agregarTexto("<div class='separador'>***</div>");
     jugador.enemigosAsesinados += bajasEnemigas;
     
@@ -468,39 +455,33 @@ function finalizarCombateSacrificio(victoria, bajasEnemigas) {
             }
         });
 
-        crearBoton("REPLIEGUE (Abrir Campo de Tiro)", () => {
-            let overlay = document.getElementById("formacion-overlay");
-            if(overlay) overlay.style.display = "flex";
+        if (jugador.enemigosAsesinados >= jugador.enemigosObjetivo) {
+            crearBoton("LA HORDA HUYE (Asegurar el Perímetro)", async () => await evaluarVictoriaDerrotaBosque());
+        } else {
+            crearBoton("REPLIEGUE (Abrir Campo de Tiro)", async () => {
+                let overlay = document.getElementById("formacion-overlay");
+                if(overlay) overlay.style.display = "flex";
 
-            let skipCine = document.getElementById("ht-skip-cine")?.checked;
-            
-            let purgarEspadachines = () => {
-                jugador.tropas.forEach(t => { 
-                    if (t.espadachin) { 
-                        t.espadachin = false; 
-                        t.cooldown = (t.clase === 'noble') ? 1 : 2; 
-                    } 
-                });
-            };
+                let skipCine = document.getElementById("ht-skip-cine")?.checked;
+                
+                let purgarEspadachines = () => {
+                    jugador.tropas.forEach(t => { 
+                        if (t.espadachin) { 
+                            t.espadachin = false; 
+                            t.cooldown = (t.clase === 'noble') ? 1 : 2; 
+                        } 
+                    });
+                };
 
-            if(skipCine) {
+                if(!skipCine && typeof playCinematicaRepliegueBosque === 'function') {
+                    await new Promise(res => playCinematicaRepliegueBosque(res));
+                }
+                
                 if(overlay) overlay.style.display = "none";
                 purgarEspadachines();
-                iniciarFaseBosque();
-            } else {
-                if (typeof playCinematicaRepliegueBosque === 'function') {
-                    playCinematicaRepliegueBosque(() => {
-                        if(overlay) overlay.style.display = "none";
-                        purgarEspadachines();
-                        iniciarFaseBosque();
-                    });
-                } else {
-                    if(overlay) overlay.style.display = "none";
-                    purgarEspadachines();
-                    iniciarFaseBosque();
-                }
-            }
-        });
+                await iniciarFaseBosque();
+            });
+        }
     } else {
         agregarTexto(`<h3 class='txt-hereje'>LA ÚLTIMA LÍNEA HA CEDIDO</h3>`);
         agregarTexto(`Los valientes mártires han sido despedazados. La horda avanza imparable...`);
