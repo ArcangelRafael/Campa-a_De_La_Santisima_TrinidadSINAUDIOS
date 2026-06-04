@@ -11,14 +11,14 @@ const EstadoBatalla = {
     tipoCombate: "cuna", maxTurnos: 0, turnoActual: 1, bajasEnemigas: 0, accionesPendientes: [],
     reservas: [], tropasVivas: [], enemigos: [], logTurnoGlobal: [], callback: null,
     progresoMuro: 0, hordaMuertosActuales: 0, metaProgresoMuro: 60, turnosFaseBosque: 1,
-    eventoEspecialVictoria: null,
+    eventoEspecialVictoria: null, caidosUltimaBatalla: [], cargandoVictoria: false,
 
     limpiar: function() {
         this.maxTurnos = 0; this.turnoActual = 1; this.bajasEnemigas = 0;
         this.accionesPendientes = []; this.reservas = []; this.tropasVivas = []; this.enemigos = [];
         this.logTurnoGlobal = []; this.callback = null; this.progresoMuro = 0; this.hordaMuertosActuales = 0;
         this.metaProgresoMuro = 60; this.turnosFaseBosque = 1;
-        this.eventoEspecialVictoria = null; 
+        this.eventoEspecialVictoria = null; this.caidosUltimaBatalla = []; this.cargandoVictoria = false;
     }
 };
 
@@ -116,8 +116,12 @@ function restaurarVisualesCombate() {
             if (tr && tr.hp > 0 && !pos.ignorarMuerto) {
                 let targetId = "";
                 if (EstadoBatalla.tipoCombate === "cuna") {
-                    let visualCol = pos.col > 3 ? 3 : pos.col; targetId = (visualCol < 0) ? `aliado-${pos.row}-${visualCol}` : `enemigo-${pos.row}-${visualCol}`;
-                } else { targetId = `pica-slot-${pos.slotPos.split("-")[1]}`; }
+                    if (pos.col >= 3) return;
+                    let visualCol = pos.col; 
+                    targetId = (visualCol < 0) ? `aliado-${pos.row}-${visualCol}` : `enemigo-${pos.row}-${visualCol}`;
+                } else { 
+                    targetId = `pica-slot-${pos.slotPos.split("-")[1]}`; 
+                }
 
                 let targetSlot = document.getElementById(targetId);
                 if (targetSlot) {
@@ -136,15 +140,24 @@ function restaurarVisualesCombate() {
     if (zonaReservas) {
         zonaReservas.innerHTML = ""; zonaReservas.style.display = "grid"; zonaReservas.style.gridTemplateColumns = "repeat(2, 75px)"; zonaReservas.style.gap = "10px"; zonaReservas.style.alignContent = "start"; zonaReservas.style.justifyContent = "center";
         let reservasVisibles = EstadoBatalla.reservas.slice(0, 8);
-        reservasVisibles.forEach(reserva => {
-            let tr = jugador.tropas.find(t => t.idUnico === reserva.idUnico);
-            if(tr) {
-                let card = document.createElement("div"); 
-                let claseBorde = tr.clase === 'noble' ? 'tropa-noble' : 'tropa-mercenaria'; 
-                card.className = `soldier-frame tropa-draggable ${claseBorde} caballero-reserva`; 
-                card.id = "drag-" + tr.idUnico;
-                card.innerHTML = RenderCombate.htmlFichaTropaInner(tr);
-                zonaReservas.appendChild(card);
+        reservasVisibles.forEach((reserva, idx) => {
+            // FIX TÁCTICO BLINDAJE: Si la reserva es "null" (hueco vacío), dibujamos un elemento invisible pero que ocupa espacio geométrico
+            if (!reserva) {
+                let dummy = document.createElement("div");
+                dummy.className = "invisible-slot";
+                dummy.id = "dummy-res-" + idx;
+                dummy.style.width = "75px"; dummy.style.height = "75px";
+                zonaReservas.appendChild(dummy);
+            } else {
+                let tr = jugador.tropas.find(t => t.idUnico === reserva.idUnico);
+                if(tr) {
+                    let card = document.createElement("div"); 
+                    let claseBorde = tr.clase === 'noble' ? 'tropa-noble' : 'tropa-mercenaria'; 
+                    card.className = `soldier-frame tropa-draggable ${claseBorde} caballero-reserva`; 
+                    card.id = "drag-" + tr.idUnico;
+                    card.innerHTML = RenderCombate.htmlFichaTropaInner(tr);
+                    zonaReservas.appendChild(card);
+                }
             }
         });
     }
@@ -176,8 +189,30 @@ function tirarGritoGuerraLog(nombre, logArray) {
 
 function finalizarCombateGlobal() {
     limpiarBotones();
-    let soldadosCaidos = jugador.tropas.filter(t => t.hp <= 0).length;
-    jugador.tropas = jugador.tropas.filter(t => t.hp > 0);
+    if (typeof jugador.cementerio === 'undefined') jugador.cementerio = [];
+    if (typeof jugador.caidosBatallaActual === 'undefined') jugador.caidosBatallaActual = [];
+    
+    let soldadosCaidos = 0;
+    let lugarMuerteDesc = "en el fragor de la batalla";
+    if (EstadoBatalla.tipoCombate === "cuna") lugarMuerteDesc = "en la heroica Carga de Cuña";
+    else if (EstadoBatalla.tipoCombate === "picas") lugarMuerteDesc = "sosteniendo el Muro en el Puente";
+    else if (EstadoBatalla.tipoCombate === "picas_bosque") lugarMuerteDesc = "en el Muro de Picas del Bosque Negro";
+    else if (EstadoBatalla.tipoCombate === "sacrificio") lugarMuerteDesc = "en el Sacrificio Supremo de la Última Línea";
+
+    for (let i = jugador.tropas.length - 1; i >= 0; i--) {
+        if (jugador.tropas[i].hp <= 0) {
+            let tropaMuerta = jugador.tropas.splice(i, 1)[0]; 
+            tropaMuerta.lugarMuerte = lugarMuerteDesc;
+            jugador.cementerio.push(tropaMuerta);             
+            soldadosCaidos++;
+            let prefijo = "Hno.";
+            if (tropaMuerta.tipoGeneral === "caballeros") prefijo = "Caballero";
+            else if (tropaMuerta.tipoGeneral === "ballesteros") prefijo = "Ballestero";
+            else if (tropaMuerta.tipoGeneral === "piqueros") prefijo = "Piquero";
+            
+            jugador.caidosBatallaActual.push({ nombreCompleto: `${prefijo} ${tropaMuerta.nombre}`, lugar: lugarMuerteDesc });
+        }
+    }
     
     let victoria = false;
     if (EstadoBatalla.tipoCombate === "cuna") { victoria = (EstadoBatalla.bajasEnemigas >= CONSTANTES_TACTICAS.CUNA_BAJAS_VICTORIA); }
@@ -187,9 +222,7 @@ function finalizarCombateGlobal() {
     }
 
     if (victoria && typeof EstadoBatalla.eventoEspecialVictoria === 'function') {
-        EstadoBatalla.eventoEspecialVictoria().then(() => {
-            imprimirPolvoSeAsienta(victoria, soldadosCaidos);
-        });
+        EstadoBatalla.eventoEspecialVictoria().then(() => { imprimirPolvoSeAsienta(victoria, soldadosCaidos); });
     } else {
         imprimirPolvoSeAsienta(victoria, soldadosCaidos);
     }
@@ -241,7 +274,22 @@ function evaluarContinuacionBatalla() {
             }
         });
 
-        if(EstadoBatalla.turnoActual > maxT || EstadoBatalla.bajasEnemigas >= CONSTANTES_TACTICAS.CUNA_BAJAS_VICTORIA || !combatesPosibles) {
+        if(EstadoBatalla.bajasEnemigas >= CONSTANTES_TACTICAS.CUNA_BAJAS_VICTORIA) {
+            if (!EstadoBatalla.cargandoVictoria) {
+                EstadoBatalla.cargandoVictoria = true;
+                restaurarVisualesCombate(); 
+                if (typeof animarAvanceCuna === "function") {
+                    animarAvanceCuna(true); 
+                }
+                return;
+            } else {
+                restaurarVisualesCombate(); 
+                finalizarCombateGlobal();
+                return;
+            }
+        }
+
+        if(EstadoBatalla.turnoActual > maxT || !combatesPosibles) {
             restaurarVisualesCombate(); 
             finalizarCombateGlobal();
             return;
@@ -275,7 +323,6 @@ function evaluarContinuacionBatalla() {
     } else if(EstadoBatalla.tipoCombate === "picas_bosque") {
         animarDialogoAvancePicasBosque();
     } else if(EstadoBatalla.tipoCombate === "sacrificio") {
-        // FIX TÁCTICO: Llamada a la nueva narrativa de sacrificio. (El código de esta función vendrá en la Fase 2)
         if (typeof animarDialogoAvanceSacrificio === 'function') animarDialogoAvanceSacrificio();
     }
 }

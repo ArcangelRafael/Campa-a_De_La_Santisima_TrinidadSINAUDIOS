@@ -1,7 +1,84 @@
 /* === DATABASE.JS - BASE DE DATOS Y LORE DEL JUEGO === */
 
 const bdObjetos = {
-    "espada_forjada": { id: "espada_forjada", nombre: "Espadas Forjadas", precio: 10, img: "assets/img/items/espada.webp", descTienda: "Forjar nuevas espadas para tus soldados.", lore: "Arma a tu ejército con mejores espadas. Tus soldados se sienten más confiados.", efectoTexto: "+2 Ataque, +5 Fe", efectos: { ataqueReal: 2, liderazgoBase: 5 } }
+    "espada_forjada": { 
+        id: "espada_forjada", nombre: "Espadas Forjadas", precio: 10, img: "assets/img/items/espada.webp", 
+        descTienda: "Forjar nuevas espadas para tus soldados.", 
+        lore: "Arma a tu ejército con mejores espadas. Tus soldados se sienten más confiados.", 
+        efectoTexto: "+2 Ataque, +5 Fe", efectos: { ataqueReal: 2, liderazgoBase: 5 },
+        categoria: "arma", estado: "fresco"
+    },
+    "pan_cevada": { 
+        id: "pan_cevada", nombre: "Pan de Cevada", precio: 1, img: "assets/img/items/com_panc.webp", 
+        descTienda: "Simple pan artesanal que sirve para saciar el hambre de la tropa. 1 Denario por 10 piezas.", 
+        lore: "Pan horneado en las abadías. Fuerte, duro y nutritivo.", 
+        efectoTexto: "Sacia el hambre.", efectos: {},
+        categoria: "comida", estado: "fresco", loteVenta: 10,
+        onPasoDelTiempo: function(item) {
+            if (item.edad >= 15) { item.id = "pan_podrido"; return "pudrio_pan"; }
+            return null;
+        },
+        onConsumir: function(tropa, isComandante) {
+            tropa.hambre = (tropa.hambre !== undefined && tropa.hambre <= 0) ? 1 : (tropa.hambre !== undefined ? tropa.hambre : 5) + 1;
+            return { status: 'fresco' };
+        }
+    },
+    "pan_podrido": { 
+        id: "pan_podrido", nombre: "Pan Podrido", precio: 0, img: "assets/img/items/com_pancp.webp", 
+        descTienda: "Pan incomible.", 
+        lore: "Este pan ha estado demasiado tiempo guardado. Sus hongos podrían ser letales si se consumen.", 
+        efectoTexto: "<span class='txt-hereje'>Peligro de Intoxicación Letal</span>", efectos: {},
+        categoria: "comida", estado: "riesgo",
+        warningTexto: "Este pan está podrido y podría hacerle daño a tu compañía.",
+        onConsumir: function(tropa, isComandante) {
+            let h = tropa.hambre !== undefined ? tropa.hambre : 5;
+            if (h <= 0 || h <= 2) {
+                tropa.hp = 0; tropa.lugarMuerte = "envenenado por raciones pútridas";
+                if (typeof jugador.cementerio === 'undefined') jugador.cementerio = [];
+                jugador.cementerio.push(tropa);
+                if (isComandante) jugador.comandantes = jugador.comandantes.filter(c => c.idUnico !== tropa.idUnico);
+                else jugador.tropas = jugador.tropas.filter(t => t.idUnico !== tropa.idUnico);
+                if (typeof Cronicas !== "undefined") Cronicas.registrar("PAN_PODRIDO_MUERTE", { nombre: tropa.nombre });
+                return { status: 'muerte', nombre: tropa.nombre };
+            } else {
+                let roll = Math.floor(Math.random() * 6) + 1;
+                if (roll === 1) {
+                    tropa.hambre = Math.min(5, h + 1);
+                    return { status: 'salvado', nombre: tropa.nombre };
+                } else {
+                    tropa.hambre = Math.max(0, h - 2);
+                    if (typeof Cronicas !== "undefined") Cronicas.registrar("PAN_PODRIDO_DESMAYO", { nombre: tropa.nombre });
+                    return { status: 'enfermo', nombre: tropa.nombre };
+                }
+            }
+        }
+    },
+    "cerveza_mesa": { 
+        id: "cerveza_mesa", nombre: "Cerveza de Mesa", precio: 1, img: "assets/img/items/agu_cerbm.webp", 
+        descTienda: "Cerveza floja y aguada, segura para beber en campaña. 1 Denario por 4 barriles.", 
+        lore: "El agua de los arroyos trae la muerte. Esta cerveza baja en alcohol mantendrá a tus hombres hidratados sin embriagarlos.", 
+        efectoTexto: "Sacia la sed.", efectos: {},
+        categoria: "bebida", estado: "fresco", loteVenta: 4,
+        onPasoDelTiempo: function(item) {
+            if (item.edad >= 21) { item.id = "cerveza_agria"; return "agrio_cerveza"; }
+            return null;
+        },
+        onConsumir: function(tropa, isComandante) {
+            tropa.sed = (tropa.sed !== undefined && tropa.sed <= 0) ? 1 : (tropa.sed !== undefined ? tropa.sed : 3) + 1;
+            return { status: 'fresco' };
+        }
+    },
+    "cerveza_agria": { 
+        id: "cerveza_agria", nombre: "Cerveza Agria", precio: 0, img: "assets/img/items/agu_cerbm.webp", 
+        descTienda: "Cerveza echada a perder.", 
+        lore: "El barril se ha contaminado y el líquido huele a vinagre rancio.", 
+        efectoTexto: "<span class='txt-hereje'>No hidrata. Produce asco.</span>", efectos: {},
+        categoria: "bebida", estado: "riesgo",
+        warningTexto: "Esta cerveza está agria. Solo dará asco a la hueste y no los hidratará.",
+        onConsumir: function(tropa, isComandante) {
+            return { status: 'agria', nombre: tropa.nombre };
+        }
+    }
 };
 
 const narrativasFe = {
@@ -51,6 +128,19 @@ const requiemsAliados = [
     "¡Han derribado a {nombre}! ¡Que esta afrenta se pague con la erradicación total de estos herejes!"
 ];
 
+// FIX TÁCTICO: Réquiems exclusivos para inanición y deshidratación
+const requiemsHambre = [
+    "Que el Señor le brinde en Su mesa celestial el banquete que le fue negado en la tierra.",
+    "Cayó sin fuerza para alzar su escudo, devorado por el vacío cruel de sus entrañas.",
+    "Su estómago cedió mucho antes que su fe. Que Dios lo reciba como mártir del abandono."
+];
+
+const requiemsSed = [
+    "Sus labios agrietados y sangrantes ya beben del dulce manantial de la vida eterna.",
+    "Cayó como espiga seca al sol abrasador, entregando su último aliento a la tierra árida.",
+    "Que la lluvia del Paraíso lave para siempre el insoportable tormento de su garganta marchita."
+];
+
 const gritosGuerraAliados = [
     "¡Al infierno, escoria pagana!",
     "¡Deus lo Vult! ¡Nadie detiene a la Cruz Bicolor!",
@@ -60,7 +150,6 @@ const gritosGuerraAliados = [
     "¡Vuestra sangre lavará vuestros pecados!"
 ];
 
-// FIX TÁCTICO: Ballesteros ajustados a 1 Vida (hp: 1) y 2 de Ataque.
 const bdTiposTropa = {
     "caballero_noble": { nombre: "Caballero Noble", tipoG: "caballeros", clase: "noble", atk: 3, def: 3, hp: 2, precio: 10, img: "assets/img/personajes/aliados/caballero_noble.webp", desc: "La élite de la Orden. Ofensiva y defensiva impecable." },
     "caballero_mercenario": { nombre: "Caballero", tipoG: "caballeros", clase: "mercenaria", atk: 2, def: 2, hp: 2, precio: 7, img: "assets/img/personajes/aliados/caballero_mercenario.webp", desc: "Guerreros a sueldo." },

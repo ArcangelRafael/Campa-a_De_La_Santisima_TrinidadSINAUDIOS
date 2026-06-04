@@ -76,6 +76,37 @@ body {
 .estandarte-bg { width: 100%; display: block; }
 .estandarte-emblema { position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%); width: 75px; }
 
+/* FIX TÁCTICO: Animación de respiración para símbolos sagrados */
+@keyframes respiracion-sagrada {
+    0% { transform: scale(1); filter: drop-shadow(0 0 5px rgba(212, 175, 55, 0.6)); }
+    50% { transform: scale(1.08); filter: drop-shadow(0 0 12px rgba(212, 175, 55, 1)); }
+    100% { transform: scale(1); filter: drop-shadow(0 0 5px rgba(212, 175, 55, 0.6)); }
+}
+
+/* FIX TÁCTICO: La Cruz de Jerusalem oficial adaptada y animada */
+.cruz-jerusalem {
+    width: 50px;
+    height: auto;
+    filter: drop-shadow(0 0 5px rgba(212, 175, 55, 0.8));
+    user-select: none;
+    animation: respiracion-sagrada 3s ease-in-out infinite;
+}
+
+/* FIX TÁCTICO: Escudo de la Orden en la Portada */
+.escudo-orden-intro {
+    width: 180px;
+    height: auto;
+    margin: 15px auto;
+    display: block;
+    filter: drop-shadow(0 0 10px rgba(212, 175, 55, 0.4));
+    user-select: none;
+    transition: 0.3s ease;
+}
+.escudo-orden-intro:hover {
+    filter: drop-shadow(0 0 20px rgba(212, 175, 55, 0.8));
+    transform: scale(1.05);
+}
+
 @keyframes balanceo {
     0% { transform: rotate(-5deg); }
     100% { transform: rotate(5deg); }
@@ -139,7 +170,9 @@ input[type="text"]:focus { box-shadow: 0 0 10px rgba(139, 0, 0, 0.8); }
 .grid-items { display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; padding: 10px; }
 .item-card { background-color: #2b2b2b; border: 1px solid #555; border-radius: 5px; padding: 10px; width: 150px; cursor: pointer; transition: 0.3s; }
 .item-card:hover { border-color: #ffaa00; background-color: #3d0000; }
-.item-card img { width: 100%; border-radius: 3px; }
+
+.item-card img { width: 100% !important; height: 110px !important; object-fit: contain !important; border-radius: 3px !important; background-color: #000; }
+
 .item-precio { color: #c0c0c0; font-weight: bold; margin-top: 5px; }
 .item-cantidad { color: #4c88ff; font-weight: bold; margin-top: 5px; font-size: 16px; }
 

@@ -7,7 +7,7 @@ function inyectarTableroCuna() {
     tablero.innerHTML = `
         <div id="zona-reservas" style="display:none; grid-template-columns: repeat(2, 75px); gap:10px; margin-left:15px; align-content:center; justify-content:center; border-right:2px dashed #333; padding-right:15px;"></div>
 
-        <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; margin-left: 15px;">
+        <div id="zona-aliada" style="display:flex; flex-direction:column; align-items:center; justify-content:center; margin-left: 15px; z-index: 10;">
             <div style="display:grid; grid-template-columns: repeat(3, 75px); grid-template-rows: repeat(5, 75px); gap:10px; padding:10px; border:2px solid transparent; box-sizing:border-box;">
                 <div class="slot-formacion valid-start" data-pos="trasera-arriba" id="aliado-0--3"></div>
                 <div class="invisible-slot" id="aliado-0--2"></div>
@@ -27,7 +27,7 @@ function inyectarTableroCuna() {
             </div>
         </div>
 
-        <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; margin-left: auto; margin-right: 20px;">
+        <div id="zona-enemiga" style="display:flex; flex-direction:column; align-items:center; justify-content:center; margin-left: auto; margin-right: 20px; z-index: 10;">
             <div id="grid-enemigo" style="display:grid; grid-template-columns: repeat(4, 75px); grid-template-rows: repeat(5, 75px); gap:10px; padding:10px; border:2px solid transparent; box-sizing:border-box;">
                 <div class="slot-enemigo" id="enemigo-0-0"><div class="enemigo-hp-combate">🤍</div><img class="enemigo-img" src="assets/img/personajes/enemigos/enemigo_piquero.webp"></div>
                 <div class="slot-enemigo" id="enemigo-0-1"><div class="enemigo-hp-combate">🤍</div><img class="enemigo-img" src="assets/img/personajes/enemigos/enemigo.webp"></div>
@@ -61,7 +61,7 @@ function inyectarTableroPicas() {
     tablero.innerHTML = `
         <div id="zona-reservas-picas" style="display:none; grid-template-columns: repeat(2, 75px); gap:10px; margin-left:15px; align-content:center; justify-content:center; border-right:2px dashed #333; padding-right:15px;"></div>
 
-        <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; margin-left: 15px;">
+        <div id="zona-aliada-picas" style="display:flex; flex-direction:column; align-items:center; justify-content:center; margin-left: 15px;">
             <div style="display:grid; grid-template-columns: repeat(2, 75px); grid-template-rows: repeat(2, 75px); gap:10px; padding:10px; border:2px solid transparent; box-sizing:border-box; margin-bottom: 40px;">
                 <div class="slot-formacion valid-start" data-pos="pica-1" id="pica-slot-1"></div>
                 <div class="slot-formacion valid-start" data-pos="pica-2" id="pica-slot-2" style="transform: translateY(42px);"></div>
@@ -70,7 +70,7 @@ function inyectarTableroPicas() {
             </div>
         </div>
 
-        <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; margin-left: auto; margin-right: 20px;">
+        <div id="zona-enemiga-picas" style="display:flex; flex-direction:column; align-items:center; justify-content:center; margin-left: auto; margin-right: 20px;">
             <div id="grid-enemigo-picas" style="display:grid; grid-template-columns: repeat(3, 75px); grid-template-rows: repeat(3, 75px); gap:10px; padding:10px; border:2px solid transparent; box-sizing:border-box;">
                 <div class="slot-enemigo" id="en-pica-0-0"><div class="enemigo-hp-combate">🤍</div><img class="enemigo-img" src="assets/img/personajes/enemigos/enemigo.webp"></div>
                 <div class="slot-enemigo" id="en-pica-0-1"><div class="enemigo-hp-combate">🤍</div><img class="enemigo-img" src="assets/img/personajes/enemigos/enemigo.webp"></div>
@@ -86,7 +86,6 @@ function inyectarTableroPicas() {
     `;
 }
 
-// FIX TÁCTICO: Nuevo tablero exclusivo para el duelo de espadas (3 espacios verticales)
 function inyectarTableroSacrificio() {
     const tablero = document.getElementById("formacion-picas-tablero");
     if (!tablero) return;
@@ -94,7 +93,7 @@ function inyectarTableroSacrificio() {
     tablero.innerHTML = `
         <div id="zona-reservas-picas" style="display:none; grid-template-columns: repeat(2, 75px); gap:10px; margin-left:15px; align-content:center; justify-content:center; border-right:2px dashed #333; padding-right:15px;"></div>
 
-        <div style="display:flex; flex-direction:column; align-items:flex-end; justify-content:center; flex-grow: 1; margin-right: 15px;">
+        <div id="zona-aliada-picas" style="display:flex; flex-direction:column; align-items:flex-end; justify-content:center; flex-grow: 1; margin-right: 15px;">
             <div style="display:grid; grid-template-columns: 75px; grid-template-rows: repeat(3, 75px); gap:15px; padding:10px; border:2px solid transparent; box-sizing:border-box;">
                 <div class="slot-formacion valid-start" data-pos="sacrificio-1" id="pica-slot-1"></div>
                 <div class="slot-formacion valid-start" data-pos="sacrificio-2" id="pica-slot-2"></div>
@@ -102,7 +101,7 @@ function inyectarTableroSacrificio() {
             </div>
         </div>
 
-        <div style="display:flex; flex-direction:column; align-items:flex-start; justify-content:center; margin-right: 40px;">
+        <div id="zona-enemiga-picas" style="display:flex; flex-direction:column; align-items:flex-start; justify-content:center; margin-right: 40px;">
             <div id="grid-enemigo-picas" style="display:grid; grid-template-columns: repeat(3, 75px); grid-template-rows: repeat(3, 75px); gap:10px; padding:10px; border:2px solid transparent; box-sizing:border-box;">
                 <div class="slot-enemigo" id="en-pica-0-0"><div class="enemigo-hp-combate">🤍</div><img class="enemigo-img" src="assets/img/personajes/enemigos/enemigo.webp"></div>
                 <div class="slot-enemigo" id="en-pica-0-1"><div class="enemigo-hp-combate">🤍</div><img class="enemigo-img" src="assets/img/personajes/enemigos/enemigo.webp"></div>

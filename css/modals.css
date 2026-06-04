@@ -1,5 +1,6 @@
 /* === MODALS.CSS - VENTANAS EMERGENTES Y OVERLAYS === */
-#video-overlay, #tribulacion-overlay, #fe-overlay, #inventario-overlay, #tienda-overlay, #detalle-tienda-overlay, #detalle-inv-overlay, #campana-overlay, #detalle-unidad-overlay {
+
+#video-overlay, #tribulacion-overlay, #fe-overlay, #inventario-overlay, #tienda-overlay, #detalle-tienda-overlay, #detalle-inv-overlay, #campana-overlay, #detalle-unidad-overlay, #cronicas-overlay, #formacion-overlay, #alimentar-overlay {
     display: none; 
     position: fixed;
     top: 0; left: 0; width: 100vw; height: 100vh;
@@ -22,10 +23,11 @@
 #trib-titulo { color: #ff4c4c; border-bottom: 1px solid #555; padding-bottom: 10px; margin-top: 0; }
 #trib-acciones { display: flex; justify-content: center; gap: 15px; margin-top: 25px; flex-wrap: wrap; }
 
-/* FIX TÁCTICO: Vinculación sagrada del #tiempo-tooltip con Fe y Orden */
 #fe-tooltip, #orden-tooltip, #tiempo-tooltip {
     display: none; position: absolute; top: 40px; left: 0; background-color: #1a1a1a; border: 1px solid #ffaa00; color: #d4c4a8; padding: 10px; width: 250px; z-index: 1000; font-size: 14px; border-radius: 5px; box-shadow: 0 5px 15px rgba(0,0,0,0.8); text-align: left; font-weight: normal; white-space: normal;
 }
+
+#fe-tooltip { left: auto; right: 0; }
 
 #fe-overlay { z-index: 2000; background-color: rgba(0, 0, 0, 0.9); }
 #fe-box { background-color: #1a1a1a; border: 2px solid #ffaa00; padding: 30px; width: 500px; max-width: 90%; text-align: center; border-radius: 5px; box-shadow: 0 0 40px rgba(255, 170, 0, 0.3); color: #d4c4a8; font-family: 'Georgia', serif; }
@@ -41,118 +43,129 @@
     background-color: #1a1a1a; border: 2px solid #888; padding: 30px; width: 600px; max-width: 90%; position: relative; text-align: center; border-radius: 5px; color: #d4c4a8; font-family: 'Georgia', serif;
 }
 
-#detalle-unidad-box {
-    background-color: #1a1a1a; border: 2px solid #c0c0c0; padding: 30px; width: 1000px; max-width: 95%; position: relative; border-radius: 5px; color: #d4c4a8; font-family: 'Georgia', serif;
-}
-
 #inventario-box, #campana-box { border-color: #4c88ff; box-shadow: 0 0 40px rgba(76, 136, 255, 0.3); }
-#tienda-box { border-color: #c0c0c0; box-shadow: 0 0 40px rgba(192, 192, 192, 0.3); }
+#tienda-box { border-color: #c0c0c0; box-shadow: 0 0 40px rgba(192, 192, 192, 0.3); padding: 20px !important; }
 
 #inv-titulo { color: #4c88ff; border-bottom: 1px solid #555; padding-bottom: 10px; margin-top: 0; }
 #campana-titulo { color: #ffaa00; border-bottom: 1px solid #555; padding-bottom: 10px; margin-top: 0; }
 #tienda-titulo { color: #c0c0c0; border-bottom: 1px solid #555; padding-bottom: 10px; margin-top: 0; }
 
-#inv-contenido, #tienda-contenido, #campana-contenido { min-height: 150px; margin: 20px 0; padding: 10px; background-color: #111; border: 1px inset #333; }
+#inv-contenido, #campana-contenido { min-height: 150px; margin: 20px 0; padding: 10px; background-color: #111; border: 1px inset #333; }
 
-.close-btn { position: absolute; top: 15px; right: 20px; cursor: pointer; font-size: 22px; color: #555; transition: 0.3s; }
+.close-btn { position: absolute; top: 15px; right: 20px; cursor: pointer; font-size: 22px; color: #555; transition: 0.3s; z-index: 2800;}
 .close-btn:hover { color: #ff4c4c; text-shadow: 0 0 10px #ff4c4c; }
 
-#campana-jerarquia-container {
-    display: flex; flex-direction: column; gap: 20px;
-}
+#campana-jerarquia-container { display: flex; flex-direction: column; gap: 20px; }
+.jerarquia-vanguardia { display: flex; gap: 20px; align-items: flex-start; }
 
-.jerarquia-vanguardia {
-    display: flex; gap: 20px; align-items: flex-start;
-}
+.jerarquia-comandante-box { width: 250px; flex-shrink: 0; border: 2px solid #ff4c4c; border-radius: 5px; padding: 15px; background-color: #111; text-align: center; }
+.jerarquia-comandante-img { width: 180px; height: auto; border: 1px solid #ff4c4c; border-radius: 3px; }
+.jerarquia-comandante-desc { margin-top: 10px; font-size: 15px; color: #aaa; font-style: italic; }
 
-.jerarquia-comandante-box {
-    width: 250px; flex-shrink: 0; border: 2px solid #ff4c4c; border-radius: 5px; padding: 15px; background-color: #111; text-align: center;
-}
-.jerarquia-comandante-img {
-    width: 180px; border: 1px solid #ff4c4c; border-radius: 3px;
-}
-.jerarquia-comandante-desc {
-    margin-top: 10px; font-size: 15px; color: #aaa; font-style: italic;
-}
+.jerarquia-lore-box { flex-grow: 1; border: 2px solid #88ff88; border-radius: 5px; padding: 20px; background-color: #111; display: flex; flex-direction: column; justify-content: center; min-height: 200px; }
+.jerarquia-lore-titulo { color: #88ff88; font-size: 20px; margin-top: 0; margin-bottom: 10px; font-family: 'Cinzel', serif; letter-spacing: 3px; border-bottom: 1px solid #88ff8844; padding-bottom: 10px;}
+.jerarquia-lore-texto { font-size: 17px; line-height: 1.6; }
 
-.jerarquia-lore-box {
-    flex-grow: 1; border: 2px solid #88ff88; border-radius: 5px; padding: 20px; background-color: #111; display: flex; flex-direction: column; justify-content: center; min-height: 200px;
-}
-.jerarquia-lore-titulo {
-    color: #88ff88; font-size: 20px; margin-top: 0; margin-bottom: 10px;
-}
-.jerarquia-lore-texto {
-    font-size: 17px; line-height: 1.6;
-}
+.jerarquia-tropa-box { background-color: #111; border: 1px inset #333; padding: 15px; border-radius: 5px; }
 
-.jerarquia-tropa-box {
-    background-color: #111; border: 1px inset #333; padding: 15px; border-radius: 5px;
-}
+.grid-desplegado { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
 
-.grid-desplegado {
-    display: flex; flex-wrap: wrap; gap: 12px; justify-content: center;
-}
+.item-card-desplegado { background-color: #1a1a1a; border: 1px solid #444; border-radius: 3px; padding: 8px; width: 120px; text-align: center; }
+.item-card-desplegado img { width: 100px !important; height: 100px !important; object-fit: contain !important; border-radius: 2px !important; background-color: #000; }
+.item-card-desplegado .unidad-nombre-aleatorio { margin-top: 8px; font-size: 14px; color: #aaa; }
 
-.item-card-desplegado {
-    background-color: #1a1a1a; border: 1px solid #444; border-radius: 3px; padding: 8px; width: 120px; text-align: center;
-}
-.item-card-desplegado img {
-    width: 100px; border-radius: 2px;
-}
-.item-card-desplegado .unidad-nombre-aleatorio {
-    margin-top: 8px; font-size: 14px; color: #aaa;
-}
+#detalle-unidad-box { background-color: #1a1a1a; border: 2px solid #555; padding: 40px; width: 1050px; max-width: 95%; height: 85vh; overflow-y: auto; position: relative; border-radius: 8px; box-shadow: 0 0 50px #000; }
+#detalle-unidad-box .close-btn { top: 20px; right: 25px; background: rgba(0,0,0,0.5); padding: 5px 10px; border-radius: 5px; z-index: 2700; }
 
-/* === MODALS.CSS - ACTUALIZADO CON DISEÑO DE PERGAMINO === */
-#detalle-unidad-box {
-    background-color: #1a1a1a; border: 2px solid #555; padding: 40px; 
-    width: 1050px; max-width: 95%; height: 85vh; overflow-y: auto;
-    position: relative; border-radius: 8px; box-shadow: 0 0 50px #000;
-}
+.scroll-efecto-rojo { border: 3px double #8b0000; border-radius: 10px; background: linear-gradient(135deg, #1a0505 0%, #2b0a0a 100%); box-shadow: inset 0 0 15px #ff4c4c44, 0 5px 15px rgba(0,0,0,0.5); }
+.label-puesto-rojo { background: #8b0000; color: white; font-size: 12px; letter-spacing: 2px; padding: 3px; border-radius: 3px; margin-bottom: 15px; }
+.nombre-comandante-txt { color: #ff4c4c; font-size: 20px; font-weight: bold; margin: 10px 0; text-shadow: 1px 1px 2px #000; }
 
-#detalle-unidad-box .close-btn {
-    top: 20px; right: 25px; background: rgba(0,0,0,0.5); padding: 5px 10px; border-radius: 5px; z-index: 2700;
-}
-
-.scroll-efecto-rojo {
-    border: 3px double #8b0000; border-radius: 10px;
-    background: linear-gradient(135deg, #1a0505 0%, #2b0a0a 100%);
-    box-shadow: inset 0 0 15px #ff4c4c44, 0 5px 15px rgba(0,0,0,0.5);
-}
-.label-puesto-rojo {
-    background: #8b0000; color: white; font-size: 12px; letter-spacing: 2px;
-    padding: 3px; border-radius: 3px; margin-bottom: 15px;
-}
-.nombre-comandante-txt {
-    color: #ff4c4c; font-size: 20px; font-weight: bold; margin: 10px 0;
-    text-shadow: 1px 1px 2px #000;
-}
-
-.scroll-efecto-verde {
-    border: 3px double #2d5a2d; border-radius: 10px;
-    background: linear-gradient(135deg, #0a1a0a 0%, #0f2b0f 100%);
-    box-shadow: inset 0 0 15px #88ff8822, 0 5px 15px rgba(0,0,0,0.5);
-}
-.jerarquia-lore-titulo {
-    color: #88ff88; font-family: 'Cinzel', serif; letter-spacing: 3px;
-    border-bottom: 1px solid #88ff8844; padding-bottom: 10px;
-}
+.scroll-efecto-verde { border: 3px double #2d5a2d; border-radius: 10px; background: linear-gradient(135deg, #0a1a0a 0%, #0f2b0f 100%); box-shadow: inset 0 0 15px #88ff8822, 0 5px 15px rgba(0,0,0,0.5); }
 .mando-directo-txt { color: #88ff88; font-size: 15px; text-align: left; }
 
-.soldier-frame {
-    border: 1px solid #333; background: #111;
-    transition: 0.2s; box-shadow: 3px 3px 10px rgba(0,0,0,0.5);
-}
+.soldier-frame { border: 1px solid #333; background: #111; transition: 0.2s; box-shadow: 3px 3px 10px rgba(0,0,0,0.5); }
 .soldier-frame:hover { border-color: #ffaa00; transform: translateY(-3px); }
-.unidad-nombre-aleatorio {
-    background: rgba(0,0,0,0.6); margin-top: 5px; color: #d4c4a8;
-    font-size: 13px; border-top: 1px solid #444; padding: 4px;
-}
+.unidad-nombre-aleatorio { background: rgba(0,0,0,0.6); margin-top: 5px; color: #d4c4a8; font-size: 13px; border-top: 1px solid #444; padding: 4px; }
 
-.biografia-unica-frame {
-    text-align: center; border: 2px solid #ffaa00; padding: 30px;
-    border-radius: 15px; background: #151515; box-shadow: inset 0 0 30px #ffaa0011;
-}
+.biografia-unica-frame { text-align: center; border: 2px solid #ffaa00; padding: 30px; border-radius: 15px; background: #151515; box-shadow: inset 0 0 30px #ffaa0011; }
 .img-bio-grande { width: 220px; border: 3px double #ffaa00; border-radius: 8px; margin-bottom: 20px; }
 .bio-titulo-oro { color: #ffaa00; font-size: 32px; text-shadow: 2px 2px 4px #000; margin-bottom: 20px; }
 .bio-texto-scroll { max-width: 700px; margin: 0 auto; line-height: 1.8; font-style: italic; font-size: 18px; color: #d4c4a8; }
+
+/* === RECLUTAMIENTO / TIENDA === */
+.tienda-box-ext { width: 850px !important; max-height: 92vh !important; overflow-y: auto; padding: 20px !important; }
+#tienda-titulo { color: #ffaa00; margin-bottom: 5px; } 
+
+#tienda-carrito, #carrito-objetos-container { background:#111; padding: 12px 20px !important; border-radius: 8px; border: 2px solid #555; margin-top: 10px !important; }
+#tienda-carrito h4, #carrito-objetos-container h4 { margin-top:0; color:#88ff88; border-bottom: 1px solid #333; padding-bottom: 5px; text-align: left; margin-bottom: 5px; }
+
+.carrito-items-ext { min-height: 70px !important; padding: 5px 15px !important; align-items: center; justify-content: flex-start; overflow-x: auto; flex-wrap: nowrap; gap: 15px; }
+.carrito-vacio { color:#555; font-style: italic; width:100%; text-align:center; display: block;}
+.carrito-footer { margin-top: 10px !important; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #333; padding-top: 10px !important; }
+.carrito-totales { text-align: left; line-height: 1.5; }
+.carrito-totales .costo { color:#ff4c4c; font-weight:bold; font-size: 16px; }
+.carrito-totales .fondo { color:#88ff88; font-size: 16px; }
+.carrito-botones { display: flex; gap: 10px; }
+.btn-disolver { background:#550000; border: 1px solid #ff4c4c; font-size:14px; padding: 8px 15px; color:#d4c4a8; cursor: pointer; transition: 0.2s; }
+.btn-disolver:hover { background: #ff4c4c; color: #111; }
+.btn-sellar { background:#2d5a2d; border: 1px solid #88ff88; font-size:14px; padding: 8px 15px; color:#fff; cursor: pointer; transition: 0.2s; }
+.btn-sellar:hover { background: #88ff88; color: #111; }
+
+@keyframes pulsoArmada {
+    0% { color: #4c88ff; text-shadow: 0 0 5px #4c88ff; }
+    50% { color: #fff; text-shadow: 0 0 15px #fff; }
+    100% { color: #4c88ff; text-shadow: 0 0 5px #4c88ff; }
+}
+.hover-armada-container { display: inline-block; position: relative; cursor: help; }
+.texto-pulso { animation: pulsoArmada 2s infinite; font-size: 18px; font-weight: bold; padding: 5px 10px; display: inline-block; }
+.tooltip-armada {
+    display: none; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); background: rgba(10, 10, 15, 0.98);
+    border: 2px solid #4c88ff; padding: 15px; border-radius: 8px; z-index: 500; box-shadow: 0 10px 30px rgba(0,0,0,1);
+    min-width: 380px; cursor: default; animation: none !important; text-shadow: none !important;
+}
+.hover-armada-container:hover .tooltip-armada { display: block; }
+
+/* === CRÓNICAS === */
+#cronicas-overlay { z-index: 2600; }
+#cronicas-box { background-color: #1a1a1a; border: 2px solid #ffaa00; padding: 30px; width: 800px; max-width: 95%; height: 80vh; display: flex; flex-direction: column; position: relative; border-radius: 5px; color: #d4c4a8; font-family: 'Georgia', serif; box-shadow: 0 0 40px rgba(255, 170, 0, 0.3); }
+#cronicas-titulo { color: #ffaa00; border-bottom: 1px solid #555; padding-bottom: 10px; margin-top: 0; text-align: center; }
+#cronicas-contenido { flex-grow: 1; overflow-y: auto; padding: 15px; background-color: #111; border: 1px inset #333; margin-top: 20px; text-align: left; }
+.cronica-vacia { text-align: center; color: #888; font-style: italic; margin-top: 20px; display: block;}
+
+/* FIX TÁCTICO: Clases extirpadas de cronicas.js y centralizadas aquí */
+.cronica-carpeta-dia { border: 2px solid #553311; border-radius: 5px; margin-bottom: 15px; background: #0a0a0a; box-shadow: 0 5px 15px rgba(0,0,0,0.8); }
+.cronica-header-dia { background: linear-gradient(to right, #2a1f10, #111); padding: 12px 20px; cursor: pointer; color: #ffd700; font-family: 'Cinzel', serif; font-size: 16px; border-bottom: 1px solid #553311; display: flex; justify-content: space-between; align-items: center; transition: 0.3s; }
+.cronica-header-dia:hover { background: linear-gradient(to right, #3a2a15, #222); text-shadow: 0 0 5px #ffaa00; }
+
+.cronica-carpeta-hora { border: 1px solid #333; margin: 10px 15px; border-radius: 4px; background: #151515; border-left: 3px solid #a3d9a5; }
+.cronica-header-hora { background: #1a1a1a; padding: 10px 15px; cursor: pointer; color: #a3d9a5; font-family: 'Georgia', serif; font-size: 15px; display: flex; justify-content: space-between; align-items: center; transition: 0.2s; }
+.cronica-header-hora:hover { background: #252525; color: #fff; }
+
+.cronica-contenido-dia { display: none; padding-bottom: 10px; }
+.cronica-contenido-hora { display: none; padding: 15px; }
+
+.icon-toggle { font-size: 14px; transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); }
+.abierto > .icon-toggle { transform: rotate(90deg); color: #fff; }
+
+/* === FORMACIÓN / DESPLIEGUE TÁCTICO === */
+#formacion-overlay { z-index: 3000; background:rgba(0,0,0,0.95); }
+#formacion-box { background:#1a1a1a; border:3px double #ffaa00; border-radius:10px; padding:20px; width:950px; max-width:98%; text-align:center; color:#d4c4a8; transition: width 0.5s; position: relative; }
+#titulo-formacion { color:#ffaa00; margin-top:0; }
+.formacion-layout { display:flex; justify-content:space-between; gap:15px; align-items:center; position:relative; height: 540px; }
+#formacion-roster { width:210px; flex-shrink:0; background:#0a0a0a; padding:15px; border:2px solid #333; border-radius:8px; height:540px; overflow-y:auto; box-sizing:border-box; }
+#titulo-roster { color:#88ff88; margin-top:0; border-bottom:1px solid #333; padding-bottom:10px; }
+#formacion-lista-tropas { display:flex; flex-wrap:wrap; gap:10px; justify-content:center; min-height: 100px; }
+.formacion-controles { margin-top:20px; height: 50px; display: flex; justify-content: center; gap: 15px;}
+
+#btn-iniciar-formacion { background:#8b0000; border:2px solid #ffaa00; color:white; font-size:18px; padding:10px 30px; letter-spacing: 2px; cursor: pointer; transition: 0.2s; }
+#btn-iniciar-formacion:hover { background: #ffaa00; color: #000; }
+
+#btn-iniciar-formacion-picas { background:#2d5a2d; border:2px solid #88ff88; color:white; font-size:18px; padding:10px 30px; letter-spacing: 2px; cursor: pointer; transition: 0.2s; }
+#btn-iniciar-formacion-picas:hover { background: #88ff88; color: #000; }
+
+#btn-tirar-dados { background:#ffaa00; border:2px solid #fff; color:#000; font-size:18px; font-weight:bold; padding:10px 30px; box-shadow:0 0 15px #ffaa00; cursor: pointer; transition: 0.2s; }
+#btn-tirar-dados:hover { transform: scale(1.05); }
+
+#btn-ver-reporte { background:#111; border:2px solid #88ff88; color:#88ff88; font-size:18px; padding:10px 30px; cursor: pointer; transition: 0.2s; }
+#btn-ver-reporte:hover { background: #88ff88; color: #111; }

@@ -20,14 +20,28 @@ document.addEventListener("DOMContentLoaded", () => {
             display: flex; flex-direction: column; align-items: flex-end;
         }
 
+        /* Panel maestro visible para no cortar los acordeones */
         #hacktester-panel {
             background: rgba(0,0,0,0.9); border: 2px solid #00ff00; color: #00ff00; 
             padding: 15px; font-family: monospace; font-size: 12px; display: none; 
-            width: 250px; border-radius: 8px; box-shadow: 0 0 15px #00ff00; overflow: visible;
-            margin-bottom: 15px; 
+            width: 280px; border-radius: 8px; box-shadow: 0 0 15px #00ff00; 
+            overflow: visible; margin-bottom: 15px; 
         }
         
         #ht-master-wrapper:hover #hacktester-panel { display: block; }
+
+        /* Zona de scroll interna exclusiva para los botones */
+        .ht-scroll-zone {
+            max-height: 55vh; 
+            overflow-y: auto; 
+            overflow-x: hidden; 
+            padding-right: 8px; 
+            margin-bottom: 10px;
+            border-bottom: 1px dashed rgba(0, 255, 0, 0.4);
+            padding-bottom: 10px;
+        }
+        .ht-scroll-zone::-webkit-scrollbar { width: 5px; }
+        .ht-scroll-zone::-webkit-scrollbar-thumb { background: #00ff00; border-radius: 3px; }
 
         #hacktester-panel h3 { margin: 0 0 10px 0; border-bottom: 1px solid #00ff00; padding-bottom: 5px; text-align: center; font-size: 14px; }
         #hacktester-panel b { color: #fff; display: block; margin-top: 10px; }
@@ -52,7 +66,7 @@ document.addEventListener("DOMContentLoaded", () => {
         .ht-label-yellow { border-color: #ff0; color: #ff0; }
         .ht-label-red { border-color: #ff4c4c; color: #ff4c4c; font-weight: bold; }
         
-        .ht-dropdown-nav { position: relative; background: #111; border: 1px solid #f0f; margin-bottom: 10px; border-radius: 3px; margin-top: 10px; }
+        .ht-dropdown-nav { position: relative; background: #111; border: 1px solid #f0f; border-radius: 3px; }
         .ht-nav-title { padding: 8px; color: #f0f; font-weight: bold; cursor: help; text-align: center; }
         .ht-nav-content { display: none; position: absolute; right: 100%; bottom: -1px; background: #000; border: 1px solid #555; border-radius: 3px; white-space: nowrap; z-index: 10001; }
         .ht-dropdown-nav:hover > .ht-nav-content { display: block; }
@@ -98,41 +112,56 @@ document.addEventListener("DOMContentLoaded", () => {
             <div id="hacktester-panel">
                 <h3>🛠️ MODO TESTER</h3>
                 
-                <b>[TROPAS NOBLES]</b>
-                <div class="ht-row"><button class="ht-btn ht-btn-cab" onclick="ht_addTropa('caballero_noble')">+ Cab.</button><button class="ht-btn ht-btn-cab" onclick="ht_removeTropa('caballero_noble')">- Cab.</button></div>
-                <div class="ht-row"><button class="ht-btn ht-btn-cab" onclick="ht_addTropa('piquero_noble')">+ Piq.</button><button class="ht-btn ht-btn-cab" onclick="ht_removeTropa('piquero_noble')">- Piq.</button></div>
-                <div class="ht-row-mb"><button class="ht-btn ht-btn-cab" onclick="ht_addTropa('ballestero_noble')">+ Ball.</button><button class="ht-btn ht-btn-cab" onclick="ht_removeTropa('ballestero_noble')">- Ball.</button></div>
-                
-                <b>[TROPAS MERCENARIAS]</b>
-                <div class="ht-row"><button class="ht-btn ht-btn-mer" onclick="ht_addTropa('caballero_mercenario')">+ Cab.</button><button class="ht-btn ht-btn-mer" onclick="ht_removeTropa('caballero_mercenario')">- Cab.</button></div>
-                <div class="ht-row"><button class="ht-btn ht-btn-mer" onclick="ht_addTropa('piquero_mercenario')">+ Piq.</button><button class="ht-btn ht-btn-mer" onclick="ht_removeTropa('piquero_mercenario')">- Piq.</button></div>
-                <div class="ht-row-mb"><button class="ht-btn ht-btn-mer" onclick="ht_addTropa('ballestero_mercenario')">+ Ball.</button><button class="ht-btn ht-btn-mer" onclick="ht_removeTropa('ballestero_mercenario')">- Ball.</button></div>
+                <div class="ht-scroll-zone">
+                    <b>[TROPAS NOBLES]</b>
+                    <div class="ht-row"><button class="ht-btn ht-btn-cab" onclick="ht_addTropa('caballero_noble')">+ Cab.</button><button class="ht-btn ht-btn-cab" onclick="ht_removeTropa('caballero_noble')">- Cab.</button></div>
+                    <div class="ht-row"><button class="ht-btn ht-btn-cab" onclick="ht_addTropa('piquero_noble')">+ Piq.</button><button class="ht-btn ht-btn-cab" onclick="ht_removeTropa('piquero_noble')">- Piq.</button></div>
+                    <div class="ht-row-mb"><button class="ht-btn ht-btn-cab" onclick="ht_addTropa('ballestero_noble')">+ Ball.</button><button class="ht-btn ht-btn-cab" onclick="ht_removeTropa('ballestero_noble')">- Ball.</button></div>
+                    
+                    <b>[TROPAS MERCENARIAS]</b>
+                    <div class="ht-row"><button class="ht-btn ht-btn-mer" onclick="ht_addTropa('caballero_mercenario')">+ Cab.</button><button class="ht-btn ht-btn-mer" onclick="ht_removeTropa('caballero_mercenario')">- Cab.</button></div>
+                    <div class="ht-row"><button class="ht-btn ht-btn-mer" onclick="ht_addTropa('piquero_mercenario')">+ Piq.</button><button class="ht-btn ht-btn-mer" onclick="ht_removeTropa('piquero_mercenario')">- Piq.</button></div>
+                    <div class="ht-row-mb"><button class="ht-btn ht-btn-mer" onclick="ht_addTropa('ballestero_mercenario')">+ Ball.</button><button class="ht-btn ht-btn-mer" onclick="ht_removeTropa('ballestero_mercenario')">- Ball.</button></div>
 
-                <b>[SALUD DEL EJÉRCITO]</b>
-                <div class="ht-row-mb"><button class="ht-btn ht-btn-dmg" onclick="ht_modVidasGeneral(-1)">-1 Vida</button><button class="ht-btn ht-btn-heal" onclick="ht_modVidasGeneral(1)">+1 Vida</button></div>
-                
-                <b>[RECURSOS Y FE]</b>
-                <div class="ht-row"><button class="ht-btn ht-btn-mer" onclick="ht_addDenarios(50)">+50 Den.</button><button class="ht-btn ht-btn-mer" onclick="ht_addDenarios(-10)">-10 Den.</button></div>
-                <div class="ht-row-mb"><button class="ht-btn ht-btn-fe" onclick="ht_modFe(50)">+50 Fe</button><button class="ht-btn ht-btn-fe" onclick="ht_modFe(-10)">-10 Fe</button></div>
+                    <b>[SALUD DEL EJÉRCITO]</b>
+                    <div class="ht-row-mb"><button class="ht-btn ht-btn-dmg" onclick="ht_modVidasGeneral(-1)">-1 Vida</button><button class="ht-btn ht-btn-heal" onclick="ht_modVidasGeneral(1)">+1 Vida</button></div>
+                    
+                    <b>[RECURSOS Y FE]</b>
+                    <div class="ht-row"><button class="ht-btn ht-btn-mer" onclick="ht_addDenarios(50)">+50 Den.</button><button class="ht-btn ht-btn-mer" onclick="ht_addDenarios(-10)">-10 Den.</button></div>
+                    <div class="ht-row-mb"><button class="ht-btn ht-btn-fe" onclick="ht_modFe(50)">+50 Fe</button><button class="ht-btn ht-btn-fe" onclick="ht_modFe(-10)">-10 Fe</button></div>
 
-                <b>[EVENTOS Y ESTADO]</b>
-                <div class="ht-row-mb">
-                    <button class="ht-btn ht-btn-trib" onclick="ht_lanzarTribulacion()">Lanza Trib.</button>
-                    <button class="ht-btn ht-btn-verfe" onclick="ht_mostrarFeActual()">Fe Actual</button>
-                </div>
+                    <b>[LOGÍSTICA Y SUMINISTROS]</b>
+                    <div class="ht-row">
+                        <button class="ht-btn ht-btn-mer" onclick="ht_addLotePan()">+10 Pan</button>
+                        <button class="ht-btn ht-btn-fe" style="border-color:#4c88ff; color:#4c88ff;" onclick="ht_addLoteCerveza()">+4 Cerveza</button>
+                    </div>
+                    <div class="ht-row-mb" style="gap: 2px;">
+                        <button class="ht-btn ht-btn-dmg" style="padding:5px 2px;" onclick="ht_modHambre(-1)">-1🍖</button>
+                        <button class="ht-btn ht-btn-heal" style="padding:5px 2px;" onclick="ht_modHambre(1)">+1🍖</button>
+                        <button class="ht-btn ht-btn-dmg" style="border-color:#4c88ff; background:#1a3055; padding:5px 2px;" onclick="ht_modSed(-1)">-1🍺</button>
+                        <button class="ht-btn ht-btn-fe" style="border-color:#4c88ff; background:#214073; color:#fff; padding:5px 2px;" onclick="ht_modSed(1)">+1🍺</button>
+                    </div>
 
-                <b style="display: flex; align-items: center; justify-content: flex-start; gap: 8px;">
-                    <input type="checkbox" onclick="ht_toggleAllSettings(this.checked)" style="cursor:pointer; transform: scale(1.2);" title="Marcar/Desmarcar Todos"> 
-                    <span>[AJUSTES Y ESCENAS]</span>
-                </b>
-                <label class="ht-label ht-label-yellow"><input type="checkbox" id="ht-top-layer" class="ht-ajuste-cb" onchange="ht_toggleTopLayer(this.checked)"> 👑 Panel Supremo</label>
-                <label class="ht-label ht-label-cyan"><input type="checkbox" id="ht-auto-fill" class="ht-ajuste-cb"> 🎲 Auto-Despliegue Aleatorio</label>
-                <label class="ht-label ht-label-orange"><input type="checkbox" id="ht-auto-combat" class="ht-ajuste-cb"> ⚡ Combate Automático</label>
-                <label class="ht-label ht-label-yellow" style="color: #ff0; border-color: #ff0;"><input type="checkbox" id="ht-skip-cine" class="ht-ajuste-cb"> 🎬 Omitir Cinemáticas</label>
-                <label class="ht-label"><input type="checkbox" id="ht-textos-planos" class="ht-ajuste-cb"> 📜 Textos Planos (Sin VN)</label>
-                <label class="ht-label ht-label-red"><input type="checkbox" id="ht-disable-popups" class="ht-ajuste-cb"> 🚫 Omitir Emergentes</label>
+                    <b>[EVENTOS Y ESTADO]</b>
+                    <div class="ht-row-mb">
+                        <button class="ht-btn ht-btn-trib" onclick="ht_lanzarTribulacion()">Lanza Trib.</button>
+                        <button class="ht-btn ht-btn-verfe" onclick="ht_mostrarFeActual()">Fe Actual</button>
+                    </div>
 
-                <div style="display: flex; gap: 5px; margin-top: 10px; margin-bottom: 10px;">
+                    <b style="display: flex; align-items: center; justify-content: flex-start; gap: 8px;">
+                        <input type="checkbox" onclick="ht_toggleAllSettings(this.checked)" style="cursor:pointer; transform: scale(1.2);" title="Marcar/Desmarcar Todos"> 
+                        <span>[AJUSTES Y ESCENAS]</span>
+                    </b>
+                    <label class="ht-label"><input type="checkbox" id="ht-mute-audio" class="ht-ajuste-cb" onchange="ht_toggleMute(this.checked)"> 🔇 Mutear Todo el Juego</label>
+                    <label class="ht-label ht-label-yellow"><input type="checkbox" id="ht-top-layer" class="ht-ajuste-cb" onchange="ht_toggleTopLayer(this.checked)"> 👑 Panel Supremo</label>
+                    <label class="ht-label ht-label-yellow"><input type="checkbox" id="ht-sin-hambre" class="ht-ajuste-cb"> 🍖 Sin Hambre (Inmune)</label>
+                    <label class="ht-label ht-label-cyan"><input type="checkbox" id="ht-sin-sed" class="ht-ajuste-cb"> 🍺 Sin Sed (Inmune)</label>
+                    <label class="ht-label ht-label-cyan"><input type="checkbox" id="ht-auto-fill" class="ht-ajuste-cb"> 🎲 Auto-Despliegue</label>
+                    <label class="ht-label ht-label-orange"><input type="checkbox" id="ht-auto-combat" class="ht-ajuste-cb"> ⚡ Combate Automático</label>
+                    <label class="ht-label ht-label-yellow" style="color: #ff0; border-color: #ff0;"><input type="checkbox" id="ht-skip-cine" class="ht-ajuste-cb"> 🎬 Omitir Cinemáticas</label>
+                    <label class="ht-label"><input type="checkbox" id="ht-textos-planos" class="ht-ajuste-cb"> 📜 Textos Planos</label>
+                    <label class="ht-label ht-label-red"><input type="checkbox" id="ht-disable-popups" class="ht-ajuste-cb"> 🚫 Omitir Emergentes</label>
+                </div> <div style="display: flex; gap: 5px; margin-bottom: 10px;">
                     <div class="ht-dropdown-nav-time">
                         <div class="ht-nav-title">⏳ Hora...</div>
                         <div class="ht-nav-content">
@@ -177,6 +206,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         </div>
                     </div>
                 </div>
+
             </div>
             <button id="btn-open-ht">🛠️</button>
         </div>
@@ -185,6 +215,108 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // 2. LÓGICA DEL HACKTESTER
+
+window.htAudioInterceptado = false;
+function ht_toggleMute(estado) {
+    window.htMuteActivo = estado;
+    
+    document.querySelectorAll('audio, video').forEach(media => media.muted = estado);
+    
+    if (!window.htAudioInterceptado) {
+        window.htAudioInterceptado = true;
+        const originalAudioPlay = window.Audio.prototype.play;
+        window.Audio.prototype.play = function() {
+            this.muted = window.htMuteActivo;
+            return originalAudioPlay.apply(this, arguments);
+        };
+    }
+    
+    if (typeof AudioManager !== 'undefined') {
+        if(AudioManager.bgmActual) AudioManager.bgmActual.muted = estado;
+    }
+    
+    console.log("HackTester: Juego " + (estado ? "MUTEADO ABSOLUTAMENTE" : "CON SONIDO RESTAURADO"));
+}
+
+function ht_addLotePan() {
+    ht_checkInit();
+    let diaActual = (typeof window.RelojDivino !== 'undefined') ? window.RelojDivino.diaActualIndex : 0;
+    let horaActual = (typeof window.RelojDivino !== 'undefined') ? window.RelojDivino.indiceActual : 0;
+    let fechaActualStr = (typeof window.RelojDivino !== 'undefined') ? window.RelojDivino.obtenerFechaActual().fecha : "Fecha Tester";
+    for(let i=0; i<10; i++) {
+        jugador.inventario.push({ id: "pan_cevada", diaCompra: diaActual, horaCompra: horaActual, fechaTexto: fechaActualStr });
+    }
+    if(typeof actualizarHUD === "function") actualizarHUD();
+    console.log("HackTester: Añadidos 10 Panes de Cevada al morral.");
+}
+
+function ht_addLoteCerveza() {
+    ht_checkInit();
+    let diaActual = (typeof window.RelojDivino !== 'undefined') ? window.RelojDivino.diaActualIndex : 0;
+    let horaActual = (typeof window.RelojDivino !== 'undefined') ? window.RelojDivino.indiceActual : 0;
+    let fechaActualStr = (typeof window.RelojDivino !== 'undefined') ? window.RelojDivino.obtenerFechaActual().fecha : "Fecha Tester";
+    for(let i=0; i<4; i++) {
+        jugador.inventario.push({ id: "cerveza_mesa", diaCompra: diaActual, horaCompra: horaActual, fechaTexto: fechaActualStr });
+    }
+    if(typeof actualizarHUD === "function") actualizarHUD();
+    console.log("HackTester: Añadidos 4 Barriles de Cerveza al morral.");
+}
+
+function ht_modHambre(cant) {
+    ht_checkInit();
+    let listas = [jugador.tropas, jugador.comandantes];
+    listas.forEach(lista => {
+        if(lista) {
+            lista.forEach(t => {
+                if (t.hp > 0) {
+                    if (t.hambre === undefined) t.hambre = 5;
+                    t.hambre += cant;
+                    if (t.hambre > 5) t.hambre = 5;
+                    if (t.hambre < 0) t.hambre = 0;
+                }
+            });
+        }
+    });
+    
+    if(typeof actualizarHUD === "function") actualizarHUD();
+    if(typeof renderizarMenuAlimentar === "function" && document.getElementById('alimentar-overlay')?.style.display === 'flex') {
+        renderizarMenuAlimentar();
+    }
+    if(typeof generarRoster === "function" && document.getElementById('formacion-overlay')?.style.display === 'flex') {
+        let tipo = window.formacionModoActivo === "cuna" ? "caballeros" : (window.formacionModoActivo === "sacrificio" ? "ballesteros" : "piqueros");
+        let filtro = window.formacionModoActivo === "sacrificio" ? "noble" : null;
+        generarRoster(tipo, filtro);
+    }
+    console.log("HackTester: Hambre modificada globalmente (" + (cant>0?"+":"") + cant + ")");
+}
+
+function ht_modSed(cant) {
+    ht_checkInit();
+    let listas = [jugador.tropas, jugador.comandantes];
+    listas.forEach(lista => {
+        if(lista) {
+            lista.forEach(t => {
+                if (t.hp > 0) {
+                    if (t.sed === undefined) t.sed = 3;
+                    t.sed += cant;
+                    if (t.sed > 3) t.sed = 3;
+                    if (t.sed < 0) t.sed = 0;
+                }
+            });
+        }
+    });
+    
+    if(typeof actualizarHUD === "function") actualizarHUD();
+    if(typeof renderizarMenuAlimentar === "function" && document.getElementById('alimentar-overlay')?.style.display === 'flex') {
+        renderizarMenuAlimentar();
+    }
+    if(typeof generarRoster === "function" && document.getElementById('formacion-overlay')?.style.display === 'flex') {
+        let tipo = window.formacionModoActivo === "cuna" ? "caballeros" : (window.formacionModoActivo === "sacrificio" ? "ballesteros" : "piqueros");
+        let filtro = window.formacionModoActivo === "sacrificio" ? "noble" : null;
+        generarRoster(tipo, filtro);
+    }
+    console.log("HackTester: Sed modificada globalmente (" + (cant>0?"+":"") + cant + ")");
+}
 
 function ht_toggleTopLayer(estado) {
     let wrapper = document.getElementById("ht-master-wrapper");
@@ -229,10 +361,32 @@ function ht_toggleAllSettings(estado) {
     document.querySelectorAll('.ht-ajuste-cb').forEach(cb => {
         cb.checked = estado;
         if(cb.id === "ht-top-layer") ht_toggleTopLayer(estado);
+        if(cb.id === "ht-mute-audio") ht_toggleMute(estado);
     });
 }
 
 function ht_checkInit() {
+    // FIX TÁCTICO: Reactivar TODOS los elementos visuales de la UI si se brincaron en la cinemática
+    let hudPrincipal = document.getElementById("hud");
+    if (hudPrincipal) hudPrincipal.style.display = "flex";
+
+    let actionArea = document.getElementById("action-area");
+    if (actionArea) actionArea.style.display = "flex";
+
+    let storyArea = document.getElementById("story-area");
+    if (storyArea) storyArea.style.overflowY = "auto";
+
+    // Quitar opacidades y bloqueos de eventos en todo el HUD
+    let idsOpacos = ["btn-nombre-hud", "btn-tienda-hud", "stat-tiempo-container", "stat-fe-container"];
+    idsOpacos.forEach(id => {
+        let el = document.getElementById(id);
+        if (el) {
+            el.style.opacity = "1";
+            el.style.pointerEvents = "auto";
+            el.style.display = "flex";
+        }
+    });
+
     if(!jugador.nombre || jugador.nombre === "Recluta Anónimo" || jugador.nombre === "...") {
         jugador.nombre = "Lord Tester";
         jugador.orden = "Santísima Trinidad";
@@ -262,6 +416,8 @@ function ht_checkInit() {
 
     inventarioDesbloqueado = true;
     tiendaDesbloqueada = true; 
+    cronicasDesbloqueado = true; 
+    
     let flecha = document.getElementById("flecha-inventario");
     if(flecha) flecha.style.display = "inline";
     
@@ -280,8 +436,8 @@ function ht_checkInit() {
         emblemaDer.src = "assets/img/ui/cruz_trinidad.webp"; 
     }
 
-    if (typeof RelojDivino !== 'undefined' && RelojDivino.indiceActual === -1) {
-        RelojDivino.iniciar();
+    if (typeof window.RelojDivino !== 'undefined' && window.RelojDivino.indiceActual === -1) {
+        window.RelojDivino.iniciar();
     }
 
     if(typeof actualizarHUD === "function") actualizarHUD();
@@ -351,48 +507,38 @@ function ht_modVidasGeneral(cantidad) {
 
 function ht_setReloj(hora) {
     ht_checkInit();
-    if (typeof RelojDivino !== 'undefined') {
-        RelojDivino.marchaIniciada = true; 
-        
-        let index = RelojDivino.horas.indexOf(hora);
+    if (typeof window.RelojDivino !== 'undefined') {
+        window.RelojDivino.marchaIniciada = true; 
+        let index = window.RelojDivino.horas.indexOf(hora);
         if (index !== -1) {
-            RelojDivino.indiceActual = index - 1;
-            RelojDivino.avanzarHora(); 
-            if (!RelojDivino.intervalo) RelojDivino.reanudar(); 
+            window.RelojDivino.indiceActual = index - 1;
+            window.RelojDivino.avanzarHora(); 
+            if (!window.RelojDivino.intervalo) window.RelojDivino.reanudar(); 
             console.log("HackTester: El flujo del tiempo ha sido forzado a " + hora);
         }
-    } else {
-        console.log("HackTester: El RelojDivino no está activo aún.");
     }
 }
 
 function ht_setDia(diaIndex) {
     ht_checkInit();
-    if (typeof RelojDivino !== 'undefined') {
-        RelojDivino.marchaIniciada = true; 
-        RelojDivino.diaActualIndex = diaIndex - 1;
-        RelojDivino.indiceActual = 4; // Nona
-        RelojDivino.avanzarHora(); // Salta a Vísperas y procesa el cambio de día
-        if (!RelojDivino.intervalo) RelojDivino.reanudar();
+    if (typeof window.RelojDivino !== 'undefined') {
+        window.RelojDivino.marchaIniciada = true; 
+        window.RelojDivino.diaActualIndex = diaIndex - 1;
+        window.RelojDivino.indiceActual = 4; // Nona
+        window.RelojDivino.avanzarHora(); // Salta a Vísperas y procesa el cambio de día
+        if (!window.RelojDivino.intervalo) window.RelojDivino.reanudar();
         console.log("HackTester: El flujo del tiempo ha sido forzado al Día " + (diaIndex + 1) + " en Vísperas.");
-    } else {
-        console.log("HackTester: El RelojDivino no está activo aún.");
     }
 }
 
 function ht_jumpTo(destino) {
     ht_checkInit();
     
-    if (typeof RelojDivino !== 'undefined') {
-        RelojDivino.marchaIniciada = true;
-    }
-    
     document.querySelectorAll('audio').forEach(audio => { audio.pause(); audio.currentTime = 0; });
     if(typeof AudioManager !== "undefined" && AudioManager.bgmActual) {
         AudioManager.bgmActual.pause();
     }
     
-    // FIX TÁCTICO: Limpieza rigurosa del clima antes de cualquier salto.
     if (typeof window.Clima !== "undefined" && typeof window.Clima.detenerTodo === "function") {
         window.Clima.detenerTodo();
     }
@@ -405,9 +551,11 @@ function ht_jumpTo(destino) {
     
     let animCaja = document.getElementById("animacion-escena1");
     if(animCaja) {
+         animCaja.style.display = "none";
          animCaja.style.backgroundImage = "url('assets/img/fondos/puente_fondo.webp')";
          animCaja.style.backgroundSize = "cover";
          animCaja.style.backgroundPosition = "center bottom";
+         animCaja.innerHTML = "";
     }
 
     if(destino === 'opciones_cap1') {
@@ -428,17 +576,22 @@ function ht_jumpTo(destino) {
         }
     }
 
-    // FIX TÁCTICO: Asignación inmersiva de música y clima para cada escena
     setTimeout(() => {
+        if (typeof window.RelojDivino !== 'undefined') {
+            if (window.RelojDivino.indiceActual === -1) {
+                window.RelojDivino.iniciar();
+            }
+            window.RelojDivino.marchaIniciada = true;
+            window.RelojDivino.actualizarHUD();
+        }
+
         if (typeof AudioManager !== "undefined") {
             const escenasCap1 = ['opciones_cap1', 'muro_picas', 'repliegue', 'bosque_victoria'];
             const escenasCap2 = ['inicio_cap2', 'opciones_cap2']; 
             
             if (escenasCap1.includes(destino)) {
-                // Inicia la música épica por ID, sin importar en qué punto del archivo esté declarada
                 AudioManager.playBGM('bgm-juego');
                 
-                // Asigna el clima exacto según la etapa del Capítulo 1
                 if (typeof window.Clima !== "undefined") {
                     if (destino === 'repliegue' || destino === 'bosque_victoria') {
                         if (typeof window.Clima.iniciarLluvia === "function") window.Clima.iniciarLluvia();
@@ -449,8 +602,8 @@ function ht_jumpTo(destino) {
                     }
                 }
             } else if (escenasCap2.includes(destino)) {
-                AudioManager.playBGM('bgm-cap2'); // Reserva para el futuro Capítulo 2
+                AudioManager.playBGM('bgm-cap2'); 
             }
         }
-    }, 150);
+    }, 250);
 }

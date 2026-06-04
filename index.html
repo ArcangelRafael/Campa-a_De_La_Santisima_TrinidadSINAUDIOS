@@ -30,6 +30,7 @@
                     <div id="dropdown-hud" class="dropdown-menu">
                         <button onclick="abrirInventario()">🎒 INVENTARIO</button>
                         <button onclick="abrirCampana()">🚩 MI CAMPAÑA</button>
+                        <button id="btn-cronicas-hud" onclick="abrirCronicas()" style="display: none;">📜 CRÓNICAS</button>
                     </div>
                 </div>
                 <div class="stat-box" style="color: #c0c0c0;">
@@ -38,8 +39,7 @@
                     </span>
                 </div>
                 
-                <!-- FIX TÁCTICO: Reloj con estilo orgánico idéntico a Fe y Denarios -->
-                <div class="stat-box" style="color: #c0c0c0; position: relative; cursor: help;" id="stat-tiempo-container">
+                <div class="stat-box" style="color: #c0c0c0; position: relative; cursor: pointer;" id="stat-tiempo-container">
                     ⏳ <span id="stat-tiempo">----</span>
                     <div id="tiempo-tooltip"></div>
                 </div>
@@ -76,36 +76,94 @@
     </div>
 
     <div id="video-overlay"><video id="game-video"></video></div>
-    <div id="tribulacion-overlay"><div id="tribulacion-box"><h3 id="trib-titulo"></h3><div id="trib-texto"></div><div id="trib-acciones"></div></div></div>
-    <div id="fe-overlay"><div id="fe-box"><h3 id="fe-titulo"></h3><div id="fe-texto"></div><div id="fe-efecto"></div><button id="fe-btn" onclick="document.getElementById('fe-overlay').style.display='none'">DEUS LO VULT</button></div></div>
-    <div id="inventario-overlay"><div id="inventario-box"><span class="close-btn" onclick="cerrarInventario()">✖</span><h3 id="inv-titulo">MORRAL</h3><div id="inv-contenido"></div></div></div>
-    <div id="tienda-overlay"><div id="tienda-box" style="width: 850px; max-height: 95vh; overflow-y: auto;"><span class="close-btn" onclick="cerrarTienda()">✖</span><h3 id="tienda-titulo" style="color:#ffaa00; margin-bottom: 15px;">RECLUTAMIENTO DE HUESTES</h3><div id="tienda-contenido"></div><div id="tienda-carrito" style="background:#111; padding: 20px; border-radius: 8px; border: 2px solid #555; margin-top: 25px;"><h4 style="margin-top:0; color:#88ff88; border-bottom: 1px solid #333; padding-bottom: 10px; text-align: left;">⚔️ FILAS DE RECLUTAMIENTO</h4><div id="carrito-items" class="grid-desplegado" style="min-height: 90px; align-items: center; justify-content: flex-start; overflow-x: auto; flex-wrap: nowrap; padding: 15px; gap: 15px;"><span style="color:#555; font-style: italic; width:100%; text-align:center;">Las filas están vacías. Recluta hombres arriba.</span></div><div style="margin-top: 15px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #333; padding-top: 15px;"><div style="text-align: left; line-height: 1.5;"><span style="color:#ff4c4c; font-weight:bold; font-size: 16px;">Costo de Leva: 💰 <span id="carrito-total">0</span></span><br><span style="color:#88ff88; font-size: 16px;">Fondo Restante: 💰 <span id="carrito-restantes">0</span> Denarios</span></div><div style="display: flex; gap: 10px;"><button onclick="vaciarCarrito()" style="background:#550000; border: 1px solid #ff4c4c; font-size:14px; padding: 8px 15px;">Disolver Filas</button><button onclick="confirmarCompra()" style="background:#2d5a2d; border: 1px solid #88ff88; font-size:14px; padding: 8px 15px; color:#fff;">Sellar Pacto y Marchar</button></div></div></div></div></div>
-    <div id="campana-overlay"><div id="campana-box"><span class="close-btn" onclick="cerrarCampana()">✖</span><h3 id="campana-titulo">HUESTE TRINITARIA</h3><div id="campana-contenido"></div></div></div>
-    <div id="detalle-unidad-overlay"><div id="detalle-unidad-box"><span class="close-btn" onclick="cerrarDetalleUnidad()">✖</span><div id="campana-jerarquia-container"></div></div></div>
-
-    <div id="formacion-overlay" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.95); z-index:3000; justify-content:center; align-items:center;">
-        
-        <div id="formacion-box" style="background:#1a1a1a; border:3px double #ffaa00; border-radius:10px; padding:20px; width:950px; max-width:98%; text-align:center; color:#d4c4a8; transition: width 0.5s;">
-            <h2 id="titulo-formacion" style="color:#ffaa00; margin-top:0;">DESPLIEGUE TÁCTICO</h2>
-            
-            <div style="display:flex; justify-content:space-between; gap:15px; align-items:center; position:relative; height: 540px;">
-                
-                <div style="width:210px; flex-shrink:0; background:#0a0a0a; padding:15px; border:2px solid #333; border-radius:8px; height:540px; overflow-y:auto; box-sizing:border-box;" id="formacion-roster">
-                    <h4 id="titulo-roster" style="color:#88ff88; margin-top:0; border-bottom:1px solid #333; padding-bottom:10px;">🛡️ Tropas</h4>
-                    <div id="formacion-lista-tropas" style="display:flex; flex-wrap:wrap; gap:10px; justify-content:center; min-height: 100px;"></div>
+    
+    <div id="tribulacion-overlay">
+        <div id="tribulacion-box">
+            <h3 id="trib-titulo"></h3><div id="trib-texto"></div><div id="trib-acciones"></div>
+        </div>
+    </div>
+    
+    <div id="fe-overlay">
+        <div id="fe-box">
+            <h3 id="fe-titulo"></h3><div id="fe-texto"></div><div id="fe-efecto"></div>
+            <button id="fe-btn" onclick="document.getElementById('fe-overlay').style.display='none'">DEUS LO VULT</button>
+        </div>
+    </div>
+    
+    <div id="inventario-overlay">
+        <div id="inventario-box">
+            <span class="close-btn" onclick="cerrarInventario()">✖</span>
+            <h3 id="inv-titulo">MORRAL</h3>
+            <div id="inv-contenido"></div>
+        </div>
+    </div>
+    
+    <div id="tienda-overlay">
+        <div id="tienda-box" class="tienda-box-ext">
+            <span class="close-btn" onclick="cerrarTienda()">✖</span>
+            <h3 id="tienda-titulo">RECLUTAMIENTO DE HUESTES</h3>
+            <div id="tienda-contenido"></div>
+            <div id="tienda-carrito">
+                <h4>⚔️ FILAS DE RECLUTAMIENTO</h4>
+                <div id="carrito-items" class="grid-desplegado carrito-items-ext">
+                    <span class="carrito-vacio">Las filas están vacías. Recluta hombres arriba.</span>
                 </div>
+                <div class="carrito-footer">
+                    <div class="carrito-totales">
+                        <span class="costo">Costo de Leva: 💰 <span id="carrito-total">0</span></span><br>
+                        <span class="fondo">Fondo Restante: 💰 <span id="carrito-restantes">0</span> Denarios</span>
+                    </div>
+                    <div class="carrito-botones">
+                        <button class="btn-disolver" onclick="vaciarCarrito()">Disolver Filas</button>
+                        <button class="btn-sellar" onclick="confirmarCompra()">Sellar Pacto y Marchar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="campana-overlay">
+        <div id="campana-box">
+            <span class="close-btn" onclick="cerrarCampana()">✖</span>
+            <h3 id="campana-titulo">HUESTE TRINITARIA</h3>
+            <div id="campana-contenido"></div>
+        </div>
+    </div>
+    
+    <div id="detalle-unidad-overlay">
+        <div id="detalle-unidad-box">
+            <span class="close-btn" onclick="cerrarDetalleUnidad()">✖</span>
+            <div id="campana-jerarquia-container"></div>
+        </div>
+    </div>
 
+    <div id="cronicas-overlay" class="modal-overlay">
+        <div id="cronicas-box">
+            <span class="close-btn" onclick="cerrarCronicas()">✖</span>
+            <h3 id="cronicas-titulo">CRÓNICAS DE LA CRUZADA</h3>
+            <div id="cronicas-contenido">
+                <p class="cronica-vacia">Aún no hay gestas registradas en los pergaminos de la Orden...</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="formacion-overlay">
+        <div id="formacion-box">
+            <h2 id="titulo-formacion">DESPLIEGUE TÁCTICO</h2>
+            <div class="formacion-layout">
+                <div id="formacion-roster">
+                    <h4 id="titulo-roster">🛡️ Tropas</h4>
+                    <div id="formacion-lista-tropas"></div>
+                </div>
                 <div id="animacion-escena1"></div>
-
                 <div id="formacion-tablero" style="display:none;"></div>
                 <div id="formacion-picas-tablero" class="estilo-tablero-base" style="display:none;"></div>
             </div>
-
-            <div style="margin-top:20px; height: 50px;">
-                <button id="btn-iniciar-formacion" onclick="cerrarFormacionYCombatir()" style="background:#8b0000; border:2px solid #ffaa00; color:white; font-size:18px; padding:10px 30px; letter-spacing: 2px; display:none;">SELLAR FORMACIÓN</button>
-                <button id="btn-iniciar-formacion-picas" onclick="cerrarFormacionPicas()" style="background:#2d5a2d; border:2px solid #88ff88; color:white; font-size:18px; padding:10px 30px; letter-spacing: 2px; display:none;">ALZAR MURO</button>
-                <button id="btn-tirar-dados" onclick="resolverDadosVisuales()" style="display:none; background:#ffaa00; border:2px solid #fff; color:#000; font-size:18px; font-weight:bold; padding:10px 30px; box-shadow:0 0 15px #ffaa00;">FIRMAR ESTRATEGIA (IR A BITÁCORA)</button>
-                <button id="btn-ver-reporte" onclick="cerrarMesaDeGuerra()" style="display:none; background:#111; border:2px solid #88ff88; color:#88ff88; font-size:18px; padding:10px 30px;">VER REPORTE EN BITÁCORA</button>
+            <div class="formacion-controles">
+                <button id="btn-iniciar-formacion" onclick="cerrarFormacionYCombatir()" style="display:none;">SELLAR FORMACIÓN</button>
+                <button id="btn-iniciar-formacion-picas" onclick="ceralerarFormacionPicas()" style="display:none;">ALZAR MURO</button>
+                <button id="btn-tirar-dados" onclick="resolverDadosVisus()" style="display:none;">FIRMAR ESTRATEGIA (IR A BITÁCORA)</button>
+                <button id="btn-ver-reporte" onclick="cerrarMesaDeGuerra()" style="display:none;">VER REPORTE EN BITÁCORA</button>
             </div>
         </div>
     </div>
@@ -127,6 +185,7 @@
     <script src="js/core/motor.js"></script>
     <script src="js/core/cinematicas.js"></script>
     <script src="js/core/inventario.js"></script> 
+    <script src="js/core/cronicas.js"></script> 
     <script src="js/core/tienda.js"></script> 
     <script src="js/core/campana.js"></script> 
     <script src="js/core/tableros.js"></script> 
@@ -144,18 +203,24 @@
     <script src="js/capitulos/introduccion/introduccion.js"></script>
 
     <script src="js/capitulos/capitulo1/capitulo1.js"></script>
+    <script src="js/capitulos/capitulo1/eventos_comunes/ruta_parlamento.js"></script>
     
-    <script src="js/capitulos/capitulo1/nodos/nodo_cuna.js"></script> 
-    <script src="js/capitulos/capitulo1/nodos/nodo_picas.js"></script> 
-    <script src="js/capitulos/capitulo1/nodos/nodo_picas_bosque.js"></script> 
-    <script src="js/capitulos/capitulo1/nodos/nodo_bosque.js"></script> 
-    <script src="js/capitulos/capitulo1/nodos/nodo_sacrificio.js"></script>
+    <script src="js/capitulos/capitulo1/ruta_1_cuna/ruta_1_cuna.js"></script>
+    <script src="js/capitulos/capitulo1/ruta_1_cuna/nodos/nodo_cuna.js"></script>
+    <script src="js/capitulos/capitulo1/ruta_1_cuna/nodos/nodo_picas.js"></script>
+    <script src="js/capitulos/capitulo1/ruta_1_cuna/nodos/nodo_bosque.js"></script>
+    <script src="js/capitulos/capitulo1/ruta_1_cuna/nodos/nodo_picas_bosque.js"></script>
+    <script src="js/capitulos/capitulo1/ruta_1_cuna/nodos/nodo_sacrificio.js"></script>
+    
+    <script src="js/capitulos/capitulo1/ruta_1_cuna/cinematicas/cine_cuna.js"></script>
+    <script src="js/capitulos/capitulo1/ruta_1_cuna/cinematicas/cine_picas.js"></script>
+    <script src="js/capitulos/capitulo1/ruta_1_cuna/cinematicas/cine_bosque.js"></script>
+    <script src="js/capitulos/capitulo1/ruta_1_cuna/cinematicas/cine_repliegue.js"></script>
+    <script src="js/capitulos/capitulo1/ruta_1_cuna/cinematicas/cine_victoria.js"></script>
 
-    <script src="js/capitulos/capitulo1/cinematicas/cine_cuna.js"></script>
-    <script src="js/capitulos/capitulo1/cinematicas/cine_picas.js"></script>
-    <script src="js/capitulos/capitulo1/cinematicas/cine_repliegue.js"></script>
-    <script src="js/capitulos/capitulo1/cinematicas/cine_bosque.js"></script>
-    <script src="js/capitulos/capitulo1/cinematicas/cine_victoria.js"></script>
+    <script src="js/capitulos/capitulo1/ruta_2_muro/ruta_2_muro.js"></script>
+
+    <script src="js/capitulos/capitulo1/ruta_3_carretas/ruta_3_carretas.js"></script>
 
     <script src="js/core/hacktester.js"></script>
 </body>

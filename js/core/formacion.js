@@ -11,9 +11,43 @@ let slotsFormacion = {
 let slotsFormacionPicas = {
     "pica-1": null, "pica-2": null, "pica-3": null, "pica-4": null
 };
-// FIX TÁCTICO: Solo 3 espacios para la inmolación
 let slotsFormacionSacrificio = {
     "sacrificio-1": null, "sacrificio-2": null, "sacrificio-3": null
+};
+
+window.gestionarEfectosVisuales = function(tableroActivo, modo) {
+    let fondoInline = tableroActivo.style.backgroundImage || "";
+    let fondoComputado = window.getComputedStyle(tableroActivo).backgroundImage || "";
+    let tienePuente = fondoInline.includes("puente") || fondoComputado.includes("puente");
+    
+    let nieblaDOM = tableroActivo.querySelector(".efecto-neblina");
+    
+    if (tienePuente) {
+        if (!nieblaDOM) {
+            let niebla = document.createElement("div");
+            niebla.className = "efecto-neblina";
+            niebla.style.cssText = "z-index: 90; pointer-events: none; opacity: 0.7; position: absolute; top: -10%; left: -10%; width: 120%; height: 120%; background-size: 50% 100%;";
+            tableroActivo.appendChild(niebla);
+        }
+    } else if (nieblaDOM) {
+        nieblaDOM.remove();
+    }
+
+    let styleId = "espejo-tropa-style";
+    let styleDOM = document.getElementById(styleId);
+    if (modo === "cuna") {
+        if (!styleDOM) {
+            let s = document.createElement("style");
+            s.id = styleId;
+            s.innerHTML = `
+                #formacion-tablero .tropa-draggable img, 
+                #formacion-roster .tropa-draggable img { transform: scaleX(-1) !important; }
+            `;
+            document.head.appendChild(s);
+        }
+    } else if (styleDOM) {
+        styleDOM.remove();
+    }
 };
 
 window.actualizarLabelTurnosPicas = function() {
@@ -92,7 +126,6 @@ function intentarAutoDespliegue() {
     actualizarLabelTurnosPicas();
 }
 
-// FIX TÁCTICO: Puente de retrocompatibilidad (Callback + Promise) para TODAS las formaciones
 function abrirFormacionReposicion(bajasArray, callbackAntiguo) {
     return new Promise(resolve => {
         callbackPostFormacion = (resultado) => {
@@ -135,9 +168,24 @@ function abrirFormacionReposicion(bajasArray, callbackAntiguo) {
         document.getElementById("btn-ver-reporte").style.display = "none";
 
         document.querySelectorAll(`#${idTablero} .tropa-draggable`).forEach(el => el.remove());
-        document.querySelectorAll(`#${idTablero} .skull-icon, #${idTablero} .cross-icon`).forEach(el => el.remove());
+        document.querySelectorAll(`#${idTablero} .marcador-batalla`).forEach(el => el.remove()); 
 
         initFormacionZonas();
+
+        // FIX TÁCTICO: Vinculación de clases CSS oficiales para que absorban los halos divinos globales
+        if (window.marcadoresBatalla) {
+            window.marcadoresBatalla.forEach(m => {
+                let slotId = m.col < 0 ? `aliado-${m.row}-${m.col}` : `enemigo-${m.row}-${m.col}`;
+                let slot = document.getElementById(slotId);
+                if (slot) {
+                    let mk = document.createElement("div");
+                    mk.className = m.tipo === 'skull' ? "marcador-batalla skull-icon" : "marcador-batalla cross-icon";
+                    mk.innerHTML = m.tipo === 'skull' ? '☠️' : '✝';
+                    mk.style.cssText = "position:absolute; font-size:35px; z-index:50; pointer-events:none; top:50%; left:50%; transform:translate(-50%, -50%);";
+                    slot.appendChild(mk);
+                }
+            });
+        }
 
         const slots = tableroActivo.querySelectorAll(".slot-formacion");
         slots.forEach(slot => {
@@ -147,17 +195,12 @@ function abrirFormacionReposicion(bajasArray, callbackAntiguo) {
             let esBaja = bajasArray.find(b => b.slotPos === posName);
             let tropaViva = EstadoBatalla.tropasVivas.find(p => p.slotPos === posName && p.idUnico && p.hp > 0 && !p.ignorarMuerto);
             
-            slot.innerHTML = ""; 
             slot.style.opacity = "1";
             
             if (esBaja) {
-                if (formacionModoActivo === "cuna") {
-                    slotsFormacion[posName] = null;
-                } else if (formacionModoActivo === "sacrificio") {
-                    slotsFormacionSacrificio[posName] = null;
-                } else {
-                    slotsFormacionPicas[posName] = null;
-                }
+                if (formacionModoActivo === "cuna") { slotsFormacion[posName] = null; } 
+                else if (formacionModoActivo === "sacrificio") { slotsFormacionSacrificio[posName] = null; } 
+                else { slotsFormacionPicas[posName] = null; }
 
                 slot.style.pointerEvents = "auto";
                 slot.classList.add("slot-reposicion-activo");
@@ -199,6 +242,8 @@ function abrirFormacionReposicion(bajasArray, callbackAntiguo) {
 
         generarRoster(tipoTropa, formacionModoActivo === "sacrificio" ? "noble" : null); 
         if(formacionModoActivo === "picas" || formacionModoActivo === "sacrificio") actualizarLabelTurnosPicas();
+        
+        gestionarEfectosVisuales(tableroActivo, formacionModoActivo);
         document.getElementById("formacion-overlay").style.display = "flex";
         
         intentarAutoDespliegue();
@@ -245,6 +290,8 @@ function abrirFormacionCuna(callbackAntiguo) {
         limpiarTablero("zona-reservas", "#formacion-tablero .slot-formacion");
         generarRoster("caballeros");
         actualizarLabelTurnosPicas();
+
+        gestionarEfectosVisuales(tableroCuna, "cuna");
         document.getElementById("formacion-overlay").style.display = "flex";
         
         intentarAutoDespliegue();
@@ -303,6 +350,8 @@ function abrirFormacionPicas(callbackAntiguo) {
         limpiarTablero("zona-reservas-picas", "#formacion-picas-tablero .slot-formacion");
         generarRoster("piqueros");
         actualizarLabelTurnosPicas();
+
+        gestionarEfectosVisuales(tableroPicas, "picas");
         document.getElementById("formacion-overlay").style.display = "flex";
         
         intentarAutoDespliegue();
@@ -355,6 +404,8 @@ function abrirFormacionSacrificio(callbackAntiguo) {
         
         generarRoster("ballesteros", "noble");
         actualizarLabelTurnosPicas();
+
+        gestionarEfectosVisuales(tableroPicas, "sacrificio");
         document.getElementById("formacion-overlay").style.display = "flex";
         
         intentarAutoDespliegue();
@@ -447,12 +498,24 @@ function cerrarFormacionPicas() {
     }
 }
 
+window.abrirRacionesDesdeFormacion = function(tipo, claseFiltro) {
+    window.formacionPendienteRefresh = { tipo, claseFiltro };
+    window.modoRacionesDesdeFormacion = true;
+    
+    if (typeof abrirMenuAlimentar === "function") {
+        abrirMenuAlimentar();
+    } else {
+        alert("El Fray no encuentra la llave de la alacena. No se pudo abrir la mesa.");
+    }
+};
+
 function generarRoster(tipo, claseFiltro = null) {
     const roster = document.getElementById("formacion-lista-tropas");
     roster.innerHTML = "";
     
-    let tropas = jugador.tropas.filter(t => {
-        let esCorrecto = t.tipoGeneral === tipo && t.hp > 0;
+    let tropasActivas = jugador.tropas.filter(t => {
+        let isDesmayado = (t.hambre !== undefined && t.hambre <= 0) || (t.sed !== undefined && t.sed <= 0);
+        let esCorrecto = t.tipoGeneral === tipo && t.hp > 0 && !isDesmayado;
         
         if (claseFiltro && t.clase !== claseFiltro && t.idUnico !== jugador.mercenarioRedimidoId) {
             esCorrecto = false;
@@ -462,11 +525,28 @@ function generarRoster(tipo, claseFiltro = null) {
         return esCorrecto && (!reposicionModo || !yaDesplegada); 
     });
 
-    if(tropas.length === 0) {
+    let tropasDesmayadas = jugador.tropas.filter(t => {
+        let isDesmayado = (t.hambre !== undefined && t.hambre <= 0) || (t.sed !== undefined && t.sed <= 0);
+        let esCorrecto = t.tipoGeneral === tipo && t.hp > 0 && isDesmayado;
+        
+        if (claseFiltro && t.clase !== claseFiltro && t.idUnico !== jugador.mercenarioRedimidoId) {
+            esCorrecto = false;
+        }
+        
+        let yaDesplegada = EstadoBatalla.tropasVivas.some(p => p.idUnico === t.idUnico && t.hp > 0 && !p.ignorarMuerto);
+        return esCorrecto && (!reposicionModo || !yaDesplegada); 
+    });
+
+    if(tropasActivas.length === 0 && tropasDesmayadas.length === 0) {
         roster.innerHTML = `<p style='color:#ff4c4c; font-style:italic;'>No tienes reservas de ${tipo} aptas para este despliegue.</p>`;
+        return;
     }
 
-    tropas.forEach(t => {
+    if(tropasActivas.length === 0 && tropasDesmayadas.length > 0) {
+        roster.innerHTML = `<p style='color:#ff4c4c; font-style:italic; text-align:center;'>Todos tus ${tipo} en reserva están desmayados.</p>`;
+    }
+
+    tropasActivas.forEach(t => {
         let card = document.createElement("div");
         let claseBorde = t.clase === 'noble' ? 'tropa-noble' : 'tropa-mercenaria';
         
@@ -496,6 +576,26 @@ function generarRoster(tipo, claseFiltro = null) {
 
         roster.appendChild(card);
     });
+
+    if (tropasDesmayadas.length > 0) {
+        let consumiblesDisponibles = jugador.inventario.some(i => {
+            let obj = typeof bdObjetos !== 'undefined' ? bdObjetos[typeof i === 'string' ? i : i.id] : null;
+            return obj && (obj.categoria === "comida" || obj.categoria === "bebida");
+        });
+        
+        if (consumiblesDisponibles) {
+            let btnHtml = `<button onclick="abrirRacionesDesdeFormacion('${tipo}', '${claseFiltro || ''}')" style="background:linear-gradient(to bottom, #8b6508, #214073); border:2px solid #ffd700; color:#fff; padding:10px; margin-top:10px; width:100%; font-size:12px; cursor:pointer; font-weight:bold; position:relative; z-index:3200; border-radius:4px; box-shadow:0 0 10px #000;">🍞🍺 ABRIR MESA DE SUMINISTROS</button>`;
+            let desmayadosDiv = document.createElement("div");
+            desmayadosDiv.style.cssText = "width:100%; padding:10px; margin-top:10px; border-top:1px dashed #555; text-align:center;";
+            desmayadosDiv.innerHTML = `<span style="color:#aaa; font-size:12px; font-style:italic;">Hay ${tropasDesmayadas.length} desmayado(s).</span>${btnHtml}`;
+            roster.appendChild(desmayadosDiv);
+        } else {
+            let desmayadosDiv = document.createElement("div");
+            desmayadosDiv.style.cssText = "width:100%; padding:10px; margin-top:10px; border-top:1px dashed #555; text-align:center;";
+            desmayadosDiv.innerHTML = `<span style="color:#aaa; font-size:12px; font-style:italic;">Hay ${tropasDesmayadas.length} desmayado(s).</span><div style="color:#ff4c4c; font-size:12px; margin-top:5px; font-weight:bold;">❌ Sin suministros en el morral</div>`;
+            roster.appendChild(desmayadosDiv);
+        }
+    }
 }
 
 function limpiarTablero(idReservas, querySlots) {

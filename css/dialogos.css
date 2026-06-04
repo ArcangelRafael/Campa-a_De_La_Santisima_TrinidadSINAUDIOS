@@ -24,17 +24,18 @@
     flex-direction: column;
     justify-content: flex-end;
     align-items: center;
-    padding-bottom: 30px;
+    /* FIX TÁCTICO: Redujimos el empuje de 120px a 75px para bajar la escena */
+    bottom: 60px; 
     pointer-events: none;
 }
 
 /* Pantalla Completa - Imagen Titánica (550px) */
 #vn-character-img {
     position: relative;
-    align-self: flex-end;
-    margin-right: 2%;
+    align-self: flex-start; /* FIX TÁCTICO: Ancla la imagen a la izquierda */
+    margin-left: 5%;        /* FIX TÁCTICO: Le da un respiro para que no pegue con el borde izquierdo */
     margin-bottom: -15px;
-    height: 550px; 
+    height: 460px; /* Mantengo los 400px que ajustaste */
     z-index: 4005;
     filter: drop-shadow(-10px 10px 20px rgba(0,0,0,0.9)) saturate(1.1);
     animation: respiracionHéroe 5s ease-in-out infinite alternate;
@@ -359,4 +360,28 @@
 @keyframes respiracionTribulacion {
     0% { transform: scale(var(--escala-trib)) translateY(0) scaleX(var(--escalaX, 1)); filter: drop-shadow(0 15px 25px rgba(0,0,0,0.95)); }
     100% { transform: scale(calc(var(--escala-trib) + 0.03)) translateY(-3px) scaleX(var(--escalaX, 1)); filter: drop-shadow(0 20px 40px rgba(0,0,0,0.6)); }
+}
+
+.cronica-box {
+    margin: 30px auto 15px auto !important; /* Menos margen superior porque el retrato es pequeño */
+    min-height: 80px !important;
+    width: 95% !important;
+    padding: 15px !important;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.9), inset 0 0 10px rgba(255, 215, 0, 0.1) !important;
+    cursor: default !important;
+}
+
+.retrato-cronica {
+    height: 180px !important; /* Retrato en miniatura para el historial */
+    width: auto !important;
+    left: -30px !important;
+    bottom: -10px !important;
+    animation: none !important; /* Sin animación de respiración para no consumir memoria en listas largas */
+    filter: drop-shadow(0 2px 5px rgba(0,0,0,0.9));
+}
+
+.texto-cronica {
+    font-size: 15px !important; /* Letra un poco más pequeña para modo lectura */
+    padding-left: 110px !important; /* Ajuste para el retrato pequeño */
+    min-height: auto !important;
 }

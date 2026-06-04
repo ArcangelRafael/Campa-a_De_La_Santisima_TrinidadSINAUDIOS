@@ -10,6 +10,20 @@ const canastaTribulaciones = [
                 costo: 0,
                 consecuencia: () => {
                     GestorEstado.modificarDefensa(-1);
+                    
+                    // FIX TÁCTICO: Extracción inquebrantable del nombre del Vigía
+                    let scout = jugador.tropas.find(t => t.idTipo === "explorador_unico");
+                    let nombreScout = scout ? scout.nombre : "Hermano Vigía";
+                    
+                    if (typeof Cronicas !== "undefined") {
+                        Cronicas.registrar("TRIBULACION", {
+                            nombreScout: nombreScout,
+                            resumenProblema: "un niño desharrapado suplicaba ayuda para alcanzar un fruto de un viejo roble",
+                            eleccion: "romper filas y compadecerse del infante",
+                            desenlace: "aquello resultó ser una emboscada pagana; el infante huyó y la espesura nos recibió con flechas, quebrando temporalmente la formación militar."
+                        });
+                    }
+
                     return {
                         narrativa: "¡Era una emboscada! Al acercaros, el niño huye con burla y de la espesura silba una lluvia de flechas paganas. Vuestros hombres alzan los escudos, mas la formación se ha roto temporalmente.<br><br><span class='txt-accion'>[Lección: La caridad es virtud divina, mas en tierras de herejes, la disciplina castrense es el escudo de tu hueste. No te fíes de las sombras.]</span>",
                         efectos: "<b class='txt-hereje'>[-1 Defensa Base]</b>"
@@ -20,6 +34,18 @@ const canastaTribulaciones = [
                 texto: "Mantener la marcha y la disciplina",
                 costo: 0,
                 consecuencia: () => {
+                    let scout = jugador.tropas.find(t => t.idTipo === "explorador_unico");
+                    let nombreScout = scout ? scout.nombre : "Hermano Vigía";
+                    
+                    if (typeof Cronicas !== "undefined") {
+                        Cronicas.registrar("TRIBULACION", {
+                            nombreScout: nombreScout,
+                            resumenProblema: "un sospechoso infante fingía necesitar socorro junto a nuestra senda de avance",
+                            eleccion: "ignorar el ruego y mantener inquebrantable la disciplina",
+                            desenlace: "el mozo reveló su engaño desenvainando una navaja antes de ser ahuyentado por un virote de ballesta, salvaguardando así la sangre de los hermanos."
+                        });
+                    }
+
                     return {
                         narrativa: "Das la orden inquebrantable de ignorar el ruego y mantener la formación de escudos cerrada. El niño, viendo frustrado su engaño, saca una navaja herrumbrada y profiere maldiciones. Tus ballesteros, preparados, disparan un certero tiro de advertencia que lo hace huir despavorido.<br><br><span class='txt-accion'>[Lección: El buen juicio militar ha preservado la sangre de tus hermanos. Ya habrá un momento de paz para ejercer la caridad.]</span>",
                         efectos: "<b class='mensaje-sistema'>[Disciplina Mantenida. Sin bajas]</b>"
@@ -39,6 +65,19 @@ const canastaTribulaciones = [
                     GestorEstado.modificarOro(-10);
                     GestorEstado.modificarFe(9);
                     GestorEstado.modificarAtaque(-2);
+
+                    let scout = jugador.tropas.find(t => t.idTipo === "explorador_unico");
+                    let nombreScout = scout ? scout.nombre : "Hermano Vigía";
+                    
+                    if (typeof Cronicas !== "undefined") {
+                        Cronicas.registrar("TRIBULACION", {
+                            nombreScout: nombreScout,
+                            resumenProblema: "un andrajoso mercader ofreció una supuesta astilla de la Vera Cruz a nuestras exhaustas filas",
+                            eleccion: "adquirir la reliquia desembolsando diez monedas de la Orden",
+                            desenlace: "el consuelo abrazó a los hombres elevando su fervor mediante los cantos, aunque la decisión haya menguado el tesoro y adormecido el espíritu marcial."
+                        });
+                    }
+
                     return {
                         narrativa: "Buena idea darles ese consuelo; a veces el corazón necesita un símbolo, aunque sea incierto. Ahora tus hombres marchan cantando salmos, aunque tus arcas pesen menos. San Luis IX de Francia entendería tu deseo de honrar lo sagrado, aunque te advertiría sobre la astucia de los hombres.",
                         efectos: "<b class='mensaje-sistema'>[+9 Fe/Liderazgo]</b> <br><b class='txt-hereje'>[-10 Denarios, -2 Ataque Base]</b>"
@@ -52,6 +91,19 @@ const canastaTribulaciones = [
                     GestorEstado.modificarAtaque(3);
                     GestorEstado.modificarOro(100);
                     GestorEstado.modificarFe(-20);
+
+                    let scout = jugador.tropas.find(t => t.idTipo === "explorador_unico");
+                    let nombreScout = scout ? scout.nombre : "Hermano Vigía";
+                    
+                    if (typeof Cronicas !== "undefined") {
+                        Cronicas.registrar("TRIBULACION", {
+                            nombreScout: nombreScout,
+                            resumenProblema: "un charlatán profano intentó estafar a la hueste mercadeando falsa madera sagrada",
+                            eleccion: "reprenderlo y exponer con severidad su sacrílego fraude",
+                            desenlace: "la cruda verdad se impuso sobre el consuelo vano; los soldados ahora fían su suerte a las armas. El oro del hereje fue confiscado para la Santa Causa, aunque algunos corazones se endurecieron."
+                        });
+                    }
+
                     return {
                         narrativa: "Has preferido la verdad sobre el consuelo fácil. Tus soldados ahora confían más en sus brazos que en amuletos. Santo Tomás de Aquino estaría orgulloso de tu uso de la razón, pues la fe no debe basarse en engaños, sino en la verdad firme.",
                         efectos: "<b class='mensaje-sistema'>[+3 Ataque, +100 Denarios ahorrados/confiscados]</b> <br><b class='txt-hereje'>[-20 Fe/Liderazgo]</b>"
@@ -70,6 +122,19 @@ const canastaTribulaciones = [
                 consecuencia: () => {
                     GestorEstado.modificarDefensa(3);
                     GestorEstado.modificarAtaque(-3);
+
+                    let scout = jugador.tropas.find(t => t.idTipo === "explorador_unico");
+                    let nombreScout = scout ? scout.nombre : "Hermano Vigía";
+                    
+                    if (typeof Cronicas !== "undefined") {
+                        Cronicas.registrar("TRIBULACION", {
+                            nombreScout: nombreScout,
+                            resumenProblema: "el carro destrozado de una infortunada viuda bloqueaba el paso de nuestra logística",
+                            eleccion: "detener el avance bélico y auxiliar a la pobre mujer",
+                            desenlace: "la viuda eleva plegarias en nuestro honor y los lugareños nos acogen como protectores cristianos; preferimos la piedad cediendo la iniciativa ofensiva al enemigo."
+                        });
+                    }
+
                     return {
                         narrativa: "Buena idea ayudar a la mujer; un caballero de la Trinidad debe ser primero un servidor. Ahora la viuda reza por tus hombres y la población local ve en ti a un libertador, no a un opresor. San Martín de Tours estaría orgulloso de tu compañía, pues él mismo dividió su capa para vestir al necesitado, priorizando la caridad sobre el rango.",
                         efectos: "<b class='mensaje-sistema'>[+3 Defensa Base]</b> <br><b class='txt-hereje'>[-3 Ataque Base]</b>"
@@ -82,6 +147,19 @@ const canastaTribulaciones = [
                 consecuencia: () => {
                     GestorEstado.modificarOro(10);
                     GestorEstado.modificarFe(-10);
+
+                    let scout = jugador.tropas.find(t => t.idTipo === "explorador_unico");
+                    let nombreScout = scout ? scout.nombre : "Hermano Vigía";
+                    
+                    if (typeof Cronicas !== "undefined") {
+                        Cronicas.registrar("TRIBULACION", {
+                            nombreScout: nombreScout,
+                            resumenProblema: "el miserable carromato de una viuda obstruía vitalmente nuestra senda de guerra",
+                            eleccion: "despejar la vía por la fuerza y arrojar los restos al barranco",
+                            desenlace: "se protegió la eficacia de la marcha militar y se despojaron bienes del carromato, empero, el corazón de la hueste se volvió de piedra perdiendo piedad celestial."
+                        });
+                    }
+
                     return {
                         narrativa: "Has mantenido la eficiencia militar y el horario de marcha, pero a costa de la piedad. El camino está despejado, pero el corazón de tus hombres se ha vuelto un poco más de piedra.",
                         efectos: "<b class='mensaje-sistema'>[+10 Denarios recuperados]</b> <br><b class='txt-hereje'>[-10 Fe/Liderazgo]</b>"
@@ -100,6 +178,19 @@ const canastaTribulaciones = [
                 consecuencia: () => {
                     GestorEstado.modificarFe(15);
                     GestorEstado.modificarDefensa(-2);
+
+                    let scout = jugador.tropas.find(t => t.idTipo === "explorador_unico");
+                    let nombreScout = scout ? scout.nombre : "Hermano Vigía";
+                    
+                    if (typeof Cronicas !== "undefined") {
+                        Cronicas.registrar("TRIBULACION", {
+                            nombreScout: nombreScout,
+                            resumenProblema: "un ex-soldado amargado escupía pestes contra Nuestro Señor en una taberna frente a los reclutas",
+                            eleccion: "intervenir con la palabra sagrada y aplacar la ira con retórica cristiana",
+                            desenlace: "el blasfemo enmudeció derrotado ante la fe y nuestros jóvenes reclutas renovaron sus votos con fiero ardor, aunque bajaron la guardia."
+                        });
+                    }
+
                     return {
                         narrativa: "Buena idea usar la retórica; la espada convence al cuerpo, pero la palabra convierte el alma. Ahora tus reclutas admiran tu convicción y el blasfemo ha quedado mudo de vergüenza. San Antonio de Padua estaría orgulloso, pues su lengua era tan poderosa que incluso los peces parecían escuchar sus sermones cuando los hombres le daban la espalda.",
                         efectos: "<b class='mensaje-sistema'>[+15 Fe/Liderazgo]</b> <br><b class='txt-hereje'>[-2 Defensa Base]</b>"
@@ -113,6 +204,19 @@ const canastaTribulaciones = [
                     GestorEstado.modificarDefensa(3);
                     GestorEstado.modificarFe(-5);
                     GestorEstado.modificarOro(-20);
+
+                    let scout = jugador.tropas.find(t => t.idTipo === "explorador_unico");
+                    let nombreScout = scout ? scout.nombre : "Hermano Vigía";
+                    
+                    if (typeof Cronicas !== "undefined") {
+                        Cronicas.registrar("TRIBULACION", {
+                            nombreScout: nombreScout,
+                            resumenProblema: "un ruin borracho esparcía blasfemias contra la Cruzada incitando la duda en la milicia",
+                            eleccion: "imponer un cruento castigo a puños y costear el daño material",
+                            desenlace: "el impío aprendió disciplina a golpes, ganando un silencio temeroso en la aldea. Compensamos el alboroto pagando veinte monedas, instaurando orden, mas sembrando un miedo oscuro en nuestros propios hombres."
+                        });
+                    }
+
                     return {
                         narrativa: "Has cortado el problema de raíz mediante la fuerza, manteniendo el orden público. Sin embargo, has dejado una semilla de rencor en la aldea y miedo en tus hombres. Has ganado silencio, pero no respeto.",
                         efectos: "<b class='mensaje-sistema'>[+3 Defensa Base]</b> <br><b class='txt-hereje'>[-5 Fe/Liderazgo, -20 Denarios]</b>"

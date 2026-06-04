@@ -3,6 +3,7 @@
 let jugador = {
     nombre: "...", denarios: 0, liderazgoBase: 0, liderazgo: 0,     
     estadoFeActual: "FE FIRME", inventario: [], orden: "", tropas: [], 
+    comandantes: [], 
     nombresUsados: [], 
     ataqueBase: 0, ataqueReal: 0, defensaBase: 0, defensaReal: 0, vidas: 3,
     
@@ -13,6 +14,7 @@ let jugador = {
 let tribulacionesDisponibles = [];
 let inventarioDesbloqueado = false; 
 let tiendaDesbloqueada = false; 
+let cronicasDesbloqueado = false;
 
 const storyArea = document.getElementById("story-area");
 const actionArea = document.getElementById("action-area");
@@ -89,6 +91,15 @@ window.GestorEstado = {
         let base = tipoPoder === 'atk' ? (tropa.atkMax || 0) : (tropa.defMax || 0);
         let penalidad = (tropa.hp < (tropa.hpMax || 2) && tropa.hp > 0) ? 1 : 0;
         
+        let hambre = tropa.hambre !== undefined ? tropa.hambre : 5;
+        let penHambreAtk = 0;
+        if (hambre === 2) penHambreAtk = 1;
+        else if (hambre === 1) penHambreAtk = 2;
+
+        let sed = tropa.sed !== undefined ? tropa.sed : 3;
+        let penSedDef = 0;
+        if (sed === 1) penSedDef = 2; // Penalización por deshidratación
+
         let modificadorMochila = 0;
         if (!tropa.mochila) tropa.mochila = [];
         
@@ -101,8 +112,24 @@ window.GestorEstado = {
 
         let neto = (base - penalidad) + modificadorMochila;
         
+        if (tipoPoder === 'atk') neto -= penHambreAtk;
+        if (tipoPoder === 'def') neto -= penSedDef;
+        
+        // Desmayo por Hambre o Sed anula todo el poder de combate
+        if (hambre <= 0 || sed <= 0) neto = 0; 
+        
+        neto = Math.max(0, neto);
+        
         let stringEfectos = "";
         if (penalidad > 0) stringEfectos += ` <span class="txt-hereje">-1 (Herido)</span>`;
+        
+        if (hambre <= 0 || sed <= 0) {
+            stringEfectos += ` <span class="txt-hereje">(Desmayado)</span>`;
+        } else {
+            if (tipoPoder === 'atk' && penHambreAtk > 0) stringEfectos += ` <span class="txt-hereje">-${penHambreAtk} (Hambre)</span>`;
+            if (tipoPoder === 'def' && penSedDef > 0) stringEfectos += ` <span class="txt-hereje">-${penSedDef} (Sed)</span>`;
+        }
+
         if (modificadorMochila > 0) stringEfectos += ` <span class="mensaje-sistema">+${modificadorMochila} (Buff)</span>`;
         else if (modificadorMochila < 0) stringEfectos += ` <span class="txt-hereje">${modificadorMochila} (Debuff)</span>`;
 
@@ -126,11 +153,24 @@ function reiniciarJugadorBase() {
     jugador.estadoFeActual = "FE FIRME"; jugador.inventario = []; jugador.orden = ""; 
     jugador.tropas = []; jugador.nombresUsados = [];
     jugador.narrativaSacrificioVista = false; jugador.mercenarioRedimidoId = null;
-    inventarioDesbloqueado = false; tiendaDesbloqueada = false;
+    inventarioDesbloqueado = false; tiendaDesbloqueada = false; cronicasDesbloqueado = false;
+    
+    // Todos inician con 5 de hambre y 3 de Sed, y el reloj de inicio activo.
+    jugador.comandantes = [
+        { idUnico: "cmd_player", idTipo: "comandante", nombre: "Comendador", img: "assets/img/personajes/aliados/jugador.webp", hp: 1, hpMax: 1, hambre: 5, sed: 3, saltoHambre: true, inicioSed: 0 },
+        { idUnico: "cmd_alex", idTipo: "comandante", nombre: "Sir Alexandro", img: "assets/img/personajes/aliados/lider_caballeros.webp", hp: 1, hpMax: 1, hambre: 5, sed: 3, saltoHambre: true, inicioSed: 0 },
+        { idUnico: "cmd_andrew", idTipo: "comandante", nombre: "Barón Andrew", img: "assets/img/personajes/aliados/lider_ballesteros.webp", hp: 1, hpMax: 1, hambre: 5, sed: 3, saltoHambre: true, inicioSed: 0 },
+        { idUnico: "cmd_juan", idTipo: "comandante", nombre: "Conde JuanA", img: "assets/img/personajes/aliados/lider_piqueros.webp", hp: 1, hpMax: 1, hambre: 5, sed: 3, saltoHambre: true, inicioSed: 0 },
+        { idUnico: "cmd_fray", idTipo: "sacerdote_unico", nombre: "Fray Bartolomé", img: "assets/img/personajes/aliados/fray.webp", hp: 1, hpMax: 1, hambre: 5, sed: 3, saltoHambre: true, inicioSed: 0 }
+    ];
+
     let flecha = document.getElementById("flecha-inventario"); if(flecha) flecha.style.display = "none";
     let iconoOrden = document.getElementById("icono-orden"); if(iconoOrden) { iconoOrden.style.display = "none"; iconoOrden.src = ""; }
     document.querySelectorAll('.estandarte').forEach(el => el.style.display = 'none');
     
+    let btnCronicas = document.getElementById("btn-cronicas-hud");
+    if (btnCronicas) btnCronicas.style.display = "none";
+
     if (typeof canastaTribulaciones !== 'undefined') { tribulacionesDisponibles = [...canastaTribulaciones]; } else { tribulacionesDisponibles = []; }
     actualizarHUD();
 }
@@ -144,6 +184,26 @@ function actualizarHUD() {
     let infoFe = obtenerEstadoFe();
     if (jugador.estadoFeActual !== infoFe.nombre) {
         mostrarAvisoFe(infoFe); jugador.estadoFeActual = infoFe.nombre; 
+    }
+
+    let btnCronicas = document.getElementById("btn-cronicas-hud");
+    if (btnCronicas) {
+        btnCronicas.style.display = cronicasDesbloqueado ? "block" : "none";
+    }
+
+    if (!jugador.comandantes || jugador.comandantes.length === 0) {
+        jugador.comandantes = [
+            { idUnico: "cmd_player", idTipo: "comandante", nombre: "Comendador", img: "assets/img/personajes/aliados/jugador.webp", hp: 1, hpMax: 1, hambre: 5, sed: 3, saltoHambre: true, inicioSed: 0 },
+            { idUnico: "cmd_alex", idTipo: "comandante", nombre: "Sir Alexandro", img: "assets/img/personajes/aliados/lider_caballeros.webp", hp: 1, hpMax: 1, hambre: 5, sed: 3, saltoHambre: true, inicioSed: 0 },
+            { idUnico: "cmd_andrew", idTipo: "comandante", nombre: "Barón Andrew", img: "assets/img/personajes/aliados/lider_ballesteros.webp", hp: 1, hpMax: 1, hambre: 5, sed: 3, saltoHambre: true, inicioSed: 0 },
+            { idUnico: "cmd_juan", idTipo: "comandante", nombre: "Conde JuanA", img: "assets/img/personajes/aliados/lider_piqueros.webp", hp: 1, hpMax: 1, hambre: 5, sed: 3, saltoHambre: true, inicioSed: 0 },
+            { idUnico: "cmd_fray", idTipo: "sacerdote_unico", nombre: "Fray Bartolomé", img: "assets/img/personajes/aliados/fray.webp", hp: 1, hpMax: 1, hambre: 5, sed: 3, saltoHambre: true, inicioSed: 0 }
+        ];
+    }
+    
+    let cmdPlayer = jugador.comandantes.find(c => c.idUnico === "cmd_player");
+    if (cmdPlayer && jugador.nombre && jugador.nombre !== "...") {
+        cmdPlayer.nombre = "Comendador " + jugador.nombre;
     }
 }
 
@@ -168,7 +228,6 @@ async function mostrarAvisoFe(infoFe) {
     let skipPopups = document.getElementById("ht-disable-popups")?.checked;
     if (skipPopups) return;
 
-    // FIX TÁCTICO: Congelar el reloj en los avisos de Fe para proteger el AFK
     if (typeof RelojDivino !== "undefined") RelojDivino.pausar();
 
     let esPositivo = (infoFe.mod >= 0 || infoFe.nombre === "FE FIRME");
@@ -228,6 +287,9 @@ function tirarDado() { return Math.floor(Math.random() * 6) + 1; }
 
 function agregarTropa(idTipo, cantidad) {
     let tipo = bdTiposTropa[idTipo];
+    // Recuperamos el índice exacto de la hora actual en el momento del reclutamiento para calcular cuándo les da sed por primera vez.
+    let horaRelojBase = (typeof RelojDivino !== 'undefined' && RelojDivino.indiceActual !== -1) ? RelojDivino.indiceActual : 0;
+    
     for(let i=0; i<cantidad; i++){
         let nomFinal = "Soldado";
         if(tipo.clase === "unico") {
@@ -257,7 +319,11 @@ function agregarTropa(idTipo, cantidad) {
             atkMax: tipo.atk, 
             defMax: tipo.def, 
             img: tipo.img,
-            mochila: [] 
+            mochila: [],
+            hambre: 5,
+            sed: 3, 
+            saltoHambre: true,
+            inicioSed: horaRelojBase // Estampa de tiempo para el asedio de la sed.
         });
     }
 }
@@ -287,7 +353,6 @@ async function dispararTribulacionAleatoria(callbackContinuar) {
         return;
     }
 
-    // FIX TÁCTICO: Congelar el tiempo litúrgico durante la tribulación
     if (typeof RelojDivino !== "undefined") RelojDivino.pausar();
 
     const overlay = document.getElementById("tribulacion-overlay");
@@ -470,7 +535,6 @@ async function dispararTribulacionAleatoria(callbackContinuar) {
     overlay.style.display = "none"; 
     overlay.innerHTML = ""; 
 
-    // FIX TÁCTICO: Reanudar el tiempo litúrgico al salir del evento
     if (typeof RelojDivino !== "undefined") RelojDivino.reanudar();
     
     if(callbackContinuar) callbackContinuar();

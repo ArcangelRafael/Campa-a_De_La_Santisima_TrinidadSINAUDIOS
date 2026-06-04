@@ -27,12 +27,26 @@ document.addEventListener("DOMContentLoaded", () => {
             let tooltip = document.getElementById("tiempo-tooltip");
             if(tooltip) tooltip.style.display = "none"; 
         };
+        
+        timeContainer.onclick = () => {
+            if (window.RelojDivino) window.RelojDivino.abrirSantoralDetallado();
+        };
     }
     
-    RelojDivino.actualizarTooltip(); 
+    setInterval(() => {
+        let overlayTienda = document.getElementById("tienda-overlay");
+        let isTiendaClosed = !overlayTienda || overlayTienda.style.display === "none";
+        let hasTropas = typeof jugador !== "undefined" && jugador.tropas && jugador.tropas.length > 0;
+        let isReclutando = typeof faseReclutamientoInicial !== "undefined" ? faseReclutamientoInicial : false;
+        
+        if (window.RelojDivino && window.RelojDivino.indiceActual === -1 && isTiendaClosed && hasTropas && !isReclutando) {
+            window.RelojDivino.marchaIniciada = true;
+            window.RelojDivino.iniciar();
+        }
+    }, 1000);
 
     document.addEventListener("click", (e) => {
-        if (RelojDivino.rezoPendiente && !RelojDivino.timerRezoIniciado) {
+        if (window.RelojDivino && window.RelojDivino.rezoPendiente && !window.RelojDivino.timerRezoIniciado) {
             setTimeout(() => {
                 let animCaja = document.getElementById("animacion-escena1");
                 let formOverlay = document.getElementById("formacion-overlay");
@@ -41,19 +55,19 @@ document.addEventListener("DOMContentLoaded", () => {
                                    (formOverlay && formOverlay.style.display !== "none");
                 
                 if (!enCinematica) {
-                    RelojDivino.timerRezoIniciado = true;
+                    window.RelojDivino.timerRezoIniciado = true;
                     setTimeout(() => {
                         let animNow = document.getElementById("animacion-escena1");
                         let formNow = document.getElementById("formacion-overlay");
                         let ocupadaNow = (animNow && animNow.style.display !== "none" && animNow.innerHTML !== "") || 
                                          (formNow && formNow.style.display !== "none");
 
-                        if (!ocupadaNow && RelojDivino.rezoPendiente) {
-                            RelojDivino.rezoPendiente = false;
-                            RelojDivino.timerRezoIniciado = false;
-                            RelojDivino.invocarRezo(RelojDivino.horas[RelojDivino.indiceActual], true);
+                        if (!ocupadaNow && window.RelojDivino.rezoPendiente) {
+                            window.RelojDivino.rezoPendiente = false;
+                            window.RelojDivino.timerRezoIniciado = false;
+                            window.RelojDivino.invocarRezo(window.RelojDivino.horas[window.RelojDivino.indiceActual], true);
                         } else {
-                            RelojDivino.timerRezoIniciado = false;
+                            window.RelojDivino.timerRezoIniciado = false;
                         }
                     }, 3000); 
                 }
@@ -62,13 +76,12 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 });
 
-const RelojDivino = {
+window.RelojDivino = {
     horas: ["Laudes", "Prima", "Tercia", "Sexta", "Nona", "Vísperas", "Completas"],
     diaActualIndex: 0,
     
-    // Inyectamos las bases de datos externas de liturgia.js
-    descripciones: DescripcionesHoras,
-    oraciones: OracionesCanonicas,
+    descripciones: typeof DescripcionesHoras !== "undefined" ? DescripcionesHoras : [],
+    oraciones: typeof OracionesCanonicas !== "undefined" ? OracionesCanonicas : {},
 
     indiceActual: -1, 
     duracionHora: 240000, 
@@ -84,8 +97,11 @@ const RelojDivino = {
 
     obtenerFechaActual: function() {
         let index = this.diaActualIndex;
-        if(index >= CalendarioSantoral.length) index = CalendarioSantoral.length - 1;
-        return CalendarioSantoral[index];
+        if(typeof CalendarioSantoral !== "undefined") {
+            if(index >= CalendarioSantoral.length) index = CalendarioSantoral.length - 1;
+            return CalendarioSantoral[index];
+        }
+        return { fecha: "Día Desconocido", santo: "Todos los Santos", biografia: "..." };
     },
 
     iniciar: function() {
@@ -97,7 +113,6 @@ const RelojDivino = {
         this.notificarCambio(true);
         
         this.programarSiguienteHora(this.duracionHora);
-        
         console.log(`[Reloj Divino] La cruzada ha comenzado bajo el sol de ${this.horas[this.indiceActual]}`);
     },
 
@@ -136,7 +151,7 @@ const RelojDivino = {
 
         if (this.horas[this.indiceActual] === "Vísperas") {
             this.diaActualIndex++;
-            if (this.diaActualIndex >= CalendarioSantoral.length) {
+            if (typeof CalendarioSantoral !== "undefined" && this.diaActualIndex >= CalendarioSantoral.length) {
                 console.log("%c ¡SE ACABÓ EL CALENDARIO SANTORAL! Han pasado más de 20 días en la Cruzada. Faltan más días por implementar en el código.", "color: #ffaa00; font-size: 16px; font-weight: bold; background: #000; padding: 5px;");
                 this.diaActualIndex = CalendarioSantoral.length - 1; 
             }
@@ -199,6 +214,10 @@ const RelojDivino = {
 
         let horaActual = this.horas[this.indiceActual];
 
+        if (typeof Cronicas !== 'undefined') {
+            Cronicas.registrar("NUEVA_HORA", { esInicio: esInicio });
+        }
+
         if (typeof AudioManager !== 'undefined') {
             let archivoCampana = "";
             switch(horaActual) {
@@ -218,11 +237,220 @@ const RelojDivino = {
             agregarTexto(`<br><i class="txt-clerigo">Las campanas resuenan a lo lejos... La hueste entra en la hora de <b>${horaActual}</b>.</i><br>`);
         }
 
+        let msgPodridos = {};
+
+        if (typeof jugador !== "undefined" && jugador.inventario && Array.isArray(jugador.inventario)) {
+            for (let i = 0; i < jugador.inventario.length; i++) {
+                let item = jugador.inventario[i];
+                if (!item) continue;
+                
+                if (typeof item === 'object') {
+                    let diasPasados = this.diaActualIndex - (item.diaCompra || 0);
+                    let horasPasadas = this.indiceActual - (item.horaCompra || 0);
+                    
+                    let horasTotalesTranscurridas = (diasPasados * 7) + horasPasadas;
+                    if (horasTotalesTranscurridas < 0) horasTotalesTranscurridas = 0;
+                    
+                    item.edad = horasTotalesTranscurridas; 
+
+                    let itemData = typeof bdObjetos !== "undefined" ? bdObjetos[item.id] : null;
+                    if (itemData && typeof itemData.onPasoDelTiempo === "function") {
+                        let resultadoTiempo = itemData.onPasoDelTiempo(item);
+                        if (resultadoTiempo) {
+                            if (!msgPodridos[resultadoTiempo]) msgPodridos[resultadoTiempo] = 0;
+                            msgPodridos[resultadoTiempo]++;
+                        }
+                    }
+                }
+            }
+        }
+        
+        if (msgPodridos["pudrio_pan"] > 0 && typeof agregarTexto === 'function' && !esInicio) {
+            agregarTexto(`<div class="mensaje-combate" style="border: 1px dashed #ff4c4c; padding: 10px; margin: 10px 0; border-radius: 5px;"><b>¡EL PAN SE PUDRE!</b><br>Las inclemencias del tiempo han echado a perder <span class="txt-hereje">${msgPodridos["pudrio_pan"]} panes</span> en el morral. Sus hongos podrían ser letales.</div>`, "", true);
+        }
+        if (msgPodridos["agrio_cerveza"] > 0 && typeof agregarTexto === 'function' && !esInicio) {
+            agregarTexto(`<div class="mensaje-combate" style="border: 1px dashed #4c88ff; padding: 10px; margin: 10px 0; border-radius: 5px;"><b>¡LA CERVEZA SE HA AGRIADO!</b><br>El sol implacable ha arruinado <span class="txt-hereje">${msgPodridos["agrio_cerveza"]} barriles</span> en el morral. El líquido ahora es un vinagre insalubre.</div>`, "", true);
+        }
+
+        if (!esInicio && (msgPodridos["pudrio_pan"] > 0 || msgPodridos["agrio_cerveza"] > 0)) {
+            if (typeof Cronicas !== 'undefined') {
+                Cronicas.registrar("LOGISTICA_PUTREFACCION", {
+                    panes: msgPodridos["pudrio_pan"] || 0,
+                    cervezas: msgPodridos["agrio_cerveza"] || 0
+                });
+            }
+        }
+
+        // =========================================================================
+        // LÓGICA DE INANICIÓN (Hambre en Tercia y Vísperas)
+        // =========================================================================
+        let comandanteMuerto = false;
+        let htSinHambre = document.getElementById("ht-sin-hambre")?.checked; 
+
+        if (typeof jugador !== "undefined" && !htSinHambre && (horaActual === "Tercia" || horaActual === "Vísperas")) {
+            let hambreAumentada = false;
+            let muertesInanicion = [];
+            
+            let listas = [jugador.tropas, jugador.comandantes];
+            listas.forEach(lista => {
+                if (lista && lista.length > 0) {
+                    for (let i = lista.length - 1; i >= 0; i--) {
+                        let t = lista[i];
+                        if (t.hp > 0) {
+                            if (t.saltoHambre) {
+                                t.saltoHambre = false;
+                            } else {
+                                if (t.hambre === undefined) t.hambre = 5;
+                                t.hambre--;
+                                hambreAumentada = true;
+                                
+                                if (t.hambre <= -2) {
+                                    t.hp = 0;
+                                    t.lugarMuerte = "por inanición severa";
+                                    if (typeof jugador.cementerio === 'undefined') jugador.cementerio = [];
+                                    jugador.cementerio.push(t);
+                                    
+                                    // FIX TÁCTICO: Se envía el objeto completo con tipo y clase a las Crónicas
+                                    muertesInanicion.push({ nombre: t.nombre, tipo: t.tipoGeneral, clase: t.clase });
+                                    
+                                    if (t.idUnico === "cmd_player") comandanteMuerto = true;
+                                    lista.splice(i, 1);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            if (hambreAumentada && typeof agregarTexto === 'function' && !esInicio) {
+                agregarTexto(`<i class="txt-hereje">El estómago de la hueste ruge... Exigen provisiones.</i>`, "", true);
+            }
+            
+            if (muertesInanicion.length > 0 && typeof agregarTexto === 'function' && !esInicio) {
+                agregarTexto(`<div class="mensaje-combate" style="border: 1px solid #ff4c4c; padding: 10px; margin: 10px 0; border-radius: 5px;"><b>¡TRAGEDIA EN EL CAMPAMENTO!</b><br>Han perecido por inanición: <span class="txt-hereje">${muertesInanicion.map(m=>m.nombre).join(", ")}</span>. La falta de raciones los ha llevado a la tumba.</div>`, "", true);
+                if (typeof GestorEstado !== "undefined") GestorEstado.modificarFe(-10, "bajas por hambruna");
+                
+                if (typeof Cronicas !== 'undefined') {
+                    Cronicas.registrar("LOGISTICA_INANICION", { caidos: muertesInanicion });
+                }
+            }
+        }
+
+        // =========================================================================
+        // LÓGICA DE DESHIDRATACIÓN (Sed Diaria Personalizada)
+        // =========================================================================
+        let sedAumentada = false;
+        let muertesDeshidratacion = [];
+        let htSinSed = document.getElementById("ht-sin-sed")?.checked; 
+
+        if (typeof jugador !== "undefined" && !htSinSed) {
+            let listasSed = [jugador.tropas, jugador.comandantes];
+            listasSed.forEach(lista => {
+                if (lista && lista.length > 0) {
+                    for (let i = lista.length - 1; i >= 0; i--) {
+                        let t = lista[i];
+                        if (t.hp > 0) {
+                            let inicioRelativo = t.inicioSed !== undefined ? t.inicioSed : 0;
+                            let horasDesdeInicio = (this.diaActualIndex * 7 + this.indiceActual) - inicioRelativo;
+                            
+                            if (horasDesdeInicio > 0 && horasDesdeInicio % 7 === 0) {
+                                if (t.sed === undefined) t.sed = 3;
+                                t.sed--;
+                                sedAumentada = true;
+
+                                if (t.sed <= -1) {
+                                    t.hp = 0;
+                                    t.lugarMuerte = "por deshidratación severa";
+                                    if (typeof jugador.cementerio === 'undefined') jugador.cementerio = [];
+                                    jugador.cementerio.push(t);
+                                    
+                                    // FIX TÁCTICO: Se envía el objeto completo con tipo y clase a las Crónicas
+                                    muertesDeshidratacion.push({ nombre: t.nombre, tipo: t.tipoGeneral, clase: t.clase });
+                                    
+                                    if (t.idUnico === "cmd_player") comandanteMuerto = true;
+                                    lista.splice(i, 1);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        if (sedAumentada && typeof agregarTexto === 'function' && !esInicio) {
+            agregarTexto(`<i class="txt-hereje" style="color:#4c88ff;">El sofocante calor seca los gaznates... La hueste exige agua o cerveza.</i>`, "", true);
+        }
+        
+        if (muertesDeshidratacion.length > 0 && typeof agregarTexto === 'function' && !esInicio) {
+            agregarTexto(`<div class="mensaje-combate" style="border: 1px solid #4c88ff; padding: 10px; margin: 10px 0; border-radius: 5px;"><b>¡TRAGEDIA EN LA MARCHA!</b><br>Han perecido de sed: <span class="txt-hereje">${muertesDeshidratacion.map(m=>m.nombre).join(", ")}</span>. Sus lenguas se hincharon y cayeron muertos al polvo.</div>`, "", true);
+            if (typeof GestorEstado !== "undefined") GestorEstado.modificarFe(-10, "bajas por deshidratación");
+
+            if (typeof Cronicas !== 'undefined') {
+                Cronicas.registrar("LOGISTICA_DESHIDRATACION", { caidos: muertesDeshidratacion });
+            }
+        }
+
+        if (comandanteMuerto && typeof agregarTexto === 'function' && !esInicio) {
+            agregarTexto(`<div class="mensaje-combate" style="border: 3px double #ff0000; padding: 20px; font-size: 20px; text-align: center; margin: 20px 0; background: #1a0000;"><b>EL COMANDANTE HA MUERTO.</b><br>Tus ojos se cerraron por la miseria de tu propia gestión logística. La cruzada continuará sin ti... si es que pueden.</div>`, "", true);
+        }
+
         setTimeout(() => {
             if(textElement.classList.contains("hora-tanendo")) {
                 textElement.classList.remove("hora-tanendo");
             }
         }, 10000);
+    },
+
+    abrirSantoralDetallado: function() {
+        if (this.indiceActual === -1) return; 
+        
+        let overlay = document.getElementById("santoral-overlay");
+        if (!overlay) {
+            overlay = document.createElement("div");
+            overlay.id = "santoral-overlay";
+            overlay.className = "modal-overlay";
+            overlay.style.cssText = "display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background-color:rgba(0,0,0,0.85); z-index:2600; justify-content:center; align-items:center;";
+            
+            let box = document.createElement("div");
+            box.id = "santoral-box";
+            box.style.cssText = "background-color:#1a1a1a; border:2px solid #a3d9a5; padding:30px; width:600px; max-width:90%; position:relative; text-align:center; border-radius:5px; color:#d4c4a8; font-family:'Georgia', serif; box-shadow:0 0 40px rgba(163, 217, 165, 0.3);";
+            
+            let closeBtn = document.createElement("span");
+            closeBtn.className = "close-btn";
+            closeBtn.innerHTML = "✖";
+            closeBtn.style.cssText = "position:absolute; top:15px; right:20px; cursor:pointer; font-size:22px; color:#555; transition:0.3s;";
+            closeBtn.onmouseover = () => { closeBtn.style.color = "#ff4c4c"; };
+            closeBtn.onmouseout = () => { closeBtn.style.color = "#555"; };
+            closeBtn.onclick = () => { overlay.style.display = "none"; };
+            
+            let titulo = document.createElement("h3");
+            titulo.id = "santoral-titulo";
+            titulo.style.cssText = "color:#a3d9a5; border-bottom:1px solid #555; padding-bottom:10px; margin-top:0; font-family:'Cinzel', serif;";
+            
+            let contenido = document.createElement("div");
+            contenido.id = "santoral-contenido";
+            contenido.style.cssText = "margin:20px 0; font-size:18px; line-height:1.6;";
+            
+            box.appendChild(closeBtn);
+            box.appendChild(titulo);
+            box.appendChild(contenido);
+            overlay.appendChild(box);
+            document.body.appendChild(overlay);
+        }
+
+        let infoDia = this.obtenerFechaActual();
+        document.getElementById("santoral-titulo").innerHTML = `⛪ Fiesta de ${infoDia.santo}`;
+        
+        let htmlLore = `
+            <div style="color:#aaa; font-style:italic; margin-bottom:15px;">${infoDia.fecha} - En la hora de ${this.horas[this.indiceActual]}</div>
+            <div style="background:#111; padding:20px; border:1px inset #333; border-radius:5px;">
+                <img src="assets/img/personajes/aliados/fray.webp" style="width:100px; border-radius:5px; border:1px solid #ffd700; margin-bottom:15px; box-shadow:0 5px 15px rgba(0,0,0,0.8);">
+                <div style="color:#a3d9a5; font-style:italic;">"¿Sabíais, Comendador, que en este día se conmemora cuando ${infoDia.biografia}"</div>
+            </div>
+        `;
+        document.getElementById("santoral-contenido").innerHTML = htmlLore;
+        
+        overlay.style.display = "flex";
     },
 
     invocarRezo: async function(horaActual, huboRetraso) {
@@ -244,7 +472,7 @@ const RelojDivino = {
         dialogContainer.style.width = "100%"; dialogContainer.style.maxWidth = "1000px";
         overlay.appendChild(dialogContainer);
 
-        let nombreComandante = jugador.nombre !== "..." ? jugador.nombre : "Comendador";
+        let nombreComandante = (typeof jugador !== "undefined" && jugador.nombre !== "...") ? jugador.nombre : "Comendador";
         let rezo = this.oraciones[horaActual];
         let infoDia = this.obtenerFechaActual();
 
@@ -303,13 +531,17 @@ const RelojDivino = {
         dialogContainer.innerHTML = "";
 
         if (opcionSeleccionada) {
-            GestorEstado.modificarFe(2); 
+            if (typeof GestorEstado !== "undefined") GestorEstado.modificarFe(2); 
+            if (typeof Cronicas !== "undefined") { Cronicas.registrar("REZO", { rezo: true, hora: horaActual }); }
+
             await MotorDialogos.mostrarDialogoEnContenedor(dialogContainer, { personajeImg: "assets/img/personajes/aliados/fray.webp", nombrePersonaje: "Fray Bartolomé", alineacion: "izq", bordeClase: "borde-fray", nombreClase: "nombre-fray", retratoClase: "retrato-tribulacion retrato-tribulacion-fray", texto: `"${rezo.v1}"`, claseTexto: "txt-clerigo" }); dialogContainer.innerHTML = "";
             await MotorDialogos.mostrarDialogoEnContenedor(dialogContainer, { personajeImg: "assets/img/personajes/aliados/jugador.webp", nombrePersonaje: nombreComandante, alineacion: "izq", bordeClase: "borde-comandante", nombreClase: "nombre-comandante", retratoClase: "retrato-tribulacion", texto: `"${rezo.r1}"`, claseTexto: "txt-comandante" }); dialogContainer.innerHTML = "";
             await MotorDialogos.mostrarDialogoEnContenedor(dialogContainer, { personajeImg: "assets/img/personajes/aliados/fray.webp", nombrePersonaje: "Fray Bartolomé", alineacion: "izq", bordeClase: "borde-fray", nombreClase: "nombre-fray", retratoClase: "retrato-tribulacion retrato-tribulacion-fray", texto: `"${rezo.v2}"`, claseTexto: "txt-clerigo" }); dialogContainer.innerHTML = "";
             await MotorDialogos.mostrarDialogoEnContenedor(dialogContainer, { personajeImg: "assets/img/personajes/aliados/jugador.webp", nombrePersonaje: nombreComandante, alineacion: "izq", bordeClase: "borde-comandante", nombreClase: "nombre-comandante", retratoClase: "retrato-tribulacion", texto: `"${rezo.r2}"`, claseTexto: "txt-comandante" }); dialogContainer.innerHTML = "";
         } else {
-            GestorEstado.modificarFe(-5);
+            if (typeof GestorEstado !== "undefined") GestorEstado.modificarFe(-5);
+            if (typeof Cronicas !== "undefined") { Cronicas.registrar("REZO", { rezo: false, hora: horaActual }); }
+
             await MotorDialogos.mostrarDialogoEnContenedor(dialogContainer, { personajeImg: "assets/img/personajes/aliados/fray.webp", nombrePersonaje: "Fray Bartolomé", alineacion: "izq", bordeClase: "borde-fray", nombreClase: "nombre-fray", retratoClase: "retrato-tribulacion retrato-tribulacion-fray", texto: `"(El monje baja la mirada con un suspiro piadoso) Comprendo, mi Señor. El peso del mando enmudece a veces el llamado de los cielos. Rezaré por vuestra alma en vuestro lugar..."`, claseTexto: "txt-clerigo" }); dialogContainer.innerHTML = "";
             await MotorDialogos.mostrarDialogoEnContenedor(dialogContainer, { personajeImg: "assets/img/personajes/aliados/fray.webp", nombrePersonaje: "Fray Bartolomé", alineacion: "izq", bordeClase: "borde-fray", nombreClase: "nombre-fray", retratoClase: "retrato-tribulacion retrato-tribulacion-fray", texto: `"${rezo.v1} ${rezo.r1}"`, claseTexto: "txt-clerigo" }); dialogContainer.innerHTML = "";
             await MotorDialogos.mostrarDialogoEnContenedor(dialogContainer, { personajeImg: "assets/img/personajes/aliados/fray.webp", nombrePersonaje: "Fray Bartolomé", alineacion: "izq", bordeClase: "borde-fray", nombreClase: "nombre-fray", retratoClase: "retrato-tribulacion retrato-tribulacion-fray", texto: `"${rezo.v2} ${rezo.r2}"`, claseTexto: "txt-clerigo" }); dialogContainer.innerHTML = "";

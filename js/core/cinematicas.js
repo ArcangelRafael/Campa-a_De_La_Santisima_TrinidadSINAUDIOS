@@ -51,10 +51,15 @@ window.DirectorCinematico = {
                 mk.style.top = `${pos.top}%`; mk.style.left = `${pos.left}%`;
                 animCaja.appendChild(mk);
             } else if (m.row !== undefined && m.col !== undefined) {
-                let tops = [15, 32, 50, 68, 85];
+                let zonaBatalla = document.getElementById("zona-batalla-anim");
+                let targetContainer = zonaBatalla ? zonaBatalla : animCaja;
+                let topsPx = ["20px", "101px", "182px", "263px", "345px"]; 
                 let cols = { "-3": 24, "-2": 36, "-1": 48, "0": 60, "1": 72, "2": 84 };
-                mk.style.top = `${tops[m.row]}%`; mk.style.left = `${cols[m.col]}%`;
-                animCaja.appendChild(mk);
+                
+                mk.style.top = topsPx[m.row] || "182px"; 
+                mk.style.left = `${cols[m.col]}%`;
+                
+                targetContainer.appendChild(mk);
             }
         });
     },
@@ -62,7 +67,6 @@ window.DirectorCinematico = {
     crearTarjetaTropa: function(tropa) {
         let card = document.createElement("div");
         card.className = `tropa-cinematica ${tropa.clase === 'noble' ? 'tropa-noble' : 'tropa-mercenaria'}`;
-        // Llama de forma segura al motor central de combate que globalizamos antes
         if (typeof RenderCombate !== "undefined") {
             card.innerHTML = RenderCombate.htmlFichaCinematica(tropa);
         }
@@ -106,7 +110,7 @@ window.DirectorCinematico = {
             let impactBtn = document.createElement('button');
             impactBtn.className = "impacto-divino-btn"; 
             impactBtn.innerText = textoBtn;
-            impactBtn.style.bottom = "5px";
+            impactBtn.style.bottom = "10px";
             
             if(btnStyle.background) impactBtn.style.background = btnStyle.background;
             if(btnStyle.borderColor) impactBtn.style.borderColor = btnStyle.borderColor;
@@ -132,5 +136,142 @@ window.DirectorCinematico = {
         let ids = ["formacion-roster", "formacion-tablero", "formacion-picas-tablero", "btn-iniciar-formacion", "btn-iniciar-formacion-picas", "label-turnos-picas"];
         ids.forEach(id => { let el = document.getElementById(id); if(el) el.style.display = "none"; });
         let t = document.getElementById("titulo-formacion"); if(t) t.innerText = "";
+    },
+
+    // =========================================================================
+    // MOTORES DE ANIMACIÓN TÁCTICA UNIVERSAL (Refactorización DRY)
+    // =========================================================================
+    crearClonAnimado: function(tropa, box, colorSombra = "transparent") {
+        let clone = document.createElement("div");
+        let claseBorde = tropa.clase === 'noble' ? 'tropa-noble' : 'tropa-mercenaria';
+        
+        clone.className = `soldier-frame tropa-draggable ${claseBorde} caballero-ocupando`;
+        clone.innerHTML = typeof RenderCombate !== "undefined" ? RenderCombate.htmlFichaTropaInner(tropa) : "";
+
+        clone.style.setProperty("position", "fixed", "important");
+        clone.style.setProperty("width", "75px", "important");
+        clone.style.setProperty("height", "75px", "important");
+        
+        let topSeguro = (box && box.top !== undefined) ? box.top : window.innerHeight / 2;
+        let leftSeguro = (box && box.left !== undefined) ? box.left : window.innerWidth / 2;
+
+        if (typeof logTraza !== "undefined") logTraza(`[DIRECTOR] Clon Invocado: ${tropa.nombre} en TOP ${topSeguro.toFixed(1)}, LEFT ${leftSeguro.toFixed(1)}`);
+
+        clone.style.setProperty("top", topSeguro + "px", "important");
+        clone.style.setProperty("left", leftSeguro + "px", "important");
+        clone.style.setProperty("margin", "0", "important");
+        clone.style.setProperty("z-index", "9999", "important");
+        clone.style.setProperty("background-color", "rgba(0,0,0,0.8)", "important");
+        
+        if (colorSombra !== "transparent") {
+            clone.style.setProperty("box-shadow", `0 0 25px ${colorSombra}`, "important"); 
+        }
+        
+        let img = clone.querySelector('img');
+        if(img) img.style.setProperty("transform", "scaleX(-1)", "important");
+        
+        document.body.appendChild(clone);
+        return clone;
+    },
+
+    animarTrasladoFase1: function(dataLeaving, dataStaying, tiempoViajeMs, sombraLeaving, callbackFinal) {
+        if (typeof logTraza !== "undefined") logTraza("--> [DIRECTOR] Iniciando Traslado Fase 1 (Vanguardia)");
+        let clonesStaying = [];
+
+        dataLeaving.forEach(item => { 
+            if (item.startBox && item.targetBox) {
+                item.clone = this.crearClonAnimado(item.tropa, item.startBox, sombraLeaving); 
+            }
+        });
+        
+        dataStaying.forEach(item => { 
+            if (item.startBox && item.targetBox) {
+                let c = this.crearClonAnimado(item.tropa, item.startBox);
+                clonesStaying.push({ clone: c, tropa: item.tropa, targetBox: item.targetBox, targetId: item.targetId });
+            }
+        });
+
+        requestAnimationFrame(() => {
+            setTimeout(() => {
+                let transitionSecs = (tiempoViajeMs / 1000).toFixed(1);
+                dataLeaving.forEach(item => {
+                    if (item.clone && item.targetBox) {
+                        item.clone.style.setProperty("transition", `top ${transitionSecs}s ease-in-out, left ${transitionSecs}s ease-in-out`, "important");
+                        let targetTop = item.targetBox.top !== undefined ? item.targetBox.top : window.innerHeight / 2;
+                        let targetLeft = item.targetBox.left !== undefined ? item.targetBox.left : window.innerWidth / 2;
+                        item.clone.style.setProperty("top", targetTop + "px", "important");
+                        item.clone.style.setProperty("left", targetLeft + "px", "important");
+                    }
+                });
+            }, 50);
+        });
+
+        setTimeout(() => {
+            dataLeaving.forEach(item => {
+                let el = document.querySelector("#formacion-tablero #" + item.targetId);
+                if (el) { 
+                    el.style.setProperty("transition", "opacity 0.3s ease", "important"); 
+                    el.style.setProperty("opacity", "1", "important"); 
+                }
+                if (item.clone) item.clone.remove();
+            });
+            
+            if (callbackFinal) callbackFinal(clonesStaying);
+        }, tiempoViajeMs + 100); 
+    },
+
+    animarTrasladoFase2: function(clonesStaying, tiempoViajeMs, sombraStaying, callbackFinal) {
+        if (typeof logTraza !== "undefined") logTraza("--> [DIRECTOR] Iniciando Traslado Fase 2 (Reagrupamiento)");
+
+        let finishCinematica = () => {
+            let overlay = document.getElementById("formacion-overlay");
+            if (!overlay) {
+                if (callbackFinal) callbackFinal();
+                return;
+            }
+
+            let btn = document.createElement("button");
+            btn.className = "impacto-divino-btn txt-animado-salto";
+            btn.innerText = "⚔️ RETORNAR AL COMBATE ⚔️";
+            btn.style.cssText = "position: absolute; bottom: 50px; left: 50%; transform: translateX(-50%); z-index: 99999;";
+            
+            btn.onclick = () => {
+                btn.remove();
+                clonesStaying.forEach(item => {
+                    let el = document.querySelector("#formacion-tablero #" + item.targetId);
+                    if (el) { 
+                        el.style.setProperty("transition", "opacity 0.3s ease", "important"); 
+                        el.style.setProperty("opacity", "1", "important"); 
+                    }
+                    if (item.clone) item.clone.remove();
+                });
+                if (callbackFinal) callbackFinal();
+            };
+            
+            overlay.appendChild(btn);
+        };
+
+        if (!clonesStaying || clonesStaying.length === 0) {
+            finishCinematica();
+            return;
+        }
+
+        requestAnimationFrame(() => {
+            setTimeout(() => {
+                let transitionSecs = (tiempoViajeMs / 1000).toFixed(1);
+                clonesStaying.forEach(item => {
+                    if (item.clone && item.targetBox) {
+                        item.clone.style.setProperty("box-shadow", `0 0 10px ${sombraStaying}`, "important"); 
+                        item.clone.style.setProperty("transition", `top ${transitionSecs}s ease-in-out, left ${transitionSecs}s ease-in-out`, "important");
+                        let targetTop = item.targetBox.top !== undefined ? item.targetBox.top : window.innerHeight / 2;
+                        let targetLeft = item.targetBox.left !== undefined ? item.targetBox.left : window.innerWidth / 2;
+                        item.clone.style.setProperty("top", targetTop + "px", "important");
+                        item.clone.style.setProperty("left", targetLeft + "px", "important");
+                    }
+                });
+            }, 50);
+        });
+
+        setTimeout(finishCinematica, tiempoViajeMs + 100);
     }
 };
