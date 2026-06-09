@@ -372,14 +372,15 @@ function resolverDadosVisualesSacrificio() {
         let idBc = 'bc_' + Math.random().toString(36).substr(2,9);
         let phase1Cons = "";
 
-        // FIX TÁCTICO: Combate Melee limpio sin audios
         if (pAtkAliado > pAtkEnemigo) {
             EstadoBatalla.bajasEnemigas++;
             EstadoBatalla.hordaMuertosActuales++;
             phase1Cons = `<span class="mensaje-sistema">¡Tajo Mortal! El pagano cae decapitado.</span>`;
             window.marcadoresBatalla.push({tipo: 'skull', slotPos: pos.slotPos}); 
         } else if (pAtkEnemigo > pAtkAliado) {
-            tropa.hp--;
+            // FIX TÁCTICO: Llamado a la central de daño
+            GestorEstado.recibirDano(tropa.idUnico, 1);
+            
             phase1Cons = `<span class="txt-hereje">¡Carnicería! La hoja enemiga despelleja a ${tropa.nombre}.</span>`;
             if(tropa.hp <= 0) {
                 phase1Cons += `<div class="separador txt-hereje">💀 ¡MÁRTIR EN LA LÍNEA! ${tropa.nombre} derramó su sangre.</div>`;
@@ -388,7 +389,10 @@ function resolverDadosVisualesSacrificio() {
         } else {
             EstadoBatalla.bajasEnemigas++;
             EstadoBatalla.hordaMuertosActuales++;
-            tropa.hp--;
+            
+            // FIX TÁCTICO: Llamado a la central de daño
+            GestorEstado.recibirDano(tropa.idUnico, 1);
+            
             phase1Cons = `<span class="txt-hereje">¡Muerte Simultánea! Ambos se clavan el acero en las tripas.</span>`;
             window.marcadoresBatalla.push({tipo: 'skull', slotPos: pos.slotPos}); 
             if(tropa.hp <= 0) {

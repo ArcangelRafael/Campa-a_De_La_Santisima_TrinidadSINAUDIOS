@@ -35,7 +35,7 @@ document.addEventListener("DOMContentLoaded", () => {
     
     setInterval(() => {
         let overlayTienda = document.getElementById("tienda-overlay");
-        let isTiendaClosed = !overlayTienda || overlayTienda.style.display === "none";
+        let isTiendaClosed = !overlayTienda || window.getComputedStyle(overlayTienda).display === "none";
         let hasTropas = typeof jugador !== "undefined" && jugador.tropas && jugador.tropas.length > 0;
         let isReclutando = typeof faseReclutamientoInicial !== "undefined" ? faseReclutamientoInicial : false;
         
@@ -51,16 +51,22 @@ document.addEventListener("DOMContentLoaded", () => {
                 let animCaja = document.getElementById("animacion-escena1");
                 let formOverlay = document.getElementById("formacion-overlay");
                 
-                let enCinematica = (animCaja && animCaja.style.display !== "none" && animCaja.innerHTML !== "") || 
-                                   (formOverlay && formOverlay.style.display !== "none");
+                // FIX TÁCTICO: Usar getComputedStyle para evitar el bug del Fray fantasma
+                let animDisp = animCaja ? window.getComputedStyle(animCaja).display : "none";
+                let formDisp = formOverlay ? window.getComputedStyle(formOverlay).display : "none";
+                
+                let enCinematica = (animDisp !== "none" && animCaja.innerHTML !== "") || (formDisp !== "none");
                 
                 if (!enCinematica) {
                     window.RelojDivino.timerRezoIniciado = true;
                     setTimeout(() => {
                         let animNow = document.getElementById("animacion-escena1");
                         let formNow = document.getElementById("formacion-overlay");
-                        let ocupadaNow = (animNow && animNow.style.display !== "none" && animNow.innerHTML !== "") || 
-                                         (formNow && formNow.style.display !== "none");
+                        
+                        let animDispNow = animNow ? window.getComputedStyle(animNow).display : "none";
+                        let formDispNow = formNow ? window.getComputedStyle(formNow).display : "none";
+                        
+                        let ocupadaNow = (animDispNow !== "none" && animNow.innerHTML !== "") || (formDispNow !== "none");
 
                         if (!ocupadaNow && window.RelojDivino.rezoPendiente) {
                             window.RelojDivino.rezoPendiente = false;
@@ -164,8 +170,11 @@ window.RelojDivino = {
             let animCaja = document.getElementById("animacion-escena1");
             let formOverlay = document.getElementById("formacion-overlay");
             
-            let enCinematica = (animCaja && animCaja.style.display !== "none" && animCaja.innerHTML !== "") || 
-                               (formOverlay && formOverlay.style.display !== "none");
+            // FIX TÁCTICO: Blindaje getComputedStyle para detectar pantallas ocultas con certeza absoluta
+            let animDisp = animCaja ? window.getComputedStyle(animCaja).display : "none";
+            let formDisp = formOverlay ? window.getComputedStyle(formOverlay).display : "none";
+            
+            let enCinematica = (animDisp !== "none" && animCaja.innerHTML !== "") || (formDisp !== "none");
             
             if (enCinematica) {
                 this.rezoPendiente = true;
@@ -300,21 +309,25 @@ window.RelojDivino = {
                             if (t.saltoHambre) {
                                 t.saltoHambre = false;
                             } else {
-                                if (t.hambre === undefined) t.hambre = 5;
-                                t.hambre--;
-                                hambreAumentada = true;
-                                
-                                if (t.hambre <= -2) {
-                                    t.hp = 0;
-                                    t.lugarMuerte = "por inanición severa";
-                                    if (typeof jugador.cementerio === 'undefined') jugador.cementerio = [];
-                                    jugador.cementerio.push(t);
+                                if (!t.hambreInamovible) {
+                                    if (t.hambre === undefined) t.hambre = 5;
+                                    t.hambre--;
+                                    hambreAumentada = true;
                                     
-                                    // FIX TÁCTICO: Se envía el objeto completo con tipo y clase a las Crónicas
-                                    muertesInanicion.push({ nombre: t.nombre, tipo: t.tipoGeneral, clase: t.clase });
-                                    
-                                    if (t.idUnico === "cmd_player") comandanteMuerto = true;
-                                    lista.splice(i, 1);
+                                    if (t.hambre <= -2) {
+                                        let globalInmortal = document.getElementById("ht-sin-vidas-perdidas")?.checked;
+                                        if (!t.hpInamovible && !globalInmortal) {
+                                            t.hp = 0;
+                                            t.lugarMuerte = "por inanición severa";
+                                            if (typeof jugador.cementerio === 'undefined') jugador.cementerio = [];
+                                            jugador.cementerio.push(t);
+                                            
+                                            muertesInanicion.push({ nombre: t.nombre, tipo: t.tipoGeneral, clase: t.clase });
+                                            
+                                            if (t.idUnico === "cmd_player") comandanteMuerto = true;
+                                            lista.splice(i, 1);
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -354,21 +367,25 @@ window.RelojDivino = {
                             let horasDesdeInicio = (this.diaActualIndex * 7 + this.indiceActual) - inicioRelativo;
                             
                             if (horasDesdeInicio > 0 && horasDesdeInicio % 7 === 0) {
-                                if (t.sed === undefined) t.sed = 3;
-                                t.sed--;
-                                sedAumentada = true;
+                                if (!t.sedInamovible) {
+                                    if (t.sed === undefined) t.sed = 3;
+                                    t.sed--;
+                                    sedAumentada = true;
 
-                                if (t.sed <= -1) {
-                                    t.hp = 0;
-                                    t.lugarMuerte = "por deshidratación severa";
-                                    if (typeof jugador.cementerio === 'undefined') jugador.cementerio = [];
-                                    jugador.cementerio.push(t);
-                                    
-                                    // FIX TÁCTICO: Se envía el objeto completo con tipo y clase a las Crónicas
-                                    muertesDeshidratacion.push({ nombre: t.nombre, tipo: t.tipoGeneral, clase: t.clase });
-                                    
-                                    if (t.idUnico === "cmd_player") comandanteMuerto = true;
-                                    lista.splice(i, 1);
+                                    if (t.sed <= -1) {
+                                        let globalInmortal = document.getElementById("ht-sin-vidas-perdidas")?.checked;
+                                        if (!t.hpInamovible && !globalInmortal) {
+                                            t.hp = 0;
+                                            t.lugarMuerte = "por deshidratación severa";
+                                            if (typeof jugador.cementerio === 'undefined') jugador.cementerio = [];
+                                            jugador.cementerio.push(t);
+                                            
+                                            muertesDeshidratacion.push({ nombre: t.nombre, tipo: t.tipoGeneral, clase: t.clase });
+                                            
+                                            if (t.idUnico === "cmd_player") comandanteMuerto = true;
+                                            lista.splice(i, 1);
+                                        }
+                                    }
                                 }
                             }
                         }

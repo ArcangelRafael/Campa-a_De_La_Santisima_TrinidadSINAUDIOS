@@ -111,3 +111,30 @@ const CalendarioSantoral = [
         biografia: "los más sabios y temidos reyes de oriente no sintieron humillación alguna al ensuciarse las túnicas, cayendo de bruces en el fango de un establo para rendir culto absoluto a la Verdad? Se despojaron de sus egos de monarcas para someterse al único Señor, ofreciendo su oro, su incienso adorador y la profética mirra del dolor. Hoy, vosotros no haréis menos: arrojad vuestro oro a las arcas para el rescate de los prisioneros, mantened la vigilia de vuestra oración constante como el incienso humeante, y bebed sin lamentos la amarga mirra de la sangre derramada en batalla. ¡Adelante, en el Nombre de Cristo!" 
     } 
 ];
+
+/* ========================================================================= */
+/* PANTEÓN DE RÉQUIEMS (Memoria de Rosario) */
+/* ========================================================================= */
+window.RequiemsPool = {
+    frasesBase: [
+        "Que San Miguel Arcángel esté peleando por tu alma, {nombre}.",
+        "Requiem aeternam dona ei Domine. Descansa, {nombre}.",
+        "Que los coros angélicos salgan a tu encuentro, hermano {nombre}.",
+        "Tu sangre riega la tierra santa y lava tus faltas, valiente {nombre}.",
+        "Cristo te otorgue la corona del martirio inmarcesible, {nombre}.",
+        "La Santísima Trinidad acoja tu sacrificio heroico, {nombre}.",
+        "Que la Virgen María te cubra con su manto celeste, {nombre}.",
+        "Has peleado el buen combate, {nombre}. Que Dios te guarde.",
+        "Polvo eres, pero en la Gloria despertarás, hermano {nombre}.",
+        "El Rey de Reyes te reciba en su seno eterno, {nombre}."
+    ],
+    frasesDisponibles: [],
+    obtenerRequiem: function(nombreDifunto) {
+        if (this.frasesDisponibles.length === 0) {
+            this.frasesDisponibles = [...this.frasesBase];
+            this.frasesDisponibles.sort(() => Math.random() - 0.5); // Barajamos
+        }
+        let frase = this.frasesDisponibles.pop();
+        return frase.replace("{nombre}", nombreDifunto);
+    }
+};

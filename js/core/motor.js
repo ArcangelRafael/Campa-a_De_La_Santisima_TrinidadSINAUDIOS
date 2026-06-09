@@ -77,9 +77,23 @@ window.GestorEstado = {
             agregarTexto(`[Comendador: ${signo}${cantidad} Vida por ${razon}]`, cssClass);
         }
     },
+    recibirDano: function(idUnico, cantidad) {
+        let tropa = jugador.tropas.find(t => t.idUnico === idUnico);
+        if (!tropa) return false;
+        
+        if (tropa.hpInamovible) {
+            if (typeof logTraza !== "undefined") logTraza(`[ESCUDO DEL TESTER] Herida bloqueada en ${tropa.nombre}`);
+            return false; 
+        }
+        
+        tropa.hp -= cantidad;
+        return true;
+    },
     curarTropa: function(idUnico, cantidad) {
         let tropa = jugador.tropas.find(t => t.idUnico === idUnico);
         if (tropa && tropa.hp > 0) {
+            if (tropa.hpInamovible) return false; 
+            
             tropa.hp += cantidad;
             let max = tropa.hpMax || 2;
             if (tropa.hp > max) tropa.hp = max; 
@@ -89,6 +103,14 @@ window.GestorEstado = {
     },
     evaluarPoderTropa: function(tropa, tipoPoder = 'atk') {
         let base = tipoPoder === 'atk' ? (tropa.atkMax || 0) : (tropa.defMax || 0);
+        
+        if (tipoPoder === 'atk' && tropa.atkInamovible) {
+            return { base: base, neto: base, stringEfectos: ` <span class="mensaje-sistema">[Fuerza Inamovible]</span>` };
+        }
+        if (tipoPoder === 'def' && tropa.defInamovible) {
+            return { base: base, neto: base, stringEfectos: ` <span class="mensaje-sistema">[Defensa Inamovible]</span>` };
+        }
+
         let penalidad = (tropa.hp < (tropa.hpMax || 2) && tropa.hp > 0) ? 1 : 0;
         
         let hambre = tropa.hambre !== undefined ? tropa.hambre : 5;
@@ -98,7 +120,7 @@ window.GestorEstado = {
 
         let sed = tropa.sed !== undefined ? tropa.sed : 3;
         let penSedDef = 0;
-        if (sed === 1) penSedDef = 2; // Penalización por deshidratación
+        if (sed === 1) penSedDef = 2; 
 
         let modificadorMochila = 0;
         if (!tropa.mochila) tropa.mochila = [];
@@ -115,7 +137,6 @@ window.GestorEstado = {
         if (tipoPoder === 'atk') neto -= penHambreAtk;
         if (tipoPoder === 'def') neto -= penSedDef;
         
-        // Desmayo por Hambre o Sed anula todo el poder de combate
         if (hambre <= 0 || sed <= 0) neto = 0; 
         
         neto = Math.max(0, neto);
@@ -155,7 +176,6 @@ function reiniciarJugadorBase() {
     jugador.narrativaSacrificioVista = false; jugador.mercenarioRedimidoId = null;
     inventarioDesbloqueado = false; tiendaDesbloqueada = false; cronicasDesbloqueado = false;
     
-    // Todos inician con 5 de hambre y 3 de Sed, y el reloj de inicio activo.
     jugador.comandantes = [
         { idUnico: "cmd_player", idTipo: "comandante", nombre: "Comendador", img: "assets/img/personajes/aliados/jugador.webp", hp: 1, hpMax: 1, hambre: 5, sed: 3, saltoHambre: true, inicioSed: 0 },
         { idUnico: "cmd_alex", idTipo: "comandante", nombre: "Sir Alexandro", img: "assets/img/personajes/aliados/lider_caballeros.webp", hp: 1, hpMax: 1, hambre: 5, sed: 3, saltoHambre: true, inicioSed: 0 },
@@ -271,6 +291,40 @@ async function mostrarAvisoFe(infoFe) {
     }
 }
 
+window.mostrarNotificacionFlotante = function(mensaje) {
+    let container = document.getElementById("notification-container");
+    if (!container) {
+        container = document.createElement("div");
+        container.id = "notification-container";
+        document.body.appendChild(container);
+    }
+    
+    let notif = document.createElement("div");
+    notif.className = "floating-notification";
+    notif.innerHTML = mensaje;
+    
+    container.appendChild(notif);
+    
+    setTimeout(() => {
+        if (notif && notif.parentElement) notif.remove();
+    }, 10000);
+};
+
+window.mostrarRequiemEnTablero = function(mensaje, x, y) {
+    let notif = document.createElement("div");
+    notif.className = "in-board-requiem";
+    notif.innerHTML = mensaje;
+    
+    notif.style.left = x + "px";
+    notif.style.top = y + "px";
+    
+    document.body.appendChild(notif);
+    
+    setTimeout(() => {
+        if (notif && notif.parentNode) notif.remove();
+    }, 3600);
+};
+
 function agregarTexto(texto, clasePersonalizada = "", forzarScroll = true) {
     const parrafo = document.createElement("p"); parrafo.innerHTML = texto;
     if (clasePersonalizada) parrafo.classList.add(clasePersonalizada);
@@ -287,7 +341,6 @@ function tirarDado() { return Math.floor(Math.random() * 6) + 1; }
 
 function agregarTropa(idTipo, cantidad) {
     let tipo = bdTiposTropa[idTipo];
-    // Recuperamos el índice exacto de la hora actual en el momento del reclutamiento para calcular cuándo les da sed por primera vez.
     let horaRelojBase = (typeof RelojDivino !== 'undefined' && RelojDivino.indiceActual !== -1) ? RelojDivino.indiceActual : 0;
     
     for(let i=0; i<cantidad; i++){
@@ -309,22 +362,16 @@ function agregarTropa(idTipo, cantidad) {
         let vidaBase = tipo.hp || 2; 
         
         jugador.tropas.push({
-            idUnico: Math.random().toString(36).substr(2, 9),
-            idTipo: idTipo,
-            tipoGeneral: tipo.tipoG,
-            clase: tipo.clase, 
-            nombre: nomFinal,
-            hpMax: vidaBase, 
-            hp: vidaBase, 
-            atkMax: tipo.atk, 
-            defMax: tipo.def, 
-            img: tipo.img,
-            mochila: [],
-            hambre: 5,
-            sed: 3, 
-            saltoHambre: true,
-            inicioSed: horaRelojBase // Estampa de tiempo para el asedio de la sed.
+            idUnico: Math.random().toString(36).substr(2, 9), idTipo: idTipo, tipoGeneral: tipo.tipoG, clase: tipo.clase, nombre: nomFinal,
+            hpMax: vidaBase, hp: vidaBase, atkMax: tipo.atk, defMax: tipo.def, img: tipo.img, mochila: [], hambre: 5, sed: 3, saltoHambre: true, inicioSed: horaRelojBase
         });
+
+        let singularMap = { "caballeros": "caballero", "piqueros": "piquero", "ballesteros": "ballestero" };
+        let tipoDisplay = singularMap[tipo.tipoG] || "soldado";
+        if (tipo.clase === "unico_random") tipoDisplay = "vigía";
+        if (tipo.clase === "unico") tipoDisplay = "héroe";
+
+        mostrarNotificacionFlotante(`Hey! el ${tipoDisplay} <b>${nomFinal}</b> se ha unido al estandarte DEUS LO VULT !!`);
     }
 }
 
@@ -379,30 +426,14 @@ async function dispararTribulacionAleatoria(callbackContinuar) {
     let nombreScout = scout ? scout.nombre : "Hermano Vigía";
     let nombreComandante = jugador.nombre !== "..." ? jugador.nombre : "Comendador";
 
-    overlay.style.position = "fixed";
-    overlay.style.top = "0"; overlay.style.left = "0";
-    overlay.style.width = "100vw"; overlay.style.height = "100vh";
-    overlay.style.backgroundColor = "rgba(0, 0, 0, 0.95)";
-    overlay.style.zIndex = "9999";
-    overlay.style.display = "flex";
-    overlay.style.justifyContent = "center";
-    overlay.style.alignItems = "center";
-    overlay.innerHTML = "";
+    overlay.style.position = "fixed"; overlay.style.top = "0"; overlay.style.left = "0"; overlay.style.width = "100vw"; overlay.style.height = "100vh";
+    overlay.style.backgroundColor = "rgba(0, 0, 0, 0.95)"; overlay.style.zIndex = "9999"; overlay.style.display = "flex"; overlay.style.justifyContent = "center"; overlay.style.alignItems = "center"; overlay.innerHTML = "";
 
-    let dialogContainer = document.createElement("div");
-    dialogContainer.style.width = "100%";
-    dialogContainer.style.maxWidth = "1000px";
-    overlay.appendChild(dialogContainer);
+    let dialogContainer = document.createElement("div"); dialogContainer.style.width = "100%"; dialogContainer.style.maxWidth = "1000px"; overlay.appendChild(dialogContainer);
 
     await MotorDialogos.mostrarDialogoEnContenedor(dialogContainer, {
-        personajeImg: "assets/img/personajes/aliados/vigia.webp",
-        nombrePersonaje: nombreScout,
-        alineacion: "izq",
-        bordeClase: "borde-aliado",
-        nombreClase: "nombre-izq-align",
-        retratoClase: "retrato-tribulacion",
-        texto: `<b style="color:#ffaa00; display:block; margin-bottom:10px; font-size:18px; font-family:'Cinzel', serif;">TRIBULACIÓN: ${tribulacionElegida.titulo}</b>${tribulacionElegida.texto}`,
-        claseTexto: "txt-clerigo"
+        personajeImg: "assets/img/personajes/aliados/vigia.webp", nombrePersonaje: nombreScout, alineacion: "izq", bordeClase: "borde-aliado", nombreClase: "nombre-izq-align", retratoClase: "retrato-tribulacion",
+        texto: `<b style="color:#ffaa00; display:block; margin-bottom:10px; font-size:18px; font-family:'Cinzel', serif;">TRIBULACIÓN: ${tribulacionElegida.titulo}</b>${tribulacionElegida.texto}`, claseTexto: "txt-clerigo"
     });
 
     dialogContainer.innerHTML = "";
@@ -410,132 +441,90 @@ async function dispararTribulacionAleatoria(callbackContinuar) {
     let opcionesPagables = tribulacionElegida.opciones.filter(o => jugador.denarios >= (o.costo || 0));
     
     let opcionSeleccionada = await new Promise((resolve) => {
-        let box = document.createElement("div");
-        box.className = "dialogo-pergamino borde-comandante";
-        box.style.cursor = "default";
-        
-        let retrato = document.createElement("img");
-        retrato.className = "dialogo-retrato retrato-izq retrato-tribulacion";
-        retrato.src = "assets/img/personajes/aliados/jugador.webp";
-        box.appendChild(retrato);
-
-        let nameTag = document.createElement("div");
-        nameTag.className = "dialogo-nombre nombre-comandante";
-        nameTag.innerHTML = nombreComandante;
-        box.appendChild(nameTag);
-
-        let textContainer = document.createElement("div");
-        textContainer.className = "dialogo-texto-container pad-izq";
-        
-        let textSpan = document.createElement("span");
-        textSpan.className = "txt-sagrado";
-        textSpan.style.fontSize = "22px";
-        textSpan.style.textAlign = "center";
-        textSpan.style.display = "block";
-        textSpan.innerHTML = ""; 
-        textContainer.appendChild(textSpan);
-        box.appendChild(textContainer);
-
-        let btnContainer = document.createElement("div");
-        btnContainer.style.cssText = "position: absolute; bottom: -20px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: row; gap: 15px; z-index: 25; width: max-content; max-width: 90%; justify-content: center; align-items: center;";
-        box.appendChild(btnContainer);
-
-        let btnNext = document.createElement("button");
-        btnNext.className = "btn-siguiente-medieval";
-        btnNext.innerText = "SIGUIENTE ⮞";
-        btnNext.style.display = "none";
-        box.appendChild(btnNext);
-
+        let box = document.createElement("div"); box.className = "dialogo-pergamino borde-comandante"; box.style.cursor = "default";
+        let retrato = document.createElement("img"); retrato.className = "dialogo-retrato retrato-izq retrato-tribulacion"; retrato.src = "assets/img/personajes/aliados/jugador.webp"; box.appendChild(retrato);
+        let nameTag = document.createElement("div"); nameTag.className = "dialogo-nombre nombre-comandante"; nameTag.innerHTML = nombreComandante; box.appendChild(nameTag);
+        let textContainer = document.createElement("div"); textContainer.className = "dialogo-texto-container pad-izq";
+        let textSpan = document.createElement("span"); textSpan.className = "txt-sagrado"; textSpan.style.fontSize = "22px"; textSpan.style.textAlign = "center"; textSpan.style.display = "block"; textSpan.innerHTML = ""; textContainer.appendChild(textSpan); box.appendChild(textContainer);
+        let btnContainer = document.createElement("div"); btnContainer.style.cssText = "position: absolute; bottom: -20px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: row; gap: 15px; z-index: 25; width: max-content; max-width: 90%; justify-content: center; align-items: center;"; box.appendChild(btnContainer);
+        let btnNext = document.createElement("button"); btnNext.className = "btn-siguiente-medieval"; btnNext.innerText = "SIGUIENTE ⮞"; btnNext.style.display = "none"; box.appendChild(btnNext);
         dialogContainer.appendChild(box);
 
         function ejecutarEleccion(opcion) {
             btnContainer.style.display = "none"; 
-            
-            let textoObj = `"${opcion.texto}"`;
-            let i = 0;
-            let interval = setInterval(() => {
-                textSpan.innerHTML += textoObj.charAt(i);
-                i++;
-                if (i >= textoObj.length) {
-                    clearInterval(interval);
-                    btnNext.style.display = "block";
-                }
-            }, 35); 
-            
-            btnNext.onclick = (e) => {
-                e.stopPropagation();
-                resolve(opcion);
-            };
+            let textoObj = `"${opcion.texto}"`; let i = 0;
+            let interval = setInterval(() => { textSpan.innerHTML += textoObj.charAt(i); i++; if (i >= textoObj.length) { clearInterval(interval); btnNext.style.display = "block"; } }, 35); 
+            btnNext.onclick = (e) => { e.stopPropagation(); resolve(opcion); };
         }
 
         if (opcionesPagables.length === 0) {
-            let btn = document.createElement("button");
-            btn.className = "btn-siguiente-medieval";
-            btn.style.cssText = "position: relative; bottom: auto; left: auto; transform: none; margin: 0; padding: 10px 20px; font-size: 13px; max-width: 280px; white-space: normal; line-height: 1.3;";
-            btn.innerText = "Lamentar la carestía y continuar";
-            btn.onclick = () => {
-                GestorEstado.modificarFe(-20); 
-                ejecutarEleccion({
-                    texto: "No tenemos el oro suficiente para actuar. Que Dios nos perdone.",
-                    consecuencia: () => {
-                        return {
-                            narrativa: "Tu compañía se desmoraliza al verte atado de manos. La miseria impide cualquier acción digna.",
-                            efectos: "<b class='txt-hereje'>[-20 Fe/Liderazgo]</b>"
-                        };
-                    }
-                });
-            };
+            let btn = document.createElement("button"); btn.className = "btn-siguiente-medieval"; btn.style.cssText = "position: relative; bottom: auto; left: auto; transform: none; margin: 0; padding: 10px 20px; font-size: 13px; max-width: 280px; white-space: normal; line-height: 1.3;"; btn.innerText = "Lamentar la carestía y continuar";
+            btn.onclick = () => { GestorEstado.modificarFe(-20); ejecutarEleccion({ texto: "No tenemos el oro suficiente para actuar. Que Dios nos perdone.", consecuencia: () => { return { narrativa: "Tu compañía se desmoraliza al verte atado de manos. La miseria impide cualquier acción digna.", efectos: "<b class='txt-hereje'>[-20 Fe/Liderazgo]</b>" }; } }); };
             btnContainer.appendChild(btn);
         } else {
             tribulacionElegida.opciones.forEach(opcion => {
-                let btn = document.createElement("button");
-                btn.className = "btn-siguiente-medieval";
-                btn.style.cssText = "position: relative; bottom: auto; left: auto; transform: none; margin: 0; padding: 10px 20px; font-size: 13px; max-width: 250px; white-space: normal; line-height: 1.3;";
-                btn.innerText = opcion.texto;
-                if (jugador.denarios < (opcion.costo || 0)) {
-                    btn.disabled = true; btn.style.opacity = "0.5"; btn.style.cursor = "not-allowed"; btn.innerText += " (Oro Insuficiente)";
-                } else {
-                    btn.onclick = () => ejecutarEleccion(opcion);
-                }
+                let btn = document.createElement("button"); btn.className = "btn-siguiente-medieval"; btn.style.cssText = "position: relative; bottom: auto; left: auto; transform: none; margin: 0; padding: 10px 20px; font-size: 13px; max-width: 250px; white-space: normal; line-height: 1.3;"; btn.innerText = opcion.texto;
+                if (jugador.denarios < (opcion.costo || 0)) { btn.disabled = true; btn.style.opacity = "0.5"; btn.style.cursor = "not-allowed"; btn.innerText += " (Oro Insuficiente)"; } else { btn.onclick = () => ejecutarEleccion(opcion); }
                 btnContainer.appendChild(btn);
             });
         }
     });
 
-    let resultado = opcionSeleccionada.consecuencia();
+    let resultado = opcionSeleccionada.consecuencia(); dialogContainer.innerHTML = "";
+    await MotorDialogos.mostrarDialogoEnContenedor(dialogContainer, { personajeImg: "assets/img/personajes/aliados/fray.webp", nombrePersonaje: "Fray Bartolomé", alineacion: "izq", bordeClase: "borde-fray", nombreClase: "nombre-fray", retratoClase: "retrato-tribulacion retrato-tribulacion-fray", texto: resultado.narrativa, claseTexto: "txt-clerigo" });
     dialogContainer.innerHTML = "";
+    await MotorDialogos.mostrarDialogoEnContenedor(dialogContainer, { personajeImg: "assets/img/personajes/aliados/vigia.webp", nombrePersonaje: nombreScout, alineacion: "izq", bordeClase: "borde-aliado", nombreClase: "nombre-izq-align", retratoClase: "retrato-tribulacion", texto: `<b style="color:#c0c0c0; font-size:18px; display:block; margin-bottom:10px; font-family:'Cinzel', serif;">REPORTE DE LA HUESTE:</b><div style="font-size:16px;">${resultado.efectos}</div>`, claseTexto: "txt-clerigo" });
 
-    await MotorDialogos.mostrarDialogoEnContenedor(dialogContainer, {
-        personajeImg: "assets/img/personajes/aliados/fray.webp",
-        nombrePersonaje: "Fray Bartolomé",
-        alineacion: "izq",
-        bordeClase: "borde-fray",
-        nombreClase: "nombre-fray",
-        retratoClase: "retrato-tribulacion retrato-tribulacion-fray",
-        texto: resultado.narrativa,
-        claseTexto: "txt-clerigo"
-    });
-
-    dialogContainer.innerHTML = "";
-
-    await MotorDialogos.mostrarDialogoEnContenedor(dialogContainer, {
-        personajeImg: "assets/img/personajes/aliados/vigia.webp",
-        nombrePersonaje: nombreScout,
-        alineacion: "izq",
-        bordeClase: "borde-aliado",
-        nombreClase: "nombre-izq-align",
-        retratoClase: "retrato-tribulacion",
-        texto: `<b style="color:#c0c0c0; font-size:18px; display:block; margin-bottom:10px; font-family:'Cinzel', serif;">REPORTE DE LA HUESTE:</b><div style="font-size:16px;">${resultado.efectos}</div>`,
-        claseTexto: "txt-clerigo"
-    });
-
-    if(typeof AudioManager !== "undefined" && typeof AudioManager.detenerMusicaTribulacion === 'function') {
-        AudioManager.detenerMusicaTribulacion();
-    }
-    overlay.style.display = "none"; 
-    overlay.innerHTML = ""; 
-
+    if(typeof AudioManager !== "undefined" && typeof AudioManager.detenerMusicaTribulacion === 'function') AudioManager.detenerMusicaTribulacion();
+    overlay.style.display = "none"; overlay.innerHTML = ""; 
     if (typeof RelojDivino !== "undefined") RelojDivino.reanudar();
-    
     if(callbackContinuar) callbackContinuar();
 }
+
+// =========================================================================
+// SISTEMA CENTRAL DE MÁRTIRES Y CAÍDOS (HALOS VISUALES)
+// =========================================================================
+window.crearMarcadorMuerteDOM = function(tipo) {
+    let mk = document.createElement("div");
+    mk.className = tipo === 'skull' ? "marcador-batalla skull-icon" : "marcador-batalla cross-icon";
+    mk.innerHTML = tipo === 'skull' ? "☠️" : "✝";
+    
+    // Inyección de CSS agresivo inline para que ningún contenedor lo sobreescriba
+    if (tipo === 'skull') {
+        mk.style.cssText = "position:absolute; font-size:45px; z-index:250; pointer-events:none; top:50%; left:50%; transform:translate(-50%, -50%); opacity: 0.95; color: #ffffff !important; text-shadow: 0 0 15px #ff0000, 0 0 30px #ff0000, 0 0 40px #ff0000 !important;";
+    } else {
+        // Posicionamiento neutral base
+        mk.style.cssText = "position:absolute; font-size:45px; z-index:250; pointer-events:none; top:50%; left:50%; transform:translate(-50%, -50%); opacity: 0.95; color: #ffd700 !important; text-shadow: 0 0 15px #ffaa00, 0 0 30px #ffaa00, 0 0 40px #ffaa00 !important;";
+    }
+    return mk;
+};
+
+window.dibujarMarcadorMuerte = function(slotElement, tipo) {
+    if (!slotElement) return null;
+    
+    // Purga de marcadores previos para evitar doble icono
+    let existente = slotElement.querySelector('.marcador-batalla');
+    if (existente) existente.remove();
+
+    let mk = window.crearMarcadorMuerteDOM(tipo);
+    slotElement.appendChild(mk);
+    return mk;
+};
+
+window.forzarHalosCinematicas = function(contenedor) {
+    if(!contenedor) return;
+    setTimeout(() => {
+        contenedor.querySelectorAll('.marcador-batalla, div').forEach(el => {
+            if(el.innerHTML.includes('☠️')) {
+                el.style.setProperty('color', '#ffffff', 'important');
+                el.style.setProperty('text-shadow', '0 0 15px #ff0000, 0 0 30px #ff0000, 0 0 40px #ff0000', 'important');
+                el.style.setProperty('z-index', '250', 'important');
+            }
+            if(el.innerHTML.includes('✝')) {
+                el.style.setProperty('color', '#ffd700', 'important');
+                el.style.setProperty('text-shadow', '0 0 15px #ffaa00, 0 0 30px #ffaa00, 0 0 40px #ffaa00', 'important');
+                el.style.setProperty('z-index', '250', 'important');
+            }
+        });
+    }, 150);
+};

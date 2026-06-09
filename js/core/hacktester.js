@@ -9,7 +9,7 @@ document.addEventListener("DOMContentLoaded", () => {
         let diaNum = i+1;
         let mes = i < 15 ? "Dic" : "Ene";
         let diaDom = i < 15 ? 17 + i : i - 14;
-        daysHtml += `<button class="ht-btn-jump-day" onclick="ht_setDia(${i})">⮞ Día ${diaNum} (${diaDom} ${mes})</button>`;
+        daysHtml += `<button class="ht-btn-jump-day" onclick="ht_setDia(${i})">Día ${diaNum} (${diaDom} ${mes})</button>`;
     }
 
     const htStyle = document.createElement("style");
@@ -25,30 +25,37 @@ document.addEventListener("DOMContentLoaded", () => {
             background: rgba(0,0,0,0.9); border: 2px solid #00ff00; color: #00ff00; 
             padding: 15px; font-family: monospace; font-size: 12px; display: none; 
             width: 280px; border-radius: 8px; box-shadow: 0 0 15px #00ff00; 
-            overflow: visible; margin-bottom: 15px; 
+            overflow: visible; margin-bottom: 15px; position: relative;
         }
         
         #ht-master-wrapper:hover #hacktester-panel { display: block; }
 
+        /* PANEL DE TROPA INDIVIDUAL (Alineado hasta arriba a la izquierda del maestro) */
+        #ht-tropa-panel {
+            position: absolute; right: 310px; top: 0;
+            background: rgba(0,0,0,0.95); border: 2px solid #00ff00; color: #00ff00;
+            padding: 15px; width: 300px; border-radius: 8px; box-shadow: 0 0 15px #00ff00;
+            display: none; flex-direction: column; max-height: 80vh;
+        }
+
         /* Zona de scroll interna exclusiva para los botones */
         .ht-scroll-zone {
-            max-height: 55vh; 
-            overflow-y: auto; 
-            overflow-x: hidden; 
-            padding-right: 8px; 
-            margin-bottom: 10px;
-            border-bottom: 1px dashed rgba(0, 255, 0, 0.4);
-            padding-bottom: 10px;
+            max-height: 55vh; overflow-y: auto; overflow-x: hidden; 
+            padding-right: 8px; margin-bottom: 10px;
+            border-bottom: 1px dashed rgba(0, 255, 0, 0.4); padding-bottom: 10px;
         }
         .ht-scroll-zone::-webkit-scrollbar { width: 5px; }
         .ht-scroll-zone::-webkit-scrollbar-thumb { background: #00ff00; border-radius: 3px; }
 
-        #hacktester-panel h3 { margin: 0 0 10px 0; border-bottom: 1px solid #00ff00; padding-bottom: 5px; text-align: center; font-size: 14px; }
+        #hacktester-panel h3, #ht-tropa-panel h3 { margin: 0 0 10px 0; border-bottom: 1px solid #00ff00; padding-bottom: 5px; text-align: center; font-size: 14px; }
         #hacktester-panel b { color: #fff; display: block; margin-top: 10px; }
-        .ht-row { display: flex; gap: 5px; margin: 5px 0; }
-        .ht-row-mb { display: flex; gap: 5px; margin-bottom: 10px; }
-        .ht-btn { flex-grow: 1; padding: 5px; cursor: pointer; font-family: monospace; font-weight: bold; border-radius: 3px; }
+        
+        .ht-row { display: flex; gap: 5px; margin: 5px 0; align-items: center; justify-content: space-between;}
+        .ht-row-mb { display: flex; gap: 5px; margin-bottom: 10px; align-items: center; justify-content: space-between;}
+        
+        .ht-btn { flex-grow: 1; padding: 5px; cursor: pointer; font-family: monospace; font-weight: bold; border-radius: 3px; text-align:center; }
         .ht-btn-cab { background: #111; color: #0f0; border: 1px solid #0f0; }
+        .ht-btn-cab:hover { background: #050; }
         .ht-btn-mer { background: #111; color: #ffaa00; border: 1px solid #ffaa00; }
         .ht-btn-dmg { background: #4a0000; color: #fff; border: 1px solid #ff4c4c; }
         .ht-btn-heal { background: #004a00; color: #fff; border: 1px solid #88ff88; }
@@ -65,6 +72,9 @@ document.addEventListener("DOMContentLoaded", () => {
         .ht-label-orange { border-color: #ff8c00; color: #ff8c00; font-weight: bold; }
         .ht-label-yellow { border-color: #ff0; color: #ff0; }
         .ht-label-red { border-color: #ff4c4c; color: #ff4c4c; font-weight: bold; }
+        
+        .ht-tropa-item { background: #111; border: 1px dashed #050; padding: 5px; margin-bottom: 3px; cursor: pointer; color:#0f0; }
+        .ht-tropa-item:hover { background: #050; }
         
         .ht-dropdown-nav { position: relative; background: #111; border: 1px solid #f0f; border-radius: 3px; }
         .ht-nav-title { padding: 8px; color: #f0f; font-weight: bold; cursor: help; text-align: center; }
@@ -108,11 +118,36 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const htContainer = document.createElement("div");
     htContainer.innerHTML = `
-        <div id="ht-master-wrapper">
+        <div id="ht-master-wrapper" onmouseleave="ht_closeTropaPanel()">
+            
+            <div id="ht-tropa-panel" onmouseleave="ht_closeTropaPanel()">
+                <h3>🔎 INSPECCIÓN AISLADA</h3>
+                <input type="text" id="ht-tropa-buscar" placeholder="Buscar por nombre..." onkeyup="ht_actualizarListaTropas()" style="width:100%; box-sizing:border-box; margin-bottom:5px; background:#000; color:#0f0; border:1px solid #0f0; padding:5px;">
+                <select id="ht-tropa-filtro" onchange="ht_actualizarListaTropas()" style="width:100%; box-sizing:border-box; margin-bottom:10px; background:#000; color:#0f0; border:1px solid #0f0; padding:5px;">
+                    <option value="todos">Todas las Unidades</option>
+                    <option value="caballeros">Caballeros</option>
+                    <option value="piqueros">Piqueros</option>
+                    <option value="ballesteros">Ballesteros</option>
+                    <option value="especiales">Especiales (Cmd/Fraile)</option>
+                </select>
+                <div id="ht-tropa-lista" class="ht-scroll-zone" style="max-height: 140px;"></div>
+                <div id="ht-tropa-detalles" style="display:none; margin-top:10px; border-top: 1px dashed #0f0; padding-top: 10px;"></div>
+                
+                <div id="ht-afectados-list" style="margin-top:10px; border-top:1px solid #0f0; padding-top:10px; display:none;">
+                    <b style="color:#fff; margin-bottom:5px; display:block;">Lista de Inamovibles:</b>
+                    <div id="ht-afectados-nombres" style="color:#aaa; font-size:11px;"></div>
+                </div>
+            </div>
+
             <div id="hacktester-panel">
-                <h3>🛠️ MODO TESTER</h3>
+                <h3>⚙️ MODO TESTER</h3>
                 
                 <div class="ht-scroll-zone">
+                    <b>[INSPECCIÓN DE UNIDAD]</b>
+                    <div class="ht-row-mb">
+                        <button class="ht-btn ht-btn-cab" onmouseenter="ht_openTropaPanel()">🔎 TROPA INDIVIDUAL</button>
+                    </div>
+
                     <b>[TROPAS NOBLES]</b>
                     <div class="ht-row"><button class="ht-btn ht-btn-cab" onclick="ht_addTropa('caballero_noble')">+ Cab.</button><button class="ht-btn ht-btn-cab" onclick="ht_removeTropa('caballero_noble')">- Cab.</button></div>
                     <div class="ht-row"><button class="ht-btn ht-btn-cab" onclick="ht_addTropa('piquero_noble')">+ Piq.</button><button class="ht-btn ht-btn-cab" onclick="ht_removeTropa('piquero_noble')">- Piq.</button></div>
@@ -136,8 +171,8 @@ document.addEventListener("DOMContentLoaded", () => {
                         <button class="ht-btn ht-btn-fe" style="border-color:#4c88ff; color:#4c88ff;" onclick="ht_addLoteCerveza()">+4 Cerveza</button>
                     </div>
                     <div class="ht-row-mb" style="gap: 2px;">
-                        <button class="ht-btn ht-btn-dmg" style="padding:5px 2px;" onclick="ht_modHambre(-1)">-1🍖</button>
-                        <button class="ht-btn ht-btn-heal" style="padding:5px 2px;" onclick="ht_modHambre(1)">+1🍖</button>
+                        <button class="ht-btn ht-btn-dmg" style="padding:5px 2px;" onclick="ht_modHambre(-1)">-1🍞</button>
+                        <button class="ht-btn ht-btn-heal" style="padding:5px 2px;" onclick="ht_modHambre(1)">+1🍞</button>
                         <button class="ht-btn ht-btn-dmg" style="border-color:#4c88ff; background:#1a3055; padding:5px 2px;" onclick="ht_modSed(-1)">-1🍺</button>
                         <button class="ht-btn ht-btn-fe" style="border-color:#4c88ff; background:#214073; color:#fff; padding:5px 2px;" onclick="ht_modSed(1)">+1🍺</button>
                     </div>
@@ -154,27 +189,29 @@ document.addEventListener("DOMContentLoaded", () => {
                     </b>
                     <label class="ht-label"><input type="checkbox" id="ht-mute-audio" class="ht-ajuste-cb" onchange="ht_toggleMute(this.checked)"> 🔇 Mutear Todo el Juego</label>
                     <label class="ht-label ht-label-yellow"><input type="checkbox" id="ht-top-layer" class="ht-ajuste-cb" onchange="ht_toggleTopLayer(this.checked)"> 👑 Panel Supremo</label>
-                    <label class="ht-label ht-label-yellow"><input type="checkbox" id="ht-sin-hambre" class="ht-ajuste-cb"> 🍖 Sin Hambre (Inmune)</label>
+                    <label class="ht-label ht-label-yellow"><input type="checkbox" id="ht-sin-vidas-perdidas" class="ht-ajuste-cb"> 🛡️ Sin Perder Vidas (Global)</label>
+                    <label class="ht-label ht-label-yellow"><input type="checkbox" id="ht-sin-hambre" class="ht-ajuste-cb"> 🍞 Sin Hambre (Inmune)</label>
                     <label class="ht-label ht-label-cyan"><input type="checkbox" id="ht-sin-sed" class="ht-ajuste-cb"> 🍺 Sin Sed (Inmune)</label>
-                    <label class="ht-label ht-label-cyan"><input type="checkbox" id="ht-auto-fill" class="ht-ajuste-cb"> 🎲 Auto-Despliegue</label>
-                    <label class="ht-label ht-label-orange"><input type="checkbox" id="ht-auto-combat" class="ht-ajuste-cb"> ⚡ Combate Automático</label>
-                    <label class="ht-label ht-label-yellow" style="color: #ff0; border-color: #ff0;"><input type="checkbox" id="ht-skip-cine" class="ht-ajuste-cb"> 🎬 Omitir Cinemáticas</label>
+                    <label class="ht-label ht-label-cyan"><input type="checkbox" id="ht-auto-fill" class="ht-ajuste-cb"> ⚡ Auto-Despliegue</label>
+                    <label class="ht-label ht-label-orange"><input type="checkbox" id="ht-auto-combat" class="ht-ajuste-cb"> ⚔️ Combate Automático</label>
+                    <label class="ht-label ht-label-yellow" style="color: #ff0; border-color: #ff0;"><input type="checkbox" id="ht-skip-cine" class="ht-ajuste-cb"> ⏭️ Omitir Cinemáticas</label>
                     <label class="ht-label"><input type="checkbox" id="ht-textos-planos" class="ht-ajuste-cb"> 📜 Textos Planos</label>
                     <label class="ht-label ht-label-red"><input type="checkbox" id="ht-disable-popups" class="ht-ajuste-cb"> 🚫 Omitir Emergentes</label>
-                </div> <div style="display: flex; gap: 5px; margin-bottom: 10px;">
+                </div>
+
+                <div style="display: flex; gap: 5px; margin-bottom: 10px;">
                     <div class="ht-dropdown-nav-time">
                         <div class="ht-nav-title">⏳ Hora...</div>
                         <div class="ht-nav-content">
-                            <button class="ht-btn-jump-time" onclick="ht_setReloj('Laudes')">⮞ Laudes</button>
-                            <button class="ht-btn-jump-time" onclick="ht_setReloj('Prima')">⮞ Prima</button>
-                            <button class="ht-btn-jump-time" onclick="ht_setReloj('Tercia')">⮞ Tercia</button>
-                            <button class="ht-btn-jump-time" onclick="ht_setReloj('Sexta')">⮞ Sexta</button>
-                            <button class="ht-btn-jump-time" onclick="ht_setReloj('Nona')">⮞ Nona</button>
-                            <button class="ht-btn-jump-time" onclick="ht_setReloj('Vísperas')">⮞ Vísperas</button>
-                            <button class="ht-btn-jump-time" onclick="ht_setReloj('Completas')">⮞ Completas</button>
+                            <button class="ht-btn-jump-time" onclick="ht_setReloj('Laudes')">🌅 Laudes</button>
+                            <button class="ht-btn-jump-time" onclick="ht_setReloj('Prima')">☀️ Prima</button>
+                            <button class="ht-btn-jump-time" onclick="ht_setReloj('Tercia')">🌤️ Tercia</button>
+                            <button class="ht-btn-jump-time" onclick="ht_setReloj('Sexta')">🌞 Sexta</button>
+                            <button class="ht-btn-jump-time" onclick="ht_setReloj('Nona')">🌥️ Nona</button>
+                            <button class="ht-btn-jump-time" onclick="ht_setReloj('Vísperas')">🌇 Vísperas</button>
+                            <button class="ht-btn-jump-time" onclick="ht_setReloj('Completas')">🌙 Completas</button>
                         </div>
                     </div>
-
                     <div class="ht-dropdown-nav-day">
                         <div class="ht-nav-title">📅 Día...</div>
                         <div class="ht-nav-content">
@@ -184,20 +221,20 @@ document.addEventListener("DOMContentLoaded", () => {
                 </div>
 
                 <div class="ht-dropdown-nav">
-                    <div class="ht-nav-title">⏴ Salto a...</div>
+                    <div class="ht-nav-title">⏭️ Salto a...</div>
                     <div class="ht-nav-content">
                         <div class="ht-nested">
-                            <div class="ht-nested-title">⏴ Capítulo 1</div>
+                            <div class="ht-nested-title">📖 Capítulo 1</div>
                             <div class="ht-nested-content">
                                 <div class="ht-nested">
-                                    <div class="ht-nested-title clickable" onclick="ht_jumpTo('opciones_cap1')" title="Clic para saltar, Hover para sub-opciones">⏴ Decisión del Puente</div>
+                                    <div class="ht-nested-title clickable" onclick="ht_jumpTo('opciones_cap1')" title="Clic para saltar, Hover para sub-opciones">🔀 Decisión del Puente</div>
                                     <div class="ht-nested-content">
                                         <div class="ht-nested">
-                                            <div class="ht-nested-title">⏴ Opción I</div>
+                                            <div class="ht-nested-title">🛡️ Opción I</div>
                                             <div class="ht-nested-content">
-                                                <button class="ht-btn-jump2" onclick="ht_jumpTo('muro_picas')">⮞ Muro de Picas (4T)</button>
-                                                <button class="ht-btn-jump2" onclick="ht_jumpTo('repliegue')">⮞ Ballesteros+Picas</button>
-                                                <button class="ht-btn-jump2" onclick="ht_jumpTo('bosque_victoria')">⮞ Victoria</button>
+                                                <button class="ht-btn-jump2" onclick="ht_jumpTo('muro_picas')">⚔️ Muro de Picas (4T)</button>
+                                                <button class="ht-btn-jump2" onclick="ht_jumpTo('repliegue')">🏹 Ballesteros+Picas</button>
+                                                <button class="ht-btn-jump2" onclick="ht_jumpTo('bosque_victoria')">👑 Victoria</button>
                                             </div>
                                         </div>
                                     </div>
@@ -206,7 +243,6 @@ document.addEventListener("DOMContentLoaded", () => {
                         </div>
                     </div>
                 </div>
-
             </div>
             <button id="btn-open-ht">🛠️</button>
         </div>
@@ -214,9 +250,221 @@ document.addEventListener("DOMContentLoaded", () => {
     document.body.appendChild(htContainer);
 });
 
-// 2. LÓGICA DEL HACKTESTER
+// =========================================================================
+// LÓGICA DE TROPA INDIVIDUAL Y SEGUIMIENTO (DOBLE CIERRE & HOVER MAGIC)
+// =========================================================================
 
+window.ht_closeTropaPanel = function() {
+    let panel = document.getElementById('ht-tropa-panel');
+    if (panel) panel.style.display = 'none';
+};
+
+window.ht_openTropaPanel = function() {
+    let panel = document.getElementById("ht-tropa-panel");
+    if(panel) {
+        panel.style.display = "flex";
+        ht_actualizarListaTropas();
+        ht_actualizarAfectados();
+    }
+};
+
+window.ht_actualizarAfectados = function() {
+    if (!jugador) return;
+    
+    let lista = [];
+    if (jugador.comandantes) lista = lista.concat(jugador.comandantes);
+    if (jugador.tropas) lista = lista.concat(jugador.tropas);
+
+    // Solo entran los que tengan un candado inamovible marcado
+    let afectados = lista.filter(t => t.hpInamovible || t.hambreInamovible || t.sedInamovible || t.atkInamovible || t.defInamovible);
+
+    let divContenedor = document.getElementById("ht-afectados-list");
+    let spanNombres = document.getElementById("ht-afectados-nombres");
+
+    if (afectados.length > 0) {
+        divContenedor.style.display = "block";
+        spanNombres.innerHTML = "";
+        
+        afectados.forEach(t => {
+            let btn = document.createElement("div");
+            btn.style.cssText = "color:#aaa; font-size:12px; cursor:pointer; padding:4px 0; border-bottom:1px solid #222; transition: 0.2s;";
+            btn.innerHTML = `• <b style="color:#0ff;">${t.nombre}</b> [Abrir Ajustes]`;
+            btn.onmouseover = () => btn.style.background = "#050";
+            btn.onmouseout = () => btn.style.background = "transparent";
+            btn.onclick = () => ht_seleccionarTropa(t.idUnico);
+            spanNombres.appendChild(btn);
+        });
+    } else {
+        divContenedor.style.display = "none";
+        spanNombres.innerHTML = "";
+    }
+};
+
+window.ht_actualizarListaTropas = function() {
+    if (!jugador || (!jugador.tropas && !jugador.comandantes)) return;
+    
+    let filtroClase = document.getElementById("ht-tropa-filtro").value;
+    let busqueda = document.getElementById("ht-tropa-buscar").value.toLowerCase();
+    
+    let lista = [];
+    if (jugador.comandantes) lista = lista.concat(jugador.comandantes);
+    if (jugador.tropas) lista = lista.concat(jugador.tropas);
+    
+    let result = lista.filter(t => {
+        if (t.hp <= 0) return false;
+        if (busqueda && !t.nombre.toLowerCase().includes(busqueda)) return false;
+        
+        if (filtroClase === "caballeros" && t.tipoGeneral !== "caballeros") return false;
+        if (filtroClase === "piqueros" && t.tipoGeneral !== "piqueros") return false;
+        if (filtroClase === "ballesteros" && t.tipoGeneral !== "ballesteros") return false;
+        if (filtroClase === "especiales" && t.tipoGeneral !== "especial" && t.idTipo !== "comandante" && t.idTipo !== "sacerdote_unico") return false;
+        
+        return true;
+    });
+
+    let contenedor = document.getElementById("ht-tropa-lista");
+    contenedor.innerHTML = "";
+    
+    if (result.length === 0) {
+        contenedor.innerHTML = "<div style='color:#555; text-align:center;'>Ningún hermano coincide.</div>";
+        return;
+    }
+
+    result.forEach(t => {
+        let div = document.createElement("div");
+        div.className = "ht-tropa-item";
+        
+        let tipoName = t.tipoGeneral ? t.tipoGeneral.toUpperCase() : t.idTipo.toUpperCase();
+        let claseName = "ESPECIAL";
+        if (t.clase === "noble") claseName = "NOBLE";
+        else if (t.clase === "mercenaria") claseName = "MERCENARIO";
+        else if (t.clase === "unico_random") claseName = "VIGÍA";
+        
+        div.innerText = `${t.nombre} [${tipoName} - ${claseName}]`;
+        div.onclick = () => ht_seleccionarTropa(t.idUnico);
+        contenedor.appendChild(div);
+    });
+};
+
+window.ht_seleccionarTropa = function(idUnico) {
+    let t = null;
+    if (jugador.comandantes) t = jugador.comandantes.find(x => x.idUnico === idUnico);
+    if (!t && jugador.tropas) t = jugador.tropas.find(x => x.idUnico === idUnico);
+    
+    let panel = document.getElementById("ht-tropa-detalles");
+    if (!t) {
+        panel.style.display = "none";
+        return;
+    }
+
+    panel.style.display = "block";
+    let h = t.hambre !== undefined ? t.hambre : 5;
+    let s = t.sed !== undefined ? t.sed : 3;
+
+    panel.innerHTML = `
+        <div style="color:#fff; font-weight:bold; margin-bottom:10px; text-align:center;">${t.nombre}</div>
+        
+        <div class="ht-row-mb">
+            <span style="width:40px; color:#ff4c4c;">HP:</span>
+            <button class="ht-btn ht-btn-dmg" onclick="ht_modStatTropa('${t.idUnico}', 'hp', -1)">-</button>
+            <span style="width:20px; text-align:center;">${t.hp}</span>
+            <button class="ht-btn ht-btn-heal" onclick="ht_modStatTropa('${t.idUnico}', 'hp', 1)">+</button>
+            <label style="margin-left:auto;"><input type="checkbox" onchange="ht_setLock('${t.idUnico}', 'hpInamovible', this.checked)" ${t.hpInamovible ? 'checked':''}> Inamov.</label>
+        </div>
+        <div class="ht-row-mb">
+            <span style="width:40px; color:#d4af37;">Pan:</span>
+            <button class="ht-btn ht-btn-dmg" onclick="ht_modStatTropa('${t.idUnico}', 'hambre', -1)">-</button>
+            <span style="width:20px; text-align:center;">${h}</span>
+            <button class="ht-btn ht-btn-heal" onclick="ht_modStatTropa('${t.idUnico}', 'hambre', 1)">+</button>
+            <label style="margin-left:auto;"><input type="checkbox" onchange="ht_setLock('${t.idUnico}', 'hambreInamovible', this.checked)" ${t.hambreInamovible ? 'checked':''}> Inamov.</label>
+        </div>
+        <div class="ht-row-mb">
+            <span style="width:40px; color:#4c88ff;">Sed:</span>
+            <button class="ht-btn ht-btn-dmg" onclick="ht_modStatTropa('${t.idUnico}', 'sed', -1)">-</button>
+            <span style="width:20px; text-align:center;">${s}</span>
+            <button class="ht-btn ht-btn-heal" onclick="ht_modStatTropa('${t.idUnico}', 'sed', 1)">+</button>
+            <label style="margin-left:auto;"><input type="checkbox" onchange="ht_setLock('${t.idUnico}', 'sedInamovible', this.checked)" ${t.sedInamovible ? 'checked':''}> Inamov.</label>
+        </div>
+        <div class="ht-row-mb">
+            <span style="width:40px; color:#ffaa00;">Atk:</span>
+            <button class="ht-btn ht-btn-dmg" onclick="ht_modStatTropa('${t.idUnico}', 'atkMax', -1)">-</button>
+            <span style="width:20px; text-align:center;">${t.atkMax || 0}</span>
+            <button class="ht-btn ht-btn-heal" onclick="ht_modStatTropa('${t.idUnico}', 'atkMax', 1)">+</button>
+            <label style="margin-left:auto;"><input type="checkbox" onchange="ht_setLock('${t.idUnico}', 'atkInamovible', this.checked)" ${t.atkInamovible ? 'checked':''}> Inamov.</label>
+        </div>
+        <div class="ht-row-mb">
+            <span style="width:40px; color:#0ff;">Def:</span>
+            <button class="ht-btn ht-btn-dmg" onclick="ht_modStatTropa('${t.idUnico}', 'defMax', -1)">-</button>
+            <span style="width:20px; text-align:center;">${t.defMax || 0}</span>
+            <button class="ht-btn ht-btn-heal" onclick="ht_modStatTropa('${t.idUnico}', 'defMax', 1)">+</button>
+            <label style="margin-left:auto;"><input type="checkbox" onchange="ht_setLock('${t.idUnico}', 'defInamovible', this.checked)" ${t.defInamovible ? 'checked':''}> Inamov.</label>
+        </div>
+    `;
+};
+
+window.ht_modStatTropa = function(idUnico, stat, delta) {
+    let t = null;
+    if (jugador.comandantes) t = jugador.comandantes.find(x => x.idUnico === idUnico);
+    if (!t && jugador.tropas) t = jugador.tropas.find(x => x.idUnico === idUnico);
+    if (!t) return;
+
+    if (t[stat + "Inamovible"]) {
+        console.log(`HackTester: Imposible modificar [${stat}], el atributo está marcado como INAMOVIBLE.`);
+        return;
+    }
+
+    if (stat === 'hp') {
+        t.hp += delta;
+        if(t.hp < 0) t.hp = 0;
+        let max = t.hpMax || 2;
+        if(t.hp > max) t.hp = max;
+    } else if (stat === 'hambre') {
+        if(t.hambre === undefined) t.hambre = 5;
+        t.hambre += delta;
+        if(t.hambre < 0) t.hambre = 0;
+        if(t.hambre > 5) t.hambre = 5;
+    } else if (stat === 'sed') {
+        if(t.sed === undefined) t.sed = 3;
+        t.sed += delta;
+        if(t.sed < 0) t.sed = 0;
+        if(t.sed > 3) t.sed = 3;
+    } else if (stat === 'atkMax') {
+        t.atkMax = (t.atkMax || 0) + delta;
+        if(t.atkMax < 0) t.atkMax = 0;
+    } else if (stat === 'defMax') {
+        t.defMax = (t.defMax || 0) + delta;
+        if(t.defMax < 0) t.defMax = 0;
+    }
+
+    ht_seleccionarTropa(idUnico); 
+    
+    if (typeof actualizarHUD === "function") actualizarHUD();
+    if (typeof renderizarMenuAlimentar === "function" && document.getElementById('alimentar-overlay')?.style.display === 'flex') {
+        renderizarMenuAlimentar();
+    }
+    if (typeof generarRoster === "function" && document.getElementById('formacion-overlay')?.style.display === 'flex') {
+        let tipo = window.formacionModoActivo === "cuna" ? "caballeros" : (window.formacionModoActivo === "sacrificio" ? "ballesteros" : "piqueros");
+        let filtro = window.formacionModoActivo === "sacrificio" ? "noble" : null;
+        generarRoster(tipo, filtro);
+    }
+};
+
+window.ht_setLock = function(idUnico, statKey, isLocked) {
+    let t = null;
+    if (jugador.comandantes) t = jugador.comandantes.find(x => x.idUnico === idUnico);
+    if (!t && jugador.tropas) t = jugador.tropas.find(x => x.idUnico === idUnico);
+    if (!t) return;
+
+    t[statKey] = isLocked;
+    ht_actualizarAfectados(); // Re-evalúa la lista dinámicamente
+    console.log(`HackTester: [${t.nombre}] -> ${statKey} establecido en ${isLocked}`);
+};
+
+
+// 2. LÓGICA GENERAL DEL HACKTESTER
 window.htAudioInterceptado = false;
+window.htMuteActivo = false;
+
 function ht_toggleMute(estado) {
     window.htMuteActivo = estado;
     
@@ -268,7 +516,7 @@ function ht_modHambre(cant) {
     listas.forEach(lista => {
         if(lista) {
             lista.forEach(t => {
-                if (t.hp > 0) {
+                if (t.hp > 0 && !t.hambreInamovible) {
                     if (t.hambre === undefined) t.hambre = 5;
                     t.hambre += cant;
                     if (t.hambre > 5) t.hambre = 5;
@@ -296,7 +544,7 @@ function ht_modSed(cant) {
     listas.forEach(lista => {
         if(lista) {
             lista.forEach(t => {
-                if (t.hp > 0) {
+                if (t.hp > 0 && !t.sedInamovible) {
                     if (t.sed === undefined) t.sed = 3;
                     t.sed += cant;
                     if (t.sed > 3) t.sed = 3;
@@ -366,17 +614,13 @@ function ht_toggleAllSettings(estado) {
 }
 
 function ht_checkInit() {
-    // FIX TÁCTICO: Reactivar TODOS los elementos visuales de la UI si se brincaron en la cinemática
     let hudPrincipal = document.getElementById("hud");
     if (hudPrincipal) hudPrincipal.style.display = "flex";
-
     let actionArea = document.getElementById("action-area");
     if (actionArea) actionArea.style.display = "flex";
-
     let storyArea = document.getElementById("story-area");
     if (storyArea) storyArea.style.overflowY = "auto";
 
-    // Quitar opacidades y bloqueos de eventos en todo el HUD
     let idsOpacos = ["btn-nombre-hud", "btn-tienda-hud", "stat-tiempo-container", "stat-fe-container"];
     idsOpacos.forEach(id => {
         let el = document.getElementById(id);
@@ -416,7 +660,7 @@ function ht_checkInit() {
 
     inventarioDesbloqueado = true;
     tiendaDesbloqueada = true; 
-    cronicasDesbloqueado = true; 
+    cronicasDesbloqueado = true;
     
     let flecha = document.getElementById("flecha-inventario");
     if(flecha) flecha.style.display = "inline";
@@ -439,11 +683,11 @@ function ht_checkInit() {
     if (typeof window.RelojDivino !== 'undefined' && window.RelojDivino.indiceActual === -1) {
         window.RelojDivino.iniciar();
     }
-
     if(typeof actualizarHUD === "function") actualizarHUD();
 }
 
 function ht_addTropa(tipo) {
+    ht_checkInit();
     agregarTropa(tipo, 1);
     if(typeof actualizarHUD === "function") actualizarHUD();
     console.log("HackTester: Añadido 1 " + tipo);
@@ -455,7 +699,6 @@ function ht_removeTropa(tipo) {
         jugador.tropas.forEach((t, index) => {
             if(t.idTipo === tipo) indicesCompatibles.push(index);
         });
-
         if(indicesCompatibles.length > 0) {
             let randomIndex = indicesCompatibles[Math.floor(Math.random() * indicesCompatibles.length)];
             let removida = jugador.tropas.splice(randomIndex, 1)[0];
@@ -469,6 +712,7 @@ function ht_removeTropa(tipo) {
 }
 
 function ht_addDenarios(cant) {
+    ht_checkInit();
     jugador.denarios += cant;
     if (jugador.denarios < 0) jugador.denarios = 0; 
     if(typeof actualizarHUD === "function") actualizarHUD();
@@ -476,6 +720,7 @@ function ht_addDenarios(cant) {
 }
 
 function ht_modFe(cant) {
+    ht_checkInit();
     jugador.liderazgo += cant;
     jugador.liderazgoBase += cant;
     if(typeof actualizarHUD === "function") actualizarHUD();
@@ -483,11 +728,15 @@ function ht_modFe(cant) {
 }
 
 function ht_modVidasGeneral(cantidad) {
+    ht_checkInit();
     if(jugador && jugador.tropas) {
         jugador.tropas.forEach(t => {
-            t.hp += cantidad;
-            if(t.hp > 2) t.hp = 2; 
-            if(t.hp < 0) t.hp = 0; 
+            let globalInmortal = document.getElementById("ht-sin-vidas-perdidas")?.checked;
+            if (!t.hpInamovible && !globalInmortal) {
+                t.hp += cantidad;
+                if(t.hp > 2) t.hp = 2; 
+                if(t.hp < 0) t.hp = 0; 
+            }
         });
         if(typeof actualizarHUD === "function") actualizarHUD();
         
@@ -550,12 +799,12 @@ function ht_jumpTo(destino) {
     if(formOverlay) formOverlay.style.display = "none";
     
     let animCaja = document.getElementById("animacion-escena1");
-    if(animCaja) {
-         animCaja.style.display = "none";
-         animCaja.style.backgroundImage = "url('assets/img/fondos/puente_fondo.webp')";
-         animCaja.style.backgroundSize = "cover";
-         animCaja.style.backgroundPosition = "center bottom";
-         animCaja.innerHTML = "";
+    if(animCaja) { 
+        animCaja.style.display = "none"; 
+        animCaja.style.backgroundImage = "url('assets/img/fondos/puente_fondo.webp')"; 
+        animCaja.style.backgroundSize = "cover"; 
+        animCaja.style.backgroundPosition = "center bottom"; 
+        animCaja.innerHTML = "";
     }
 
     if(destino === 'opciones_cap1') {
@@ -587,7 +836,7 @@ function ht_jumpTo(destino) {
 
         if (typeof AudioManager !== "undefined") {
             const escenasCap1 = ['opciones_cap1', 'muro_picas', 'repliegue', 'bosque_victoria'];
-            const escenasCap2 = ['inicio_cap2', 'opciones_cap2']; 
+            const escenasCap2 = ['inicio_cap2', 'opciones_cap2'];
             
             if (escenasCap1.includes(destino)) {
                 AudioManager.playBGM('bgm-juego');

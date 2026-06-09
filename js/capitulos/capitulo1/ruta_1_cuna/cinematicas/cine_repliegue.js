@@ -94,48 +94,185 @@ function playModalAlivioPicas() {
 function playCinematicaRepliegue(callbackFinal) {
     console.log("INICIANDO OPERACIÓN DE REPLIEGUE TÁCTICO...");
     
-    DirectorCinematico.limpiarHigieneVisual();
-    const animCaja = DirectorCinematico.prepararEscenario("EL RELEVO TÁCTICO", "assets/img/fondos/puentepiso.webp");
+    if (typeof DirectorCinematico !== 'undefined') DirectorCinematico.limpiarHigieneVisual();
+    
+    const animCaja = document.getElementById("animacion-escena1");
     if (!animCaja) { if(callbackFinal) callbackFinal(); return; }
+
+    animCaja.style.display = "block";
+    animCaja.style.backgroundImage = "url('assets/img/fondos/puentepiso.webp')";
+    animCaja.style.backgroundSize = "160%"; 
+    animCaja.style.backgroundPosition = "left center";
+    animCaja.style.overflow = "visible"; 
+    animCaja.innerHTML = ""; 
+
+    // =========================================================================
+    // TEXTO SUPERIOR (EN LA ZONA GRIS EXTERIOR)
+    // =========================================================================
+    let titulo = document.createElement("h3");
+    titulo.className = "txt-sagrado";
+    titulo.innerText = "EL RELEVO TÁCTICO";
+    titulo.style.cssText = "position:absolute; top:-40px; width:100%; text-align:center; margin:0; letter-spacing:3px; z-index:300; text-shadow:0 0 10px #000;";
+    animCaja.appendChild(titulo);
+
+    // =========================================================================
+    // ZONA DE BATALLA (CON TIJERAS LATERALES MAGNÉTICAS | | )
+    // clip-path: inset() recorta los bordes. Usamos valores negativos arriba y abajo
+    // para NO cortar las cabezas ni los pies, pero un 0 a los lados para ocultarlos.
+    // =========================================================================
+    let zonaBatalla = document.createElement("div");
+    zonaBatalla.id = "zona-batalla-anim";
+    zonaBatalla.style.cssText = "position:absolute; top:50%; left:0; width:100%; height:400px; transform:translateY(-50%); z-index:150; overflow:visible; clip-path: inset(-150px 0 -150px 0);";
+    animCaja.appendChild(zonaBatalla);
+
+    if (typeof window.forzarHalosCinematicas === 'function') window.forzarHalosCinematicas(zonaBatalla);
+
+    // NIEBLA DE GUERRA (SOBRE LAS UNIDADES)
+    let niebla = document.createElement("div");
+    niebla.className = "efecto-neblina";
+    niebla.style.cssText = "z-index: 999; pointer-events: none; position: absolute; top: -10%; left: 0%; width: 100%; height: 120%; opacity: 0.85;";
+    zonaBatalla.appendChild(niebla);
 
     // 1. BALLESTEROS
     let ballesterosVivos = jugador.tropas.filter(t => t.tipoGeneral === "ballesteros" && t.hp > 0);
     ballesterosVivos.forEach((ballestero, index) => {
-        let card = DirectorCinematico.crearTarjetaTropa(ballestero);
+        let card = document.createElement("div");
+        let claseBorde = ballestero.clase === 'noble' ? 'tropa-noble' : 'tropa-mercenaria';
+        card.className = `tropa-cinematica ${claseBorde}`;
         card.style.zIndex = "150"; 
-        card.style.top = `${23 + ((index % 3) * 16)}%`;
-        card.style.left = `${-20 - (index * 12)}%`;
+        
+        let hpStars = "❤️".repeat(Math.max(0, ballestero.hp)) + "🖤".repeat(2 - Math.max(0, ballestero.hp));
+        let etiqueta = ballestero.clase === 'noble' ? "<span class='txt-sagrado' style='font-size:9px;'>(N)</span>" : "";
+        card.innerHTML = `<img src="${ballestero.img}"><div class="unidad-hp-combate">${hpStars}</div><div class="unidad-nombre-aleatorio">${ballestero.nombre} <br>${etiqueta}</div>`;
+
+        let row = index % 3; let col = Math.floor(index / 3); 
+        
+        card.style.top = `${28 + (row * 18)}%`; 
+        card.style.left = `${-20 - (col * 12)}%`;
         card.style.opacity = "1"; 
         card.style.transition = "left 5.5s ease-out";
-        animCaja.appendChild(card);
-        setTimeout(() => { card.style.left = `${34 - (Math.floor(index / 3) * 8.5)}%`; }, 100);
+        zonaBatalla.appendChild(card); 
+        
+        setTimeout(() => { card.style.left = `${34 - (col * 8.5)}%`; }, 100);
     });
 
-    // 2. PIQUEROS
-    let piquerosVivos = jugador.tropas.filter(t => t.tipoGeneral === "piqueros" && t.hp > 0);
-    let c_arriba = 0; let c_abajo = 0;
+    // =========================================================================
+    // 2. PIQUEROS (Estrategia Compactada, Aparecen de la derecha y marchan)
+    // =========================================================================
+    let picaVanguardiaIds = [];
+    if (typeof EstadoBatalla !== 'undefined' && EstadoBatalla.tropasVivas) {
+        picaVanguardiaIds = EstadoBatalla.tropasVivas.map(p => p.idUnico).filter(id => id != null);
+    }
 
-    piquerosVivos.forEach((pica, index) => {
-        let card = DirectorCinematico.crearTarjetaTropa(pica);
-        let isTop = index < Math.ceil(piquerosVivos.length / 2);
-        let posIndex = isTop ? c_arriba++ : c_abajo++;
-        let depth = Math.floor(posIndex / 5); 
+    let piquerosVivos = jugador.tropas.filter(t => t.tipoGeneral === "piqueros" && t.hp > 0);
+    let vanguardia = piquerosVivos.filter(t => picaVanguardiaIds.includes(t.idUnico));
+    let reservas = piquerosVivos.filter(t => !picaVanguardiaIds.includes(t.idUnico));
+    
+    let piquerosGrid = [];
+    
+    vanguardia.forEach(p => {
+        let posObj = EstadoBatalla.tropasVivas.find(tv => tv.idUnico === p.idUnico);
+        let slotIndex = posObj && posObj.slotPos ? parseInt(posObj.slotPos.split("-")[1]) - 1 : 0;
+        if(isNaN(slotIndex)) slotIndex = 0;
+        piquerosGrid.push({ tropa: p, row: slotIndex, col: 0, isTop: slotIndex < 2 });
+    });
+    
+    reservas.forEach((p, i) => {
+        let row = i % 4;
+        piquerosGrid.push({ tropa: p, row: row, col: Math.floor(i / 4) + 1, isTop: (i % 4) < 2 });
+    });
+
+    let countTop = 0; let countBot = 0;
+
+    piquerosGrid.forEach((gridItem) => {
+        let card = document.createElement("div");
+        let claseBorde = gridItem.tropa.clase === 'noble' ? 'tropa-noble' : 'tropa-mercenaria';
+        card.className = `tropa-cinematica ${claseBorde}`;
         
-        card.style.zIndex = 200 - depth;
-        card.style.top = `${(index % 2 === 0) ? 42 : 58}%`;
-        card.style.left = `${90 + (Math.floor(index / 2) * 12)}%`;
+        let hpStars = "❤️".repeat(Math.max(0, gridItem.tropa.hp)) + "🖤".repeat(2 - Math.max(0, gridItem.tropa.hp));
+        let etiqueta = gridItem.tropa.clase === 'noble' ? "<span class='txt-sagrado' style='font-size:9px;'>(N)</span>" : "";
+        card.innerHTML = `<img src="${gridItem.tropa.img}"><div class="unidad-hp-combate">${hpStars}</div><div class="unidad-nombre-aleatorio">${gridItem.tropa.nombre} <br>${etiqueta}</div>`;
+
+        let posIndex = gridItem.isTop ? countTop++ : countBot++;
+        
+        let initialLeft = 105 + (gridItem.col * 8); 
+        let initialTop = 22 + (gridItem.row * 15); 
+
+        card.style.zIndex = 200 - gridItem.col;
+        card.style.top = `${initialTop}%`;
+        card.style.left = `${initialLeft}%`;
         card.style.opacity = "1";
-        card.style.transition = `left 6.5s ease-out, top 6.5s ease-out`;
-        animCaja.appendChild(card);
+        zonaBatalla.appendChild(card);
         card.getBoundingClientRect(); 
 
         setTimeout(() => {
-            card.style.left = `${48 - ((posIndex % 5) * 8) - (depth * 3)}%`;
-            card.style.top = `${isTop ? 8 - (depth * 3) : 74 + (depth * 3)}%`;
-        }, 500); 
+            card.style.transition = `left 3.9s linear`;
+            card.style.left = `${initialLeft - 55}%`; 
+        }, 100);
+
+        setTimeout(() => {
+            card.style.transition = `left 2.5s ease-out, top 2.5s ease-out`;
+            let colDescanso = posIndex % 5;
+            let depthDescanso = Math.floor(posIndex / 5);
+            
+            let finalLeft = 48 - (colDescanso * 8) - (depthDescanso * 3);
+            // Empujados más abajo (de 82 a 92) para dejar completamente libres a los ballesteros
+            let finalTop = gridItem.isTop ? 2 - (depthDescanso * 3) : 92 + (depthDescanso * 3); 
+            
+            card.style.left = `${finalLeft}%`;
+            card.style.top = `${finalTop}%`;
+        }, 4000); 
     });
 
-    // 3. ENEMIGOS Y BOTÓN
-    setTimeout(() => { DirectorCinematico.crearEnemigosEstaticos(animCaja, 62, true); }, 1500); 
-    DirectorCinematico.crearBotonContinuar(animCaja, "DEUS LO VULT !", 8500, callbackFinal);
+    // =========================================================================
+    // 3. ENEMIGOS (Aparecen con retraso de 3.5 segundos para no empalmarse)
+    // =========================================================================
+    setTimeout(() => {
+        let rowsTopEnemigos = ["28%", "46%", "64%"]; 
+        for(let r=0; r < 3; r++) {
+            for(let c=0; c < 3; c++) {
+                let cardE = document.createElement("div");
+                let imgE = (r + c) % 2 === 0 ? "enemigo_piquero.webp" : "enemigo.webp";
+                cardE.className = "tropa-cinematica cinematica-enemigo-relevo"; 
+                cardE.style.zIndex = "100"; 
+                
+                let startLeftE = 95 + (c * 10); 
+                let endLeftE = 68 + (c * 10);   
+
+                cardE.style.top = rowsTopEnemigos[r];
+                cardE.style.left = `${startLeftE}%`;
+                cardE.style.filter = "sepia(50%) brightness(0.6)"; 
+                cardE.style.opacity = "0"; 
+                cardE.style.transition = `left 4.5s ease-out, opacity 0.8s ease-in, filter 4.5s linear`; 
+                
+                cardE.innerHTML = `<img src="assets/img/personajes/enemigos/${imgE}" style="transform:scaleX(-1);">`;
+                zonaBatalla.appendChild(cardE);
+                cardE.getBoundingClientRect(); 
+
+                setTimeout(() => {
+                    cardE.style.opacity = "1";
+                    cardE.style.left = `${endLeftE}%`;
+                    cardE.style.filter = "sepia(0%) brightness(0.9)"; 
+                }, 50);
+            }
+        }
+    }, 3500); 
+
+    // =========================================================================
+    // BOTÓN DE CONTINUAR (EN LA ZONA GRIS INFERIOR)
+    // =========================================================================
+    setTimeout(() => {
+        let impactBtn = document.createElement('button');
+        impactBtn.className = "impacto-divino-btn"; 
+        impactBtn.innerText = "DEUS LO VULT !";
+        impactBtn.style.cssText = "position:absolute; bottom:-60px; left:50%; transform:translateX(-50%); z-index:9999;";
+        
+        impactBtn.onclick = function() {
+            impactBtn.style.display = "none"; 
+            animCaja.style.display = "none";
+            animCaja.innerHTML = "";
+            if(callbackFinal) callbackFinal(); 
+        };
+        animCaja.appendChild(impactBtn);
+    }, 8500); 
 }

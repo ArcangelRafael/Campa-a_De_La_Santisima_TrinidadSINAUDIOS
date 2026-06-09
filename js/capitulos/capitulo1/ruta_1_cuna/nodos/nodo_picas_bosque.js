@@ -1,8 +1,123 @@
 /* === NODO_PICAS_BOSQUE.JS - LÓGICA EXCLUSIVA DEL MURO DE PICAS (BOSQUE) === */
 
+// =========================================================================
+// FUNCIÓN GLOBAL DE ANIMACIÓN DE CAÍDOS Y CRUCES PERSISTENTES
+// =========================================================================
+window.animarMuertePiquero = function(slot, tipo) {
+    if(!slot) return;
+    
+    // 1. Efecto de desvanecimiento en la tarjeta de la tropa
+    let card = slot.querySelector('.tropa-draggable') || slot.firstElementChild;
+    if(card && !card.classList.contains('marcador-batalla')) {
+        card.style.transition = "opacity 2.5s ease-out, filter 2.5s ease-out";
+        card.style.filter = "grayscale(100%) sepia(30%) brightness(0.4)";
+        card.style.opacity = "0";
+    }
+    
+    // 2. Aparición de la Cruz Dorada (o Calavera)
+    let cross = document.createElement("div");
+    cross.innerHTML = tipo === 'cross' ? "✝" : "💀";
+    cross.className = `marcador-batalla ${tipo}-icon persistent-death-mark`; 
+    cross.style.cssText = `position:absolute; font-size:45px; z-index:90; pointer-events:none; opacity: 0; transition: opacity 2.5s ease-in; top: 50%; left: 50%; transform: translate(-50%, -50%);`;
+    
+    if (tipo === 'cross') {
+        cross.style.color = "#ffd700";
+        cross.style.textShadow = "0 0 15px #ffaa00, 0 0 40px #ffaa00, 0 0 60px #ffaa00";
+    } else {
+        cross.style.color = "#ffffff";
+        cross.style.textShadow = "0 0 15px #ff0000, 0 0 30px #ff0000, 0 0 45px #ff0000";
+    }
+    slot.appendChild(cross);
+
+    setTimeout(() => { cross.style.opacity = "0.95"; }, 100);
+};
+
 async function iniciarCombatePicasBosque(formacion, callbackFinalizar, metaPP, turnosFase) {
     EstadoBatalla.limpiar(); 
     EstadoBatalla.tipoCombate = "picas_bosque";
+    if (!window.marcadoresBatalla) window.marcadoresBatalla = []; // Inicializamos registro de cruces
+
+    // =========================================================================
+    // INYECCIÓN DE CSS PARA LA ZONA DE CONTENCIÓN Y ENEMIGOS
+    // =========================================================================
+    let styleId = "picas-bosque-style";
+    if (!document.getElementById(styleId)) {
+        let style = document.createElement("style");
+        style.id = styleId;
+        style.innerHTML = `
+            /* EL TABLERO CONTENEDOR TIPO CINE */
+            #formacion-picas-tablero {
+                position: relative; 
+                overflow: hidden; 
+            }
+
+            /* LA ZONA DE BATALLA (CONTENCIÓN) */
+            .zona-batalla-picas-bosque-anim {
+                position: absolute; 
+                top: 50%; 
+                left: 0; 
+                width: 100%; 
+                height: 400px; 
+                transform: translateY(-50%); 
+                z-index: 150;
+                display: flex; 
+                align-items: center; 
+            }
+
+            /* LA CUADRÍCULA ALIADA (COMPACTADA) */
+            .modo-combate #zona-aliada-picas > div { 
+                display: grid !important; 
+                grid-template-columns: 75px !important; 
+                grid-template-rows: repeat(4, 75px) !important; 
+                gap: 5px !important; 
+                margin-bottom: 0 !important; 
+            }
+            .modo-combate #zona-aliada-picas .slot-formacion { transform: none !important; }
+            .modo-combate #zona-aliada-picas { 
+                margin-left: 80px !important; 
+                margin-right: 0 !important; 
+                z-index: 2; 
+                transform: scale(0.95); 
+            }
+
+            /* LA CUADRÍCULA DE RESERVAS (OCULTAS DURANTE COMBATE) */
+            .modo-combate #zona-reservas-picas { 
+                display: none !important; /* <--- FIX TÁCTICO: RESERVAS INVISIBLES */
+            }
+
+            /* LA CUADRÍCULA ENEMIGA (SEPARADA Y RETROCEDIDA) */
+            .modo-combate #zona-enemiga-picas { 
+                margin-left: 45px !important; /* <--- EMPUJE HACIA ATRÁS */
+                margin-right: 20px !important; 
+                z-index: 3; 
+                transform: scale(0.95); 
+            }
+            
+            .modo-combate #zona-enemiga-picas > div {
+                display: grid !important;
+                grid-template-columns: repeat(3, 75px) !important; /* <--- FUERZA COLUMNAS EXACTAS */
+                gap: 5px 20px !important; /* <--- SEPARACIÓN HORIZONTAL PARA NO ENCIMARSE */
+            }
+
+            /* TARJETAS ENEMIGAS EXACTAMENTE IGUALES A LAS ALIADAS */
+            .modo-combate #zona-enemiga-picas .enemigo-atacando-pica,
+            .modo-combate #zona-enemiga-picas > div > div {
+                width: 75px !important; 
+                height: 75px !important; 
+                box-sizing: border-box !important; 
+            }
+
+            /* PURGA DE LAS LÍNEAS ROJAS PUNTEADAS EN ENEMIGOS MUERTOS/VACÍOS */
+            .modo-combate #zona-enemiga-picas > div > div[style*="dashed"],
+            .modo-combate #zona-enemiga-picas > div > div:empty {
+                border: none !important;
+                background: transparent !important;
+                box-shadow: none !important;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+    // =========================================================================
     
     EstadoBatalla.metaProgresoMuro = metaPP;
     EstadoBatalla.turnosFaseBosque = turnosFase;
@@ -11,9 +126,6 @@ async function iniciarCombatePicasBosque(formacion, callbackFinalizar, metaPP, t
     EstadoBatalla.reservas = jugador.tropas.filter(t => t.tipoGeneral === "piqueros" && t.hp > 0 && !Object.values(formacion.slots).includes(t.idUnico));
     EstadoBatalla.maxTurnos = turnosFase;
     EstadoBatalla.callback = callbackFinalizar;
-    
-    // FIX TÁCTICO: Se extirpó el EstadoBatalla.eventoEspecialVictoria. 
-    // El bosque ya no llamará a la cinemática del puente.
 
     EstadoBatalla.tropasVivas = [
         { idUnico: formacion.slots["pica-1"], posNombre: "el flanco izquierdo de picas", slotPos: "pica-1" },
@@ -62,11 +174,29 @@ function animarAvancePicasBosque() {
         tablero.style.backgroundSize = "160%";
         tablero.style.backgroundPosition = "left center";
 
+        let zonaBatalla = document.getElementById("zona-batalla-picas-bosque-anim");
+        if (!zonaBatalla) {
+            zonaBatalla = document.createElement("div");
+            zonaBatalla.id = "zona-batalla-picas-bosque-anim";
+            zonaBatalla.className = "zona-batalla-picas-bosque-anim";
+            
+            let zonaRes = document.getElementById("zona-reservas-picas");
+            let zonaAli = document.getElementById("zona-aliada-picas");
+            let zonaEne = document.getElementById("zona-enemiga-picas");
+            
+            if (zonaRes) zonaBatalla.appendChild(zonaRes);
+            if (zonaAli) zonaBatalla.appendChild(zonaAli);
+            if (zonaEne) zonaBatalla.appendChild(zonaEne);
+
+            tablero.appendChild(zonaBatalla);
+        }
+
         if (!document.getElementById("niebla-combate-picas")) {
             let nieblaCombat = document.createElement("div");
             nieblaCombat.id = "niebla-combate-picas";
             nieblaCombat.className = "efecto-neblina";
-            tablero.appendChild(nieblaCombat);
+            nieblaCombat.style.cssText = "z-index: 800 !important; pointer-events: none; position: absolute; top: -10%; left: -10%; width: 120%; height: 120%; opacity: 0.85;";
+            zonaBatalla.appendChild(nieblaCombat);
         }
 
         let labelTurnos = document.getElementById("label-turnos-picas");
@@ -98,7 +228,7 @@ function animarAvancePicasBosque() {
                     if(slotPica) {
                         let divEnemigo = document.createElement("div");
                         divEnemigo.className = "enemigo-atacando-pica";
-                        divEnemigo.style.cssText = "position:absolute; top:5px; right:-65px; width:70px; height:90px; border:2px solid #ff4c4c; background:#1a1a1a; z-index:150; transform:translateX(60px); transition:transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); border-radius:4px; box-shadow: -5px 0 15px rgba(255,0,0,0.8); display:flex; justify-content:center; align-items:center;";
+                        divEnemigo.style.cssText = "position:absolute; top:0px; right:-70px; width:75px; height:75px; border:2px solid #ff4c4c; background:#1a1a1a; z-index:150; transform:translateX(60px); transition:transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); border-radius:4px; box-shadow: -5px 0 15px rgba(255,0,0,0.8); display:flex; justify-content:center; align-items:center;";
                         divEnemigo.innerHTML = `<img src="assets/img/personajes/enemigos/enemigo.webp" style="width:100%;height:100%;object-fit:cover; transform:scaleX(-1); border-radius:2px;">`;
                         slotPica.appendChild(divEnemigo);
                         setTimeout(() => divEnemigo.style.transform = "translateX(0)", 100);
@@ -148,11 +278,15 @@ function resolverDadosVisualesPicasBosque() {
             hasCounter = true;
             phase1Cons = `<span class="mensaje-sistema">¡Muro Impenetrable! ${tropa.nombre} resiste y prepara contraataque.</span>`;
         } else {
-            tropa.hp--;
+            GestorEstado.recibirDano(tropa.idUnico, 1);
+            
             phase1Cons = `<span class="txt-hereje">¡Brecha en la guardia! El enemigo perfora y hiere a ${tropa.nombre}.</span>`;
             if(tropa.hp <= 0) {
                 phase1Cons += `<div class="separador txt-hereje">💀 ¡MÁRTIR EN EL MURO! ${tropa.nombre} ha caído.</div>`;
+                
+                // FIX TÁCTICO: Registro persistente y Animación de Desvanecimiento + Cruz
                 window.marcadoresBatalla.push({tipo: 'cross', slotPos: pos.slotPos});
+                window.animarMuertePiquero(slotPica, 'cross');
             }
         }
 
@@ -175,13 +309,20 @@ function resolverDadosVisualesPicasBosque() {
                 EstadoBatalla.bajasEnemigas++;
                 EstadoBatalla.hordaMuertosActuales++;
                 phase2Cons = `<span class="mensaje-sistema">¡Infiel Ensartado! El asaltante muere en las lanzas.</span>`;
+                
+                // Animación de cráneo para el enemigo
                 window.marcadoresBatalla.push({tipo: 'skull', slotPos: pos.slotPos}); 
+                window.animarMuertePiquero(slotPica, 'skull');
             } else {
-                tropa.hp--;
+                GestorEstado.recibirDano(tropa.idUnico, 1);
+                
                 phase2Cons = `<span class="txt-hereje">¡Duelo sangriento! ${tropa.nombre} sufre una herida en la refriega.</span>`;
                 if(tropa.hp <= 0) {
                     phase2Cons += `<div class="separador txt-hereje">💀 ¡MÁRTIR EN EL MURO! ${tropa.nombre} ha caído.</div>`;
+                    
+                    // FIX TÁCTICO: Registro persistente y Animación de Desvanecimiento + Cruz
                     window.marcadoresBatalla.push({tipo: 'cross', slotPos: pos.slotPos});
+                    window.animarMuertePiquero(slotPica, 'cross');
                 }
             }
 

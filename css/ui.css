@@ -34,7 +34,6 @@ body {
     min-height: 50px;
 }
 
-/* FIX TÁCTICO: Reducción drástica del "gap" para unificar el HUD al centro */
 .hud-stats-container {
     display: flex;
     justify-content: center;
@@ -76,14 +75,12 @@ body {
 .estandarte-bg { width: 100%; display: block; }
 .estandarte-emblema { position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%); width: 75px; }
 
-/* FIX TÁCTICO: Animación de respiración para símbolos sagrados */
 @keyframes respiracion-sagrada {
     0% { transform: scale(1); filter: drop-shadow(0 0 5px rgba(212, 175, 55, 0.6)); }
     50% { transform: scale(1.08); filter: drop-shadow(0 0 12px rgba(212, 175, 55, 1)); }
     100% { transform: scale(1); filter: drop-shadow(0 0 5px rgba(212, 175, 55, 0.6)); }
 }
 
-/* FIX TÁCTICO: La Cruz de Jerusalem oficial adaptada y animada */
 .cruz-jerusalem {
     width: 50px;
     height: auto;
@@ -92,7 +89,6 @@ body {
     animation: respiracion-sagrada 3s ease-in-out infinite;
 }
 
-/* FIX TÁCTICO: Escudo de la Orden en la Portada */
 .escudo-orden-intro {
     width: 180px;
     height: auto;
@@ -313,7 +309,12 @@ input[type="text"]:focus { box-shadow: 0 0 10px rgba(139, 0, 0, 0.8); }
 }
 .en-combate { animation: clashFlash 0.3s infinite alternate !important; }
 
-.modo-combate .slot-formacion { border: none !important; background: transparent !important; }
+.modo-combate .slot-formacion { 
+    border: none !important; 
+    background: transparent !important; 
+    width: 75px !important; 
+    height: 75px !important; 
+}
 .modo-combate .invisible-slot { border: none !important; background: transparent !important; }
 .modo-combate .slot-lider::before { display: none !important; }
 .modo-combate div[style*="top:10px; left:10px"], .modo-combate #label-retaguardia { color: transparent !important; display: none !important; }
@@ -339,6 +340,107 @@ input[type="text"]:focus { box-shadow: 0 0 10px rgba(139, 0, 0, 0.8); }
 .modo-combate .enemigo-hp-combate { display: block !important; }
 
 .caballero-atacando { position: absolute !important; top: 0 !important; left: -50% !important; width: 100% !important; height: 100% !important; z-index: 50; box-shadow: 0 0 15px #ffaa00; transition: all 0.4s ease; margin: 0 !important; }
-.caballero-ocupando { position: absolute !important; top: 0 !important; left: 0 !important; width: 100% !important; height: 100% !important; z-index: 10; border: 2px solid #88ff88 !important; box-shadow: 0 0 10px #88ff88; transition: all 0.4s ease; margin: 0 !important; }
+.caballero-ocupando { position: absolute !important; top: 0 !important; left: 0 !important; width: 100% !important; height: 100% !important; z-index: 10; transition: all 0.4s ease; margin: 0 !important; }
 
 .modo-combate .caballero-reserva { width: 75px !important; height: 75px !important; opacity: 0.6; filter: grayscale(40%); transform: scale(0.9); border-color: #555 !important; transition: 0.4s ease; }
+
+/* ========================================================================= */
+/* CONTENEDOR DE NOTIFICACIONES FLOTANTES (EFECTO FANTASMA) */
+/* ========================================================================= */
+#notification-container {
+    position: fixed;
+    bottom: 30px; 
+    left: 20px; 
+    z-index: 8000; 
+    display: flex;
+    flex-direction: column-reverse; 
+    gap: 8px;
+    pointer-events: none; 
+}
+
+.floating-notification {
+    background: rgba(10, 10, 10, 0.3); /* Transparente de inicio */
+    border: 1px solid rgba(255, 170, 0, 0.2);
+    color: rgba(212, 196, 168, 0.5);
+    padding: 8px 15px;
+    border-radius: 4px;
+    font-size: 13px;
+    letter-spacing: 0.5px;
+    pointer-events: auto; /* Permite que el cursor lo toque */
+    transition: all 0.3s ease;
+    /* FIX TÁCTICO: Se incrementa la duración a 9.5s para que suba más lento y dé tiempo de leer */
+    animation: floatUpAnim 9.5s forwards linear; 
+    cursor: default;
+    box-shadow: 0 0 5px rgba(0,0,0,0.5);
+    backdrop-filter: blur(1px);
+}
+
+.floating-notification b {
+    color: rgba(255, 170, 0, 0.6);
+}
+
+/* EFECTO HOVER: Congela la animación y solidifica los colores para leer */
+.floating-notification:hover {
+    animation-play-state: paused;
+    background: rgba(20, 0, 0, 0.95) !important;
+    border-color: rgba(255, 170, 0, 1) !important;
+    color: rgba(255, 255, 255, 1) !important;
+    box-shadow: 0 0 15px rgba(255, 170, 0, 0.5);
+    backdrop-filter: blur(3px);
+    transform: scale(1.02);
+    z-index: 8001;
+}
+
+.floating-notification:hover b {
+    color: #ffaa00 !important;
+    text-shadow: 0 0 5px #ffaa00;
+}
+
+/* FIX TÁCTICO: Distancia ampliada. Ahora viaja de 20px a -300px, subiendo mucho más arriba */
+@keyframes floatUpAnim {
+    0% { opacity: 0; transform: translateY(20px); }
+    5% { opacity: 1; transform: translateY(0); }
+    85% { opacity: 1; transform: translateY(-250px); }
+    100% { opacity: 0; transform: translateY(-300px); }
+}
+
+/* ========================================================================= */
+/* DIÁLOGOS DE RÉQUIEM EN TABLERO */
+/* ========================================================================= */
+.in-board-requiem {
+    position: absolute;
+    z-index: 10000; 
+    background: rgba(15, 10, 10, 0.85);
+    border: 1px solid rgba(212, 196, 168, 0.3);
+    color: #c0c0c0;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 11.5px;
+    font-family: 'Georgia', serif;
+    pointer-events: none; 
+    
+    /* FIX TÁCTICO: Envoltura de texto y centrado */
+    white-space: normal; 
+    max-width: 220px; 
+    text-align: center;
+    line-height: 1.4;
+    /* ----------------------------------------- */
+
+    transform: translateX(-50%); 
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.8), inset 0 0 5px rgba(255, 170, 0, 0.2);
+    animation: requiemFloatUp 3.5s ease-out forwards;
+    backdrop-filter: blur(2px);
+}
+
+.in-board-requiem b {
+    color: #ffaa00;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+}
+
+@keyframes requiemFloatUp {
+    0% { opacity: 0; transform: translate(-50%, 15px); }
+    10% { opacity: 1; transform: translate(-50%, 0); }
+    80% { opacity: 1; transform: translate(-50%, -45px); }
+    100% { opacity: 0; transform: translate(-50%, -55px); }
+}

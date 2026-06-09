@@ -7,6 +7,12 @@ async function iniciarFaseBosque() {
     if (!jugador.enemigosAsesinados) jugador.enemigosAsesinados = 0;
 
     limpiarBotones(); storyArea.innerHTML = "";
+
+    if (jugador.enemigosAsesinados >= jugador.enemigosObjetivo) {
+        await evaluarVictoriaDerrotaBosque();
+        return;
+    }
+
     agregarTexto("<h2 class='txt-sagrado' style='text-align:center;'>LA DEFENSA DEL BOSQUE</h2>");
     
     await MotorDialogos.mostrarDialogo({
@@ -16,30 +22,6 @@ async function iniciarFaseBosque() {
     
     agregarTexto(`<div class='resumen-turno-box' style='border-color:#ff4c4c;'><h3 class='txt-hereje'>PROGRESO DE LA MASACRE</h3>
         <p style='font-size:24px; margin:0;'>⚔️ <span class='txt-hereje'>${jugador.enemigosAsesinados} / ${jugador.enemigosObjetivo}</span> Herejes Eliminados ⚔️</p></div>`, "", true);
-
-    if (jugador.enemigosAsesinados >= jugador.enemigosObjetivo) {
-        agregarTexto("<div class='separador'>***</div>");
-        
-        await MotorDialogos.mostrarDialogo({
-            personajeImg: "assets/img/personajes/aliados/lider_ballesteros.webp", nombrePersonaje: "Barón Andrew", alineacion: "izq", bordeClase: "borde-aliado", nombreClase: "nombre-izq-align",
-            texto: `"¡Huyen! ¡Las ratas paganas corren hacia la niebla! ¡EL BOSQUE ES NUESTRO!"`, claseTexto: "txt-lugarteniente"
-        });
-        
-        crearBoton("AVANZAR (Asegurar el Perímetro)", async () => {
-            let overlay = document.getElementById("formacion-overlay");
-            if(overlay) overlay.style.display = "flex";
-            
-            let skipCine = document.getElementById("ht-skip-cine")?.checked;
-            if(!skipCine && typeof playCinematicaVictoria === 'function') {
-                await new Promise(res => playCinematicaVictoria(res));
-            }
-            if(overlay) overlay.style.display = "none";
-            
-            if (typeof iniciarParlamentoBosque === 'function') await iniciarParlamentoBosque(); 
-            else interludiumCapitulo1();
-        });
-        return;
-    }
 
     jugador.tropas.forEach(t => { if (t.cooldown === undefined) t.cooldown = 0; });
 
@@ -107,7 +89,6 @@ function ejecutarVolleyBosque() {
                 textoDado, resultadoTexto, idBc
             });
 
-            // FIX TÁCTICO: Audio escalonado para dar inmersión de "lluvia de flechas"
             if (autoCombat && typeof window.AudioManager !== 'undefined') {
                 let delayDisparo = (indice * 150) + (Math.random() * 150);
                 setTimeout(() => {
@@ -215,22 +196,42 @@ async function iniciarPicasBosque() {
     
     let overlay = document.getElementById("formacion-overlay");
     if(overlay) overlay.style.display = "flex";
-    document.getElementById("formacion-roster").style.display = "none";
-    document.getElementById("formacion-tablero").style.display = "none";
-    document.getElementById("formacion-picas-tablero").style.display = "none";
-    document.getElementById("btn-iniciar-formacion-picas").style.display = "none";
-    document.getElementById("titulo-formacion").innerText = "";
+    
+    let roster = document.getElementById("formacion-roster");
+    let tablero = document.getElementById("formacion-tablero");
+    let picasTablero = document.getElementById("formacion-picas-tablero");
+    let btnPicas = document.getElementById("btn-iniciar-formacion-picas");
+    
+    if(roster) roster.style.display = "none";
+    if(tablero) tablero.style.display = "none";
+    if(picasTablero) picasTablero.style.display = "none";
+    if(btnPicas) btnPicas.style.display = "none";
+    
+    let titulo = document.getElementById("titulo-formacion");
+    if(titulo) titulo.innerText = "";
 
     let skipCine = document.getElementById("ht-skip-cine")?.checked;
-    if(!skipCine && typeof playCinematicaFormarMuroBosque === 'function') {
-        await new Promise(res => playCinematicaFormarMuroBosque(resultado, res));
+
+    // =====================================================================
+    // CONECTE RESTAURADO 1: CINEMÁTICA FORMACIÓN MURO EN BOSQUE
+    // =====================================================================
+    if (!skipCine) {
+        if (typeof window.playCinematicaFormarMuroBosque === 'function') {
+            console.log("🎬 [ENLACE RESTAURADO] Ejecutando playCinematicaFormarMuroBosque...");
+            await new Promise(res => window.playCinematicaFormarMuroBosque(resultado, res));
+        } else if (typeof playCinematicaFormarMuroBosque === 'function') {
+            console.log("🎬 [ENLACE RESTAURADO LOCAL] Ejecutando playCinematicaFormarMuroBosque...");
+            await new Promise(res => playCinematicaFormarMuroBosque(resultado, res));
+        } else {
+            console.error("⚠️ [ALERTA TÁCTICA]: No se encontró la cinemática de formar muro. Saltando animación.");
+        }
     }
     
     if(overlay) overlay.style.display = "none";
     
     let {victoria, bajas} = await new Promise(resolve => {
-        if (typeof iniciarCombatePicasBosque === 'function') {
-            iniciarCombatePicasBosque(resultado, (v, b) => resolve({victoria: v, bajas: b}), metaCalculada, turnosMeta);
+        if (typeof window.iniciarCombatePicasBosque === 'function') {
+            window.iniciarCombatePicasBosque(resultado, (v, b) => resolve({victoria: v, bajas: b}), metaCalculada, turnosMeta);
         } else {
             resolve({victoria: true, bajas: 0});
         }
@@ -276,9 +277,22 @@ async function evaluarPicasBosque(victoria, bajasEnPicas) {
             if(overlay2) overlay2.style.display = "flex";
 
             let skipCine = document.getElementById("ht-skip-cine")?.checked;
-            if(!skipCine && typeof playCinematicaRepliegueBosque === 'function') {
-                await new Promise(res => playCinematicaRepliegueBosque(res));
+
+            // =====================================================================
+            // CONECTE RESTAURADO 2: CINEMÁTICA REPLIEGUE EN BOSQUE
+            // =====================================================================
+            if (!skipCine) {
+                if (typeof window.playCinematicaRepliegueBosque === 'function') {
+                    console.log("🎬 [ENLACE RESTAURADO] Ejecutando playCinematicaRepliegueBosque...");
+                    await new Promise(res => window.playCinematicaRepliegueBosque(res));
+                } else if (typeof playCinematicaRepliegueBosque === 'function') {
+                    console.log("🎬 [ENLACE RESTAURADO LOCAL] Ejecutando playCinematicaRepliegueBosque...");
+                    await new Promise(res => playCinematicaRepliegueBosque(res));
+                } else {
+                    console.error("⚠️ [ALERTA TÁCTICA]: No se encontró la cinemática de repliegue.");
+                }
             }
+            
             if(overlay2) overlay2.style.display = "none";
             await iniciarFaseBosque();
         });
@@ -286,31 +300,16 @@ async function evaluarPicasBosque(victoria, bajasEnPicas) {
 }
 
 async function evaluarVictoriaDerrotaBosque() {
-    limpiarBotones();
-    
-    jugador.tropas.forEach(t => { if (t.espadachin) t.espadachin = false; });
-    
-    if (typeof GestorEstado !== 'undefined' && typeof GestorEstado.avanzarEfectosTemporales === 'function') {
-        GestorEstado.avanzarEfectosTemporales();
-    }
-    
-    if (jugador.enemigosAsesinados >= jugador.enemigosObjetivo) {
-        
-        agregarTexto(`<div class='separador'>***</div>`);
-        agregarTexto(`<h2 class='txt-sagrado' style='text-align:center;'>¡VICTORIA EN EL BOSQUE!</h2>`);
-        
-        let divDialogo = document.createElement("div");
-        storyArea.appendChild(divDialogo);
-        await MotorDialogos.mostrarDialogoEnContenedor(divDialogo, {
-            personajeImg: "assets/img/personajes/aliados/lider_ballesteros.webp", nombrePersonaje: "Barón Andrew", alineacion: "izq", bordeClase: "borde-aliado", nombreClase: "nombre-izq-align",
-            texto: `"¡Huyen! ¡Las ratas paganas corren hacia la niebla! ¡EL BOSQUE ES NUESTRO!"`, claseTexto: "txt-lugarteniente"
-        });
+    storyArea.innerHTML = ""; limpiarBotones();
+    let ballesterosVivos = jugador.tropas.filter(t => t.tipoGeneral === "ballesteros" && t.hp > 0 && !t.espadachin).length;
+    let piquerosVivos = jugador.tropas.filter(t => t.tipoGeneral === "piqueros" && t.hp > 0).length;
 
-        agregarTexto(`La horda pagana ha sido quebrada. Los cadáveres infieles alfombran la tierra y el silencio regresa al bosque, roto únicamente por los rezos de vuestros hermanos heridos.`);
+    if (ballesterosVivos > 0) {
+        agregarTexto(`<h2 class='txt-sagrado' style='text-align:center;'>LA CARNICERÍA HA TERMINADO</h2>`);
+        agregarTexto(`Vuestros hermanos resoplan cansados. La colina está cubierta de cadáveres paganos. Habéis sobrevivido al asedio.`);
         
-        let totalAliados = jugador.tropas.filter(t => t.hp > 0).length;
-        if (totalAliados < 8) {
-            agregarTexto(`Ha sido una victoria pírrica. Vuestras fuerzas están mermadas y el hedor a sangre atrae moscas y desesperanza.`, "txt-hereje");
+        if (piquerosVivos === 0) {
+            agregarTexto(`No obstante, todos vuestros lanceros perecieron. Ha sido una victoria pírrica. Vuestras fuerzas están mermadas y el hedor a sangre atrae moscas y desesperanza.`, "txt-hereje");
             GestorEstado.modificarFe(-15, "las bajas críticas y el agobiante hedor a muerte");
         } else {
             agregarTexto(`Vuestros soldados alzan sus espadas al cielo en agradecimiento.`, "mensaje-sistema");
@@ -322,11 +321,12 @@ async function evaluarVictoriaDerrotaBosque() {
             if(overlay) overlay.style.display = "flex";
             
             let skipCine = document.getElementById("ht-skip-cine")?.checked;
-            if(!skipCine && typeof playCinematicaVictoria === 'function') {
-                await new Promise(res => playCinematicaVictoria(res));
-            }
-            if(overlay) overlay.style.display = "none";
             
+            if(!skipCine && typeof window.playCinematicaVictoria === 'function') {
+                await new Promise(res => window.playCinematicaVictoria(res));
+            }
+            
+            if(overlay) overlay.style.display = "none";
             if (typeof iniciarParlamentoBosque === 'function') await iniciarParlamentoBosque(); 
             else interludiumCapitulo1();
         });
@@ -334,6 +334,6 @@ async function evaluarVictoriaDerrotaBosque() {
         agregarTexto(`<div class='separador'>***</div>`);
         agregarTexto(`<h2 class='txt-hereje' style='text-align:center;'>MASACRE EN EL BOSQUE</h2>`);
         agregarTexto(`Sin protección, vuestros tiradores fueron despedazados. La Cruzada ha fracasado en estas tierras impías.`);
-        crearBoton("REINICIAR", () => location.reload());
+        crearBoton("Soportar el Juicio Divino...", capitulo1_DerrotaFinal);
     }
 }

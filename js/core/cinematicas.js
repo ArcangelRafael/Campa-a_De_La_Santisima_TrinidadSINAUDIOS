@@ -138,9 +138,6 @@ window.DirectorCinematico = {
         let t = document.getElementById("titulo-formacion"); if(t) t.innerText = "";
     },
 
-    // =========================================================================
-    // MOTORES DE ANIMACIÓN TÁCTICA UNIVERSAL (Refactorización DRY)
-    // =========================================================================
     crearClonAnimado: function(tropa, box, colorSombra = "transparent") {
         let clone = document.createElement("div");
         let claseBorde = tropa.clase === 'noble' ? 'tropa-noble' : 'tropa-mercenaria';
@@ -149,6 +146,7 @@ window.DirectorCinematico = {
         clone.innerHTML = typeof RenderCombate !== "undefined" ? RenderCombate.htmlFichaTropaInner(tropa) : "";
 
         clone.style.setProperty("position", "fixed", "important");
+        
         clone.style.setProperty("width", "75px", "important");
         clone.style.setProperty("height", "75px", "important");
         
@@ -230,25 +228,33 @@ window.DirectorCinematico = {
                 return;
             }
 
-            let btn = document.createElement("button");
-            btn.className = "impacto-divino-btn txt-animado-salto";
-            btn.innerText = "⚔️ RETORNAR AL COMBATE ⚔️";
-            btn.style.cssText = "position: absolute; bottom: 50px; left: 50%; transform: translateX(-50%); z-index: 99999;";
-            
-            btn.onclick = () => {
-                btn.remove();
-                clonesStaying.forEach(item => {
-                    let el = document.querySelector("#formacion-tablero #" + item.targetId);
-                    if (el) { 
-                        el.style.setProperty("transition", "opacity 0.3s ease", "important"); 
-                        el.style.setProperty("opacity", "1", "important"); 
-                    }
-                    if (item.clone) item.clone.remove();
-                });
+            // FIX TÁCTICO: Guardamos la función original para curar la amnesia del botón
+            let btnNativo = document.getElementById("btn-iniciar-formacion");
+            if (btnNativo) {
+                let onclickOriginal = btnNativo.onclick;
+                
+                btnNativo.innerText = "⚔️ RETORNAR AL COMBATE ⚔️";
+                btnNativo.style.display = "inline-block";
+                
+                btnNativo.onclick = () => {
+                    btnNativo.style.display = "none";
+                    // Le restauramos su memoria original para que en el próximo turno vuelva a cerrar el panel de tropas
+                    btnNativo.onclick = onclickOriginal;
+                    
+                    clonesStaying.forEach(item => {
+                        let el = document.querySelector("#formacion-tablero #" + item.targetId);
+                        if (el) { 
+                            el.style.setProperty("transition", "opacity 0.3s ease", "important"); 
+                            el.style.setProperty("opacity", "1", "important"); 
+                        }
+                        if (item.clone) item.clone.remove();
+                    });
+                    if (callbackFinal) callbackFinal();
+                };
+            } else {
+                clonesStaying.forEach(item => { if (item.clone) item.clone.remove(); });
                 if (callbackFinal) callbackFinal();
-            };
-            
-            overlay.appendChild(btn);
+            }
         };
 
         if (!clonesStaying || clonesStaying.length === 0) {

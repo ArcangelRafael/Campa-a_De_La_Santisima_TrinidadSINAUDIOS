@@ -109,7 +109,16 @@ function playCinematicaCargaCuna(formacionInfo, callbackFinal) {
     let reservas = jugador.tropas.filter(t => t.tipoGeneral === "caballeros" && t.hp > 0 && !Object.values(slots).includes(t.idUnico));
     let numMostrados = 0;
     let mapeoFilas = [2, 1, 3, 0, 4]; 
-    let offsetCuna = [0, -8, -8, -16, -16]; 
+    
+    // =====================================================================
+    // [NUEVO] LÓGICA DE CABEZA DE RESERVA INYECTADA PARA LA CINEMÁTICA INICIAL
+    // =====================================================================
+    let traseraArribaLlena = slots["trasera-arriba"] !== null;
+    let traseraAbajoLlena = slots["trasera-abajo"] !== null;
+    let traserosAvanzan = traseraArribaLlena || traseraAbajoLlena;
+    
+    let offsetCabeza = traserosAvanzan ? 0 : -20; // Si no hay retaguardia, la cabeza no asoma
+    let offsetCuna = [offsetCabeza, -8, -8, -16, -16]; 
     let baseLeftPunta = 31; 
 
     reservas.forEach((cab) => {

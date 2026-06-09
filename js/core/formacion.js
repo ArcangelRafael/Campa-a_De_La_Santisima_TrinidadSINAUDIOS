@@ -1,19 +1,54 @@
 /* === FORMACION.JS - SISTEMA DE DESPLIEGUE TÁCTICO === */
 
+// =========================================================================
+// MOTOR UNIVERSAL DE MÁRTIRES Y CAÍDOS (INYECCIÓN DE HALOS INMORTALES)
+// =========================================================================
+window.crearMarcadorMuerteDOM = function(tipo) {
+    let mk = document.createElement("div");
+    mk.className = tipo === 'skull' ? "marcador-batalla skull-icon" : "marcador-batalla cross-icon";
+    mk.innerHTML = tipo === 'skull' ? "☠️" : "✝";
+    if (tipo === 'skull') {
+        mk.style.cssText = "position:absolute; font-size:45px; z-index:250; pointer-events:none; top:50%; left:50%; transform:translate(-50%, -50%); opacity: 0.95; color: #ffffff !important; text-shadow: 0 0 15px #ff0000, 0 0 40px #ff0000, 0 0 60px #ff0000 !important;";
+    } else {
+        mk.style.cssText = "position:absolute; font-size:45px; z-index:250; pointer-events:none; top:50%; left:50%; transform:translate(-50%, -50%); opacity: 0.95; color: #ffd700 !important; text-shadow: 0 0 15px #ffaa00, 0 0 40px #ffaa00, 0 0 60px #ffaa00 !important;";
+    }
+    return mk;
+};
+
+window.dibujarMarcadorMuerte = function(slotElement, tipo) {
+    if (!slotElement) return null;
+    let mk = window.crearMarcadorMuerteDOM(tipo);
+    slotElement.appendChild(mk);
+    return mk;
+};
+
+window.forzarHalosCinematicas = function(contenedor) {
+    if(!contenedor) return;
+    setTimeout(() => {
+        contenedor.querySelectorAll('.marcador-batalla, div').forEach(el => {
+            if(el.innerHTML.includes('☠️')) {
+                el.style.setProperty('color', '#ffffff', 'important');
+                el.style.setProperty('text-shadow', '0 0 15px #ff0000, 0 0 40px #ff0000, 0 0 60px #ff0000', 'important');
+                el.style.setProperty('z-index', '250', 'important');
+            }
+            if(el.innerHTML.includes('✝')) {
+                el.style.setProperty('color', '#ffd700', 'important');
+                el.style.setProperty('text-shadow', '0 0 15px #ffaa00, 0 0 40px #ffaa00, 0 0 60px #ffaa00', 'important');
+                el.style.setProperty('z-index', '250', 'important');
+            }
+        });
+    }, 150); 
+};
+// =========================================================================
+
 let tropaArrastrada = null;
 let callbackPostFormacion = null;
 let formacionModoActivo = "cuna"; 
 let reposicionModo = false; 
 
-let slotsFormacion = {
-    "trasera-arriba": null, "trasera-abajo": null, "media-arriba": null, "media-abajo": null, "punta": null
-};
-let slotsFormacionPicas = {
-    "pica-1": null, "pica-2": null, "pica-3": null, "pica-4": null
-};
-let slotsFormacionSacrificio = {
-    "sacrificio-1": null, "sacrificio-2": null, "sacrificio-3": null
-};
+let slotsFormacion = { "trasera-arriba": null, "trasera-abajo": null, "media-arriba": null, "media-abajo": null, "punta": null };
+let slotsFormacionPicas = { "pica-1": null, "pica-2": null, "pica-3": null, "pica-4": null };
+let slotsFormacionSacrificio = { "sacrificio-1": null, "sacrificio-2": null, "sacrificio-3": null };
 
 window.gestionarEfectosVisuales = function(tableroActivo, modo) {
     let fondoInline = tableroActivo.style.backgroundImage || "";
@@ -39,10 +74,7 @@ window.gestionarEfectosVisuales = function(tableroActivo, modo) {
         if (!styleDOM) {
             let s = document.createElement("style");
             s.id = styleId;
-            s.innerHTML = `
-                #formacion-tablero .tropa-draggable img, 
-                #formacion-roster .tropa-draggable img { transform: scaleX(-1) !important; }
-            `;
+            s.innerHTML = `#formacion-tablero .tropa-draggable img, #formacion-roster .tropa-draggable img { transform: scaleX(-1) !important; }`;
             document.head.appendChild(s);
         }
     } else if (styleDOM) {
@@ -63,20 +95,14 @@ window.actualizarLabelTurnosPicas = function() {
         let ballesterosDisponibles = jugador.tropas.filter(t => t.tipoGeneral === "ballesteros" && (t.clase === "noble" || t.idUnico === jugador.mercenarioRedimidoId) && t.hp > 0 && !t.espadachin).length;
         let metaRequerida = Math.min(3, ballesterosDisponibles);
         let picasCont = Object.values(slotsFormacionSacrificio).filter(id => id !== null).length;
-        
-        if (picasCont > 0) {
-            turnos = Math.ceil(metaRequerida / picasCont);
-        }
+        if (picasCont > 0) turnos = Math.ceil(metaRequerida / picasCont);
     } else {
         let picasCont = Object.values(slotsFormacionPicas).filter(id => id !== null).length;
         let puntos = {1:3, 2:6, 3:8, 4:12}[picasCont] || 0;
-        
         let metaActual = (typeof EstadoBatalla !== 'undefined' && EstadoBatalla.metaProgresoMuro) ? EstadoBatalla.metaProgresoMuro : 48;
         let progresoMuro = (typeof EstadoBatalla !== 'undefined' && EstadoBatalla.progresoMuro) ? EstadoBatalla.progresoMuro : 0;
-        
         let faltan = metaActual - progresoMuro;
         if (faltan < 0) faltan = 0; 
-        
         if (puntos > 0) turnos = Math.ceil(faltan / puntos);
     }
 
@@ -107,11 +133,12 @@ function intentarAutoDespliegue() {
 
     let roster = document.getElementById("formacion-lista-tropas");
     let tropasDisponibles = Array.from(roster.querySelectorAll(".tropa-draggable"));
-
     tropasDisponibles.sort(() => Math.random() - 0.5);
 
     slotsTarget.forEach(slot => {
-        if (slot.children.length === 0 && tropasDisponibles.length > 0) {
+        // FIX BUG: Solo revisa si hay OTRAS TROPAS. Ignora las cruces para no bloquearse.
+        let hasTropa = Array.from(slot.children).some(c => c.classList.contains('tropa-draggable'));
+        if (!hasTropa && tropasDisponibles.length > 0) {
             let tropa = tropasDisponibles.pop(); 
             slot.appendChild(tropa);
             let idTropa = tropa.dataset.idTropa;
@@ -150,6 +177,18 @@ function abrirFormacionReposicion(bajasArray, callbackAntiguo) {
         tableroActivo.style.display = "flex";
         tableroActivo.classList.remove("modo-combate");
 
+        // FIX VISUAL: Aumento agresivo de la separación (gap) de las casillas en PICAS
+        let vContainer = tableroActivo.querySelector("#zona-aliada-picas > div");
+        if (vContainer && (formacionModoActivo === "picas" || formacionModoActivo === "sacrificio")) {
+            vContainer.style.setProperty("grid-template-columns", "75px", "important");
+            vContainer.style.setProperty("grid-template-rows", "repeat(4, 75px)", "important");
+            vContainer.style.setProperty("margin-bottom", "0", "important");
+            vContainer.style.setProperty("gap", "45px", "important"); // <--- AUMENTO DE SEPARACIÓN (DE 10 a 45)
+            vContainer.querySelectorAll(".slot-formacion").forEach(s => {
+                s.style.setProperty("transform", "none", "important");
+            });
+        }
+
         if (idTablero === "formacion-picas-tablero") {
             if (typeof EstadoBatalla !== 'undefined' && (EstadoBatalla.esBosque || EstadoBatalla.tipoCombate === "picas_bosque" || EstadoBatalla.tipoCombate === "sacrificio")) {
                 tableroActivo.style.backgroundImage = "linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('assets/img/fondos/puentepiso.webp')";
@@ -172,17 +211,14 @@ function abrirFormacionReposicion(bajasArray, callbackAntiguo) {
 
         initFormacionZonas();
 
-        // FIX TÁCTICO: Vinculación de clases CSS oficiales para que absorban los halos divinos globales
         if (window.marcadoresBatalla) {
             window.marcadoresBatalla.forEach(m => {
-                let slotId = m.col < 0 ? `aliado-${m.row}-${m.col}` : `enemigo-${m.row}-${m.col}`;
+                if (m.tipo === 'skull') return; 
+
+                let slotId = m.slotPos ? `pica-slot-${m.slotPos.split("-")[1]}` : (m.col < 0 ? `aliado-${m.row}-${m.col}` : `enemigo-${m.row}-${m.col}`);
                 let slot = document.getElementById(slotId);
-                if (slot) {
-                    let mk = document.createElement("div");
-                    mk.className = m.tipo === 'skull' ? "marcador-batalla skull-icon" : "marcador-batalla cross-icon";
-                    mk.innerHTML = m.tipo === 'skull' ? '☠️' : '✝';
-                    mk.style.cssText = "position:absolute; font-size:35px; z-index:50; pointer-events:none; top:50%; left:50%; transform:translate(-50%, -50%);";
-                    slot.appendChild(mk);
+                if (slot && typeof window.dibujarMarcadorMuerte === 'function') {
+                    window.dibujarMarcadorMuerte(slot, m.tipo);
                 }
             });
         }
@@ -221,11 +257,7 @@ function abrirFormacionReposicion(bajasArray, callbackAntiguo) {
                     card.style.width = "100%"; card.style.height = "100%"; card.style.margin = "0"; card.style.cursor = "default";
                     card.style.pointerEvents = "none"; 
                     
-                    card.innerHTML = `
-                        <img src="${tr.img}">
-                        <div class="unidad-hp-combate" style="display:block !important;">${hpStars}</div>
-                        <div class="unidad-nombre-aleatorio">${tr.nombre} <br>${etiqueta}</div>
-                    `;
+                    card.innerHTML = `<img src="${tr.img}"><div class="unidad-hp-combate" style="display:block !important;">${hpStars}</div><div class="unidad-nombre-aleatorio">${tr.nombre} <br>${etiqueta}</div>`;
                     slot.appendChild(card);
                 }
                 slot.style.pointerEvents = "none";
@@ -237,6 +269,7 @@ function abrirFormacionReposicion(bajasArray, callbackAntiguo) {
                 slot.style.opacity = "0.3";
                 slot.style.border = "2px dashed rgba(255, 255, 255, 0.4)";
                 slot.style.background = "rgba(0, 0, 0, 0.5)";
+                slot.classList.remove("slot-reposicion-activo"); 
             }
         });
 
@@ -252,17 +285,12 @@ function abrirFormacionReposicion(bajasArray, callbackAntiguo) {
 
 function abrirFormacionCuna(callbackAntiguo) {
     return new Promise(resolve => {
-        callbackPostFormacion = (resultado) => {
-            if (callbackAntiguo) callbackAntiguo(resultado);
-            resolve(resultado);
-        };
-        formacionModoActivo = "cuna";
-        reposicionModo = false;
+        callbackPostFormacion = (resultado) => { if (callbackAntiguo) callbackAntiguo(resultado); resolve(resultado); };
+        formacionModoActivo = "cuna"; reposicionModo = false;
         slotsFormacion = { "trasera-arriba": null, "trasera-abajo": null, "media-arriba": null, "media-abajo": null, "punta": null };
 
         document.getElementById("titulo-formacion").innerText = "TÁCTICA: FORMACIÓN EN CUÑA";
         document.getElementById("titulo-roster").innerText = "🛡️ Caballeros";
-        
         document.getElementById("formacion-roster").style.display = "block";
         document.getElementById("btn-ver-reporte").style.display = "none";
         
@@ -278,39 +306,24 @@ function abrirFormacionCuna(callbackAntiguo) {
         if(tableroCuna) tableroCuna.classList.remove("modo-combate");
 
         initFormacionZonas();
-
-        document.querySelectorAll(".slot-formacion").forEach(s => { 
-            s.style.opacity = "1"; 
-            s.style.pointerEvents = "auto"; 
-            s.style.border = ""; 
-            s.style.background = ""; 
-            s.classList.remove("slot-reposicion-activo"); 
-        });
-
+        document.querySelectorAll(".slot-formacion").forEach(s => { s.style.opacity = "1"; s.style.pointerEvents = "auto"; s.style.border = ""; s.style.background = ""; s.classList.remove("slot-reposicion-activo"); });
         limpiarTablero("zona-reservas", "#formacion-tablero .slot-formacion");
         generarRoster("caballeros");
         actualizarLabelTurnosPicas();
-
         gestionarEfectosVisuales(tableroCuna, "cuna");
         document.getElementById("formacion-overlay").style.display = "flex";
-        
         intentarAutoDespliegue();
     });
 }
 
 function abrirFormacionPicas(callbackAntiguo) {
     return new Promise(resolve => {
-        callbackPostFormacion = (resultado) => {
-            if (callbackAntiguo) callbackAntiguo(resultado);
-            resolve(resultado);
-        };
-        formacionModoActivo = "picas";
-        reposicionModo = false;
+        callbackPostFormacion = (resultado) => { if (callbackAntiguo) callbackAntiguo(resultado); resolve(resultado); };
+        formacionModoActivo = "picas"; reposicionModo = false;
         slotsFormacionPicas = { "pica-1": null, "pica-2": null, "pica-3": null, "pica-4": null };
 
         document.getElementById("titulo-formacion").innerText = "TÁCTICA: MURO DE PICAS";
         document.getElementById("titulo-roster").innerText = "🛡️ Piqueros";
-
         document.getElementById("formacion-roster").style.display = "block";
         document.getElementById("btn-ver-reporte").style.display = "none";
         
@@ -325,52 +338,42 @@ function abrirFormacionPicas(callbackAntiguo) {
         let tableroPicas = document.getElementById("formacion-picas-tablero");
         if(tableroPicas) {
             tableroPicas.classList.remove("modo-combate");
-            
+            let vContainer = tableroPicas.querySelector("#zona-aliada-picas > div");
+            if (vContainer) {
+                vContainer.style.setProperty("grid-template-columns", "75px", "important");
+                vContainer.style.setProperty("grid-template-rows", "repeat(4, 75px)", "important");
+                vContainer.style.setProperty("margin-bottom", "0", "important");
+                vContainer.style.setProperty("gap", "45px", "important"); // <--- AUMENTO DE SEPARACIÓN
+                vContainer.querySelectorAll(".slot-formacion").forEach(s => { s.style.setProperty("transform", "none", "important"); });
+            }
             if (typeof EstadoBatalla !== 'undefined' && (EstadoBatalla.esBosque || EstadoBatalla.tipoCombate === "picas_bosque" || EstadoBatalla.tipoCombate === "sacrificio")) {
                 tableroPicas.style.backgroundImage = "linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('assets/img/fondos/puentepiso.webp')";
-                tableroPicas.style.backgroundSize = "160%";
-                tableroPicas.style.backgroundPosition = "left center";
+                tableroPicas.style.backgroundSize = "160%"; tableroPicas.style.backgroundPosition = "left center";
             } else {
                 tableroPicas.style.backgroundImage = "linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('assets/img/fondos/puente_fondo.webp')";
-                tableroPicas.style.backgroundSize = "cover";
-                tableroPicas.style.backgroundPosition = "center bottom";
+                tableroPicas.style.backgroundSize = "cover"; tableroPicas.style.backgroundPosition = "center bottom";
             }
         }
 
         initFormacionZonas();
-
-        document.querySelectorAll(".slot-formacion").forEach(s => { 
-            s.style.opacity = "1"; 
-            s.style.pointerEvents = "auto"; 
-            s.style.border = ""; 
-            s.style.background = ""; 
-            s.classList.remove("slot-reposicion-activo"); 
-        });
-
+        document.querySelectorAll(".slot-formacion").forEach(s => { s.style.opacity = "1"; s.style.pointerEvents = "auto"; s.style.border = ""; s.style.background = ""; s.classList.remove("slot-reposicion-activo"); });
         limpiarTablero("zona-reservas-picas", "#formacion-picas-tablero .slot-formacion");
         generarRoster("piqueros");
         actualizarLabelTurnosPicas();
-
         gestionarEfectosVisuales(tableroPicas, "picas");
         document.getElementById("formacion-overlay").style.display = "flex";
-        
         intentarAutoDespliegue();
     });
 }
 
 function abrirFormacionSacrificio(callbackAntiguo) {
     return new Promise(resolve => {
-        callbackPostFormacion = (resultado) => {
-            if (callbackAntiguo) callbackAntiguo(resultado);
-            resolve(resultado);
-        };
-        formacionModoActivo = "sacrificio";
-        reposicionModo = false;
+        callbackPostFormacion = (resultado) => { if (callbackAntiguo) callbackAntiguo(resultado); resolve(resultado); };
+        formacionModoActivo = "sacrificio"; reposicionModo = false;
         slotsFormacionSacrificio = { "sacrificio-1": null, "sacrificio-2": null, "sacrificio-3": null };
 
         document.getElementById("titulo-formacion").innerText = "EL ÚLTIMO ALIENTO (A MUERTE)";
         document.getElementById("titulo-roster").innerText = "🛡️ Sangre Noble";
-
         document.getElementById("formacion-roster").style.display = "block";
         document.getElementById("btn-ver-reporte").style.display = "none";
         
@@ -386,28 +389,21 @@ function abrirFormacionSacrificio(callbackAntiguo) {
         if(tableroPicas) {
             tableroPicas.classList.remove("modo-combate");
             tableroPicas.style.backgroundImage = "linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('assets/img/fondos/puentepiso.webp')";
-            tableroPicas.style.backgroundSize = "160%";
-            tableroPicas.style.backgroundPosition = "left center";
+            tableroPicas.style.backgroundSize = "160%"; tableroPicas.style.backgroundPosition = "left center";
+
+            let vContainer = tableroPicas.querySelector("#zona-aliada-picas > div");
+            if (vContainer) {
+                vContainer.style.setProperty("gap", "45px", "important"); // <--- AUMENTO DE SEPARACIÓN
+            }
         }
 
         initFormacionZonas();
-
-        document.querySelectorAll(".slot-formacion").forEach(s => { 
-            s.style.opacity = "1"; 
-            s.style.pointerEvents = "auto"; 
-            s.style.border = ""; 
-            s.style.background = ""; 
-            s.classList.remove("slot-reposicion-activo"); 
-        });
-
+        document.querySelectorAll(".slot-formacion").forEach(s => { s.style.opacity = "1"; s.style.pointerEvents = "auto"; s.style.border = ""; s.style.background = ""; s.classList.remove("slot-reposicion-activo"); });
         limpiarTablero("zona-reservas-picas", "#formacion-picas-tablero .slot-formacion");
-        
         generarRoster("ballesteros", "noble");
         actualizarLabelTurnosPicas();
-
         gestionarEfectosVisuales(tableroPicas, "sacrificio");
         document.getElementById("formacion-overlay").style.display = "flex";
-        
         intentarAutoDespliegue();
     });
 }
@@ -420,21 +416,18 @@ function cerrarFormacionYCombatir() {
         let reforzados = [];
         document.querySelectorAll(".slot-reposicion-activo").forEach(slot => {
             if (slot.children.length > 0) {
-                let idNuevo = slot.children[0].id.replace("drag-", "");
-                let tropaObj = jugador.tropas.find(t => t.idUnico === idNuevo);
-                let posObj = EstadoBatalla.tropasVivas.find(p => p.slotPos === slot.dataset.pos);
-                if (posObj && tropaObj) {
-                    posObj.idUnico = idNuevo;
-                    posObj.ignorarMuerto = false; 
-                    reforzados.push(tropaObj);
+                // Asegurarnos de agarrar a la tropa, no a un marcador
+                let tropaCard = Array.from(slot.children).find(c => c.classList.contains('tropa-draggable'));
+                if (tropaCard) {
+                    let idNuevo = tropaCard.id.replace("drag-", "");
+                    let tropaObj = jugador.tropas.find(t => t.idUnico === idNuevo);
+                    let posObj = EstadoBatalla.tropasVivas.find(p => p.slotPos === slot.dataset.pos);
+                    if (posObj && tropaObj) { posObj.idUnico = idNuevo; posObj.ignorarMuerto = false; reforzados.push(tropaObj); }
                 }
             }
         });
         reposicionModo = false;
-        if(callbackPostFormacion) {
-            callbackPostFormacion(reforzados);
-            callbackPostFormacion = null;
-        }
+        if(callbackPostFormacion) { callbackPostFormacion(reforzados); callbackPostFormacion = null; }
     } else {
         if (formacionModoActivo === "cuna") {
             let formacionInfo = { total: 0, puntaEsNoble: false, todaNobleza: true, nombreLider: null, vacios: 5, slots: { ...slotsFormacion } };
@@ -444,18 +437,12 @@ function cerrarFormacionYCombatir() {
                     let tropaObj = jugador.tropas.find(t => t.idUnico === slotsFormacion[pos]);
                     if(tropaObj) {
                         if (tropaObj.clase !== "noble") formacionInfo.todaNobleza = false;
-                        if(pos === "punta") {
-                            formacionInfo.nombreLider = tropaObj.nombre;
-                            if(tropaObj.clase === "noble") formacionInfo.puntaEsNoble = true;
-                        }
+                        if(pos === "punta") { formacionInfo.nombreLider = tropaObj.nombre; if(tropaObj.clase === "noble") formacionInfo.puntaEsNoble = true; }
                     }
                 }
             }
             if (formacionInfo.total === 0) formacionInfo.todaNobleza = false;
-            if(callbackPostFormacion) {
-                callbackPostFormacion(formacionInfo);
-                callbackPostFormacion = null;
-            }
+            if(callbackPostFormacion) { callbackPostFormacion(formacionInfo); callbackPostFormacion = null; }
         }
     }
 }
@@ -476,11 +463,7 @@ function cerrarFormacionPicas() {
             }
         }
         if (formacionInfo.total === 0) formacionInfo.todaNobleza = false;
-        if(callbackPostFormacion) {
-            callbackPostFormacion(formacionInfo);
-            callbackPostFormacion = null;
-        }
-
+        if(callbackPostFormacion) { callbackPostFormacion(formacionInfo); callbackPostFormacion = null; }
     } else {
         let formacionInfo = { total: 0, vacios: 4, todaNobleza: true, slots: { ...slotsFormacionPicas } };
         for(let pos in slotsFormacionPicas){
@@ -491,22 +474,14 @@ function cerrarFormacionPicas() {
             }
         }
         if (formacionInfo.total === 0) formacionInfo.todaNobleza = false;
-        if(callbackPostFormacion) {
-            callbackPostFormacion(formacionInfo);
-            callbackPostFormacion = null;
-        }
+        if(callbackPostFormacion) { callbackPostFormacion(formacionInfo); callbackPostFormacion = null; }
     }
 }
 
 window.abrirRacionesDesdeFormacion = function(tipo, claseFiltro) {
     window.formacionPendienteRefresh = { tipo, claseFiltro };
     window.modoRacionesDesdeFormacion = true;
-    
-    if (typeof abrirMenuAlimentar === "function") {
-        abrirMenuAlimentar();
-    } else {
-        alert("El Fray no encuentra la llave de la alacena. No se pudo abrir la mesa.");
-    }
+    if (typeof abrirMenuAlimentar === "function") { abrirMenuAlimentar(); } else { alert("El Fray no encuentra la llave de la alacena. No se pudo abrir la mesa."); }
 };
 
 function generarRoster(tipo, claseFiltro = null) {
@@ -516,11 +491,7 @@ function generarRoster(tipo, claseFiltro = null) {
     let tropasActivas = jugador.tropas.filter(t => {
         let isDesmayado = (t.hambre !== undefined && t.hambre <= 0) || (t.sed !== undefined && t.sed <= 0);
         let esCorrecto = t.tipoGeneral === tipo && t.hp > 0 && !isDesmayado;
-        
-        if (claseFiltro && t.clase !== claseFiltro && t.idUnico !== jugador.mercenarioRedimidoId) {
-            esCorrecto = false;
-        }
-        
+        if (claseFiltro && t.clase !== claseFiltro && t.idUnico !== jugador.mercenarioRedimidoId) { esCorrecto = false; }
         let yaDesplegada = EstadoBatalla.tropasVivas.some(p => p.idUnico === t.idUnico && t.hp > 0 && !p.ignorarMuerto);
         return esCorrecto && (!reposicionModo || !yaDesplegada); 
     });
@@ -528,18 +499,13 @@ function generarRoster(tipo, claseFiltro = null) {
     let tropasDesmayadas = jugador.tropas.filter(t => {
         let isDesmayado = (t.hambre !== undefined && t.hambre <= 0) || (t.sed !== undefined && t.sed <= 0);
         let esCorrecto = t.tipoGeneral === tipo && t.hp > 0 && isDesmayado;
-        
-        if (claseFiltro && t.clase !== claseFiltro && t.idUnico !== jugador.mercenarioRedimidoId) {
-            esCorrecto = false;
-        }
-        
+        if (claseFiltro && t.clase !== claseFiltro && t.idUnico !== jugador.mercenarioRedimidoId) { esCorrecto = false; }
         let yaDesplegada = EstadoBatalla.tropasVivas.some(p => p.idUnico === t.idUnico && t.hp > 0 && !p.ignorarMuerto);
         return esCorrecto && (!reposicionModo || !yaDesplegada); 
     });
 
     if(tropasActivas.length === 0 && tropasDesmayadas.length === 0) {
-        roster.innerHTML = `<p style='color:#ff4c4c; font-style:italic;'>No tienes reservas de ${tipo} aptas para este despliegue.</p>`;
-        return;
+        roster.innerHTML = `<p style='color:#ff4c4c; font-style:italic;'>No tienes reservas de ${tipo} aptas para este despliegue.</p>`; return;
     }
 
     if(tropasActivas.length === 0 && tropasDesmayadas.length > 0) {
@@ -549,31 +515,15 @@ function generarRoster(tipo, claseFiltro = null) {
     tropasActivas.forEach(t => {
         let card = document.createElement("div");
         let claseBorde = t.clase === 'noble' ? 'tropa-noble' : 'tropa-mercenaria';
-        
         card.className = `soldier-frame tropa-draggable ${claseBorde}`;
-        card.draggable = true; 
-        card.id = "drag-" + t.idUnico;
-        card.dataset.idTropa = t.idUnico;
-        
+        card.draggable = true; card.id = "drag-" + t.idUnico; card.dataset.idTropa = t.idUnico;
         let etiqueta = t.clase === 'noble' ? "<span style='color:#ffaa00; font-size:9px;'>(N)</span>" : "";
         let maxVida = t.hpMax || 2;
         let hpStars = "❤️".repeat(Math.max(0, t.hp)) + "🖤".repeat(maxVida - Math.max(0, t.hp));
-        
-        card.innerHTML = `
-            <img src="${t.img}">
-            <div class="unidad-hp-combate" style="display:block !important;">${hpStars}</div>
-            <div class="unidad-nombre-aleatorio">${t.nombre} <br>${etiqueta}</div>
-        `;
+        card.innerHTML = `<img src="${t.img}"><div class="unidad-hp-combate" style="display:block !important;">${hpStars}</div><div class="unidad-nombre-aleatorio">${t.nombre} <br>${etiqueta}</div>`;
 
-        card.addEventListener('dragstart', (e) => {
-            tropaArrastrada = t;
-            e.dataTransfer.setData('text/plain', t.idUnico);
-            setTimeout(() => card.style.opacity = '0.5', 0);
-        });
-        card.addEventListener('dragend', (e) => {
-            card.style.opacity = '1'; tropaArrastrada = null;
-        });
-
+        card.addEventListener('dragstart', (e) => { tropaArrastrada = t; e.dataTransfer.setData('text/plain', t.idUnico); setTimeout(() => card.style.opacity = '0.5', 0); });
+        card.addEventListener('dragend', (e) => { card.style.opacity = '1'; tropaArrastrada = null; });
         roster.appendChild(card);
     });
 
@@ -582,7 +532,6 @@ function generarRoster(tipo, claseFiltro = null) {
             let obj = typeof bdObjetos !== 'undefined' ? bdObjetos[typeof i === 'string' ? i : i.id] : null;
             return obj && (obj.categoria === "comida" || obj.categoria === "bebida");
         });
-        
         if (consumiblesDisponibles) {
             let btnHtml = `<button onclick="abrirRacionesDesdeFormacion('${tipo}', '${claseFiltro || ''}')" style="background:linear-gradient(to bottom, #8b6508, #214073); border:2px solid #ffd700; color:#fff; padding:10px; margin-top:10px; width:100%; font-size:12px; cursor:pointer; font-weight:bold; position:relative; z-index:3200; border-radius:4px; box-shadow:0 0 10px #000;">🍞🍺 ABRIR MESA DE SUMINISTROS</button>`;
             let desmayadosDiv = document.createElement("div");
@@ -610,23 +559,24 @@ function initFormacionZonas() {
     const rosterZona = document.getElementById("formacion-roster");
 
     slots.forEach(slot => {
-        slot.addEventListener('dragover', e => { 
-            if (slot.style.pointerEvents !== "none") { e.preventDefault(); slot.classList.add('over'); }
-        });
+        slot.addEventListener('dragover', e => { if (slot.style.pointerEvents !== "none") { e.preventDefault(); slot.classList.add('over'); } });
         slot.addEventListener('dragleave', e => slot.classList.remove('over'));
         
         slot.addEventListener('drop', e => {
             if (slot.style.pointerEvents === "none") return;
-            
-            e.preventDefault();
-            slot.classList.remove('over');
-            const id = e.dataTransfer.getData('text/plain');
+            e.preventDefault(); slot.classList.remove('over');
+            const id = e.dataTransfer.getData('text/plain'); 
             const elemento = document.getElementById("drag-" + id);
             
             if (elemento) {
-                if (slot.children.length > 0) { rosterZona.querySelector("#formacion-lista-tropas").appendChild(slot.children[0]); }
+                // FIX BUG DE BLOQUEO: Solo expulsar TROPAS de regreso al roster, ¡dejar las Cruces intactas!
+                Array.from(slot.children).forEach(child => {
+                    if (child.classList.contains('tropa-draggable') && child.id !== elemento.id) {
+                        rosterZona.querySelector("#formacion-lista-tropas").appendChild(child);
+                    }
+                });
+                
                 slot.appendChild(elemento);
-
                 let targetSlots = formacionModoActivo === "cuna" ? slotsFormacion : (formacionModoActivo === "sacrificio" ? slotsFormacionSacrificio : slotsFormacionPicas);
                 for(let pos in targetSlots){ if(targetSlots[pos] === id) targetSlots[pos] = null; }
                 targetSlots[slot.dataset.pos] = id;
@@ -637,8 +587,8 @@ function initFormacionZonas() {
 
     rosterZona.addEventListener('dragover', e => e.preventDefault());
     rosterZona.addEventListener('drop', e => {
-        e.preventDefault();
-        const id = e.dataTransfer.getData('text/plain');
+        e.preventDefault(); 
+        const id = e.dataTransfer.getData('text/plain'); 
         const elemento = document.getElementById("drag-" + id);
         if(elemento){
             rosterZona.querySelector("#formacion-lista-tropas").appendChild(elemento);
@@ -648,7 +598,4 @@ function initFormacionZonas() {
         }
     });
 }
-
-document.addEventListener("DOMContentLoaded", () => {
-    initFormacionZonas();
-});
+document.addEventListener("DOMContentLoaded", () => { initFormacionZonas(); });
