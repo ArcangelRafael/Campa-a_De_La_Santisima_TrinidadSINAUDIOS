@@ -4,6 +4,28 @@ let timeoutVideoGlobal = null;
 window.isRollingDados = false; 
 window.isRollingAll = false;
 
+// FIX TÁCTICO: Función DOD auxiliar para desgastar equipo tras un choque
+function desgastarEquipoCombatiente(idUnico) {
+    if (!idUnico) return;
+    let tropa = typeof jugador !== "undefined" && jugador.tropas ? jugador.tropas.find(t => t.idUnico === idUnico) : null;
+    if (!tropa) return;
+
+    if (tropa.mochila && tropa.mochila.length > 0) {
+        for (let i = tropa.mochila.length - 1; i >= 0; i--) {
+            let item = tropa.mochila[i];
+            if (item.duracion !== undefined) {
+                item.duracion -= 1;
+                if (item.duracion <= 0) {
+                    if (typeof window.mostrarNotificacionFlotante === 'function') {
+                        window.mostrarNotificacionFlotante(`💥 El/La ${item.nombre} de ${tropa.nombre} se ha hecho añicos en el combate.`);
+                    }
+                    tropa.mochila.splice(i, 1);
+                }
+            }
+        }
+    }
+}
+
 window.resolverDadosBloque = function(btn, idBloque, isAutoAll = false) {
     if (window.isRollingDados && !isAutoAll) return; 
     
@@ -57,6 +79,10 @@ window.resolverDadosBloque = function(btn, idBloque, isAutoAll = false) {
         bloque.classList.remove('rolling');
         bloque.style.borderLeft = "4px solid #88ff88"; 
         
+        // FIX TÁCTICO DOD: Extraer el ID del combatiente para desgastar su equipo
+        let tropaIdDado = bloque.dataset.tropaId;
+        if (tropaIdDado) desgastarEquipoCombatiente(tropaIdDado);
+
         let nextBlockId = bloque.dataset.nextBlock;
         if (nextBlockId) {
             let nextBlock = document.getElementById(nextBlockId);
@@ -66,7 +92,6 @@ window.resolverDadosBloque = function(btn, idBloque, isAutoAll = false) {
             }
         }
 
-        // FIX TÁCTICO: Solo cuando todos los dados pendientes han sido lanzados y revelados...
         if (document.querySelectorAll('.pendiente-dados').length === 0) {
             document.querySelectorAll('.resumen-oculto').forEach(el => {
                 el.style.display = 'block';
@@ -87,8 +112,6 @@ window.resolverDadosBloque = function(btn, idBloque, isAutoAll = false) {
             
             setTimeout(() => {
                 window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-                
-                // ... mandamos a llamar a la evaluación de bajas y avance de turno
                 if (typeof evaluarBajasYContinuar === 'function') {
                     evaluarBajasYContinuar();
                 }
@@ -130,15 +153,18 @@ window.resolverDadosBosque = function(btn, idBloque, isAutoAll = false) {
 
     if (!isAutoAll) window.isRollingDados = true; 
 
-    let audioBallesta = new Audio('assets/audio/ballesta.mp3');
-    audioBallesta.volume = 0.8; 
-    audioBallesta.play().catch(e => console.log("Audio de ballesta bloqueado por políticas del navegador.", e));
+    if (typeof window.AudioManager !== 'undefined') {
+        window.AudioManager.playSFX('assets/audio/ballesta_recarga.mp3');
+    } else {
+        let audioBallesta = new Audio('assets/audio/ballesta_recarga.mp3');
+        audioBallesta.volume = 0.8; 
+        audioBallesta.play().catch(e => console.log(e));
+    }
 
     let overlay = bloque.querySelector('.hover-lanzar-overlay');
     if (overlay) overlay.style.display = 'none';
     
     let zonaVideo = bloque.querySelector('.video-zona');
-    
     let alDadoEl = bloque.querySelector('.dado-hide'); 
     let valAl = alDadoEl ? alDadoEl.dataset.val : null;
 
@@ -158,19 +184,15 @@ window.resolverDadosBosque = function(btn, idBloque, isAutoAll = false) {
         if (cons) {
             cons.style.display = 'inline-block';
             cons.classList.add('txt-animado-salto');
-            
-            if (cons.innerHTML.includes('CRÍTICO')) {
-                let lamentos = ['lam1.mp3', 'lam2.mp3', 'lam3.mp3'];
-                let lamentoElegido = lamentos[Math.floor(Math.random() * lamentos.length)];
-                let audioGrito = new Audio(`assets/audio/${lamentoElegido}`);
-                audioGrito.volume = 0.9;
-                audioGrito.play().catch(e=>e);
-            }
         }
 
         bloque.classList.remove('pendiente-dados');
         bloque.classList.remove('rolling');
         
+        // FIX TÁCTICO DOD: Extraer el ID del combatiente para desgastar su equipo
+        let tropaIdDado = bloque.dataset.tropaId;
+        if (tropaIdDado) desgastarEquipoCombatiente(tropaIdDado);
+
         if (document.querySelectorAll('.pendiente-dados').length === 0) {
             document.querySelectorAll('.resumen-oculto').forEach(el => {
                 el.style.display = 'block';
@@ -196,7 +218,6 @@ window.tirarTodosLosDadosBosque = function(btnAll) {
         let btn = p.querySelector('.btn-lanzar-dados');
         if (btn && !p.classList.contains('rolling')) {
             p.classList.add('rolling'); 
-            
             let tiempoRetardo = Math.floor(Math.random() * 5000); 
             
             setTimeout(() => {

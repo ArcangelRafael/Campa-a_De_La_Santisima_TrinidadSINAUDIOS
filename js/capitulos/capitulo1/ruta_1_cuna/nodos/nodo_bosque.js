@@ -84,6 +84,10 @@ function ejecutarVolleyBosque() {
             let resultadoTexto = impacto ? `<b class="mensaje-sistema">¡CRÍTICO! 💀</b>` : `<b class="txt-hereje">Falla 💨</b>`;
             let idBc = 'bc_' + Math.random().toString(36).substr(2,9);
 
+            // FIX TÁCTICO DOD: El "Switch de Modo". 
+            // Eliminamos la inyección del tropaId. Al no enviarlo al motor, 
+            // esta acción se registra mecánicamente como "Modo Distancia" 
+            // y no desgastará ni un ápice de la armadura o espadas de la mochila.
             htmlGrid += RenderCombate.htmlCartaBallestero({
                 cooldown: 0, autoCombat, claseBorde, img: b.img, nombre: b.nombre, 
                 textoDado, resultadoTexto, idBc
@@ -92,9 +96,9 @@ function ejecutarVolleyBosque() {
             if (autoCombat && typeof window.AudioManager !== 'undefined') {
                 let delayDisparo = (indice * 150) + (Math.random() * 150);
                 setTimeout(() => {
-                    AudioManager.playSFX("assets/audio/ballesta.mp3");
+                    window.AudioManager.playSFX("assets/audio/ballesta.mp3");
                     if (impacto) {
-                        setTimeout(() => AudioManager.playLamento(), 150);
+                        setTimeout(() => window.AudioManager.playLamento(), 150);
                     }
                 }, delayDisparo);
             }
@@ -103,6 +107,8 @@ function ejecutarVolleyBosque() {
 
     htmlGrid += `</div>`;
     agregarTexto(htmlGrid, "", true);
+
+    window.bajasBallesterosEsteTurno = bajasVolley; 
 
     jugador.enemigosAsesinados += bajasVolley;
     
@@ -142,8 +148,38 @@ async function finalizarVolleyBosque() {
     limpiarBotones();
     
     agregarTexto(`<div class='separador'>***</div>`);
+
+    if (typeof window.mostrarNotificacionFlotante === 'function') {
+        let bajasTop = Math.min(jugador.enemigosAsesinados, jugador.enemigosObjetivo);
+        window.mostrarNotificacionFlotante(`⚔️ Progreso de Masacre: <b>${bajasTop} / ${jugador.enemigosObjetivo}</b> herejes abatidos.`);
+    }
     
     if (jugador.enemigosAsesinados >= jugador.enemigosObjetivo) {
+        window.victoriaPorSaetasFlag = true; 
+        
+        let skipCine = document.getElementById("ht-skip-cine")?.checked;
+        if (!skipCine && typeof window.playCinematicaVictoriaPorSaetasBosque === 'function') {            
+            let overlay = document.getElementById("formacion-overlay");
+            if(overlay) {
+                overlay.style.display = "flex";
+                let roster = document.getElementById("formacion-roster");
+                let tablero = document.getElementById("formacion-tablero");
+                let picasTablero = document.getElementById("formacion-picas-tablero");
+                let btnPicas = document.getElementById("btn-iniciar-formacion-picas");
+                if(roster) roster.style.display = "none";
+                if(tablero) tablero.style.display = "none";
+                if(picasTablero) picasTablero.style.display = "none";
+                if(btnPicas) btnPicas.style.display = "none";
+                
+                let titulo = document.getElementById("titulo-formacion");
+                if(titulo) titulo.innerText = "";
+            }
+
+            await new Promise(res => window.playCinematicaVictoriaPorSaetasBosque(res));
+
+            if(overlay) overlay.style.display = "none";
+        }
+
         await evaluarVictoriaDerrotaBosque();
     } else {
         let divDialogo = document.createElement("div");
@@ -159,7 +195,7 @@ async function finalizarVolleyBosque() {
             crearBoton("🛡️ PREPARAR MURO DE PICAS", async () => await iniciarPicasBosque());
         } else {
             await MotorDialogos.mostrarDialogoEnContenedor(divDialogo, {
-                personajeImg: "assets/img/personajes/aliados/lider_piqueros.webp", nombrePersonaje: "Conde JuanA", alineacion: "izq", bordeClase: "borde-aliado", nombreClase: "nombre-izq-align",
+                personajeImg: "assets/img/personajes/aliados/lider_piqueros.webp", nombrePersonaje: "Conde JuanA", alineacion: "izq", bordeClase: "borde-aliado", fontClassName: "nombre-izq-align",
                 texto: `"¡Padre Santo, ten misericordia! ¡Mis falanges han sido masacradas hasta el último mártir! Su sangre riega esta tierra profanada. Barón Andrew... ya no me quedan lanzas para detener a las bestias. ¡Que la Santísima Trinidad os proteja, pues tendréis que arreglároslas con vuestras propias espadas!"`, claseTexto: "txt-lugarteniente"
             });
             crearBoton("🛡️ PREPARAR LA ÚLTIMA LÍNEA (SACRIFICIO)", async () => await iniciarNarrativaSacrificio());
@@ -190,6 +226,7 @@ async function iniciarPicasBosque() {
         EstadoBatalla.esBosque = true;
         EstadoBatalla.metaProgresoMuro = metaCalculada;
         EstadoBatalla.progresoMuro = 0; 
+        EstadoBatalla.hordaMuertosActuales = 0; 
     }
     
     let resultado = await abrirFormacionPicas();
@@ -212,15 +249,10 @@ async function iniciarPicasBosque() {
 
     let skipCine = document.getElementById("ht-skip-cine")?.checked;
 
-    // =====================================================================
-    // CONECTE RESTAURADO 1: CINEMÁTICA FORMACIÓN MURO EN BOSQUE
-    // =====================================================================
     if (!skipCine) {
         if (typeof window.playCinematicaFormarMuroBosque === 'function') {
-            console.log("🎬 [ENLACE RESTAURADO] Ejecutando playCinematicaFormarMuroBosque...");
             await new Promise(res => window.playCinematicaFormarMuroBosque(resultado, res));
         } else if (typeof playCinematicaFormarMuroBosque === 'function') {
-            console.log("🎬 [ENLACE RESTAURADO LOCAL] Ejecutando playCinematicaFormarMuroBosque...");
             await new Promise(res => playCinematicaFormarMuroBosque(resultado, res));
         } else {
             console.error("⚠️ [ALERTA TÁCTICA]: No se encontró la cinemática de formar muro. Saltando animación.");
@@ -241,12 +273,19 @@ async function iniciarPicasBosque() {
 }
 
 async function evaluarPicasBosque(victoria, bajasEnPicas) {
+    window.victoriaPorSaetasFlag = false; 
+
     let overlay = document.getElementById("formacion-overlay");
     if(overlay) overlay.style.display = "none";
 
     limpiarBotones(); agregarTexto("<div class='separador'>***</div>");
     jugador.enemigosAsesinados += bajasEnPicas;
     
+    if (typeof window.mostrarNotificacionFlotante === 'function') {
+        let bajasTop = Math.min(jugador.enemigosAsesinados, jugador.enemigosObjetivo);
+        window.mostrarNotificacionFlotante(`⚔️ Progreso de Masacre: <b>${bajasTop} / ${jugador.enemigosObjetivo}</b> herejes abatidos.`);
+    }
+
     if (!victoria) {
         let totalPiqueros = jugador.tropas.filter(t => t.tipoGeneral === "piqueros" && t.hp > 0).length;
         if (totalPiqueros === 0) {
@@ -278,15 +317,10 @@ async function evaluarPicasBosque(victoria, bajasEnPicas) {
 
             let skipCine = document.getElementById("ht-skip-cine")?.checked;
 
-            // =====================================================================
-            // CONECTE RESTAURADO 2: CINEMÁTICA REPLIEGUE EN BOSQUE
-            // =====================================================================
             if (!skipCine) {
                 if (typeof window.playCinematicaRepliegueBosque === 'function') {
-                    console.log("🎬 [ENLACE RESTAURADO] Ejecutando playCinematicaRepliegueBosque...");
                     await new Promise(res => window.playCinematicaRepliegueBosque(res));
                 } else if (typeof playCinematicaRepliegueBosque === 'function') {
-                    console.log("🎬 [ENLACE RESTAURADO LOCAL] Ejecutando playCinematicaRepliegueBosque...");
                     await new Promise(res => playCinematicaRepliegueBosque(res));
                 } else {
                     console.error("⚠️ [ALERTA TÁCTICA]: No se encontró la cinemática de repliegue.");
@@ -323,7 +357,7 @@ async function evaluarVictoriaDerrotaBosque() {
             let skipCine = document.getElementById("ht-skip-cine")?.checked;
             
             if(!skipCine && typeof window.playCinematicaVictoria === 'function') {
-                await new Promise(res => window.playCinematicaVictoria(res));
+                await new Promise(res => window.playCinematicaVictoria(res, window.victoriaPorSaetasFlag));
             }
             
             if(overlay) overlay.style.display = "none";

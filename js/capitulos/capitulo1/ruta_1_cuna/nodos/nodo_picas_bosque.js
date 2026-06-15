@@ -1,24 +1,57 @@
 /* === NODO_PICAS_BOSQUE.JS - LÓGICA EXCLUSIVA DEL MURO DE PICAS (BOSQUE) === */
 
+window.iniciarRadarTactico = function() {
+    console.log("📡 RADAR TÁCTICO INICIADO: Escaneando zona de batalla en el bosque...");
+    if(window.radarInterval) clearInterval(window.radarInterval);
+
+    window.radarInterval = setInterval(() => {
+        let contenedor = document.getElementById("zona-batalla-picas-anim");
+        let zA = document.getElementById("zona-aliada-picas");
+        let zE = document.getElementById("zona-enemiga-picas");
+
+        if(contenedor && zA && zE) {
+            // Silenciado para no saturar, pero el radar sigue activo.
+        }
+    }, 2000);
+};
+
 // =========================================================================
-// FUNCIÓN GLOBAL DE ANIMACIÓN DE CAÍDOS Y CRUCES PERSISTENTES
+// REGISTRO INMORTAL DE CAÍDOS Y NOMBRES
 // =========================================================================
-window.animarMuertePiquero = function(slot, tipo) {
+window.registrarMarcadorPersistente = function(slotPos, tipo, nombre = null) {
+    if (!window.marcadoresBosquePersistentes) window.marcadoresBosquePersistentes = [];
+    let existe = window.marcadoresBosquePersistentes.find(m => m.slotPos === slotPos && m.tipo === tipo);
+    if (!existe) {
+        window.marcadoresBosquePersistentes.push({ slotPos, tipo, nombre });
+    }
+};
+
+window.dibujarMarcadorMuerte = function(slot, tipo) {
     if(!slot) return;
     
-    // 1. Efecto de desvanecimiento en la tarjeta de la tropa
     let card = slot.querySelector('.tropa-draggable') || slot.firstElementChild;
-    if(card && !card.classList.contains('marcador-batalla')) {
-        card.style.transition = "opacity 2.5s ease-out, filter 2.5s ease-out";
-        card.style.filter = "grayscale(100%) sepia(30%) brightness(0.4)";
-        card.style.opacity = "0";
+    
+    if(card && card.id && card.id.startsWith('drag-')) {
+        let idUnico = card.id.split('-')[1];
+        let tropa = jugador.tropas.find(t => t.idUnico == idUnico);
+        
+        if(tropa && tropa.hp <= 0 && !card.classList.contains('marcador-batalla')) {
+            card.style.transition = "filter 1s ease-out";
+            card.style.filter = "grayscale(100%) sepia(30%) brightness(0.4)";
+            card.style.opacity = "1"; 
+        }
     }
     
-    // 2. Aparición de la Cruz Dorada (o Calavera)
+    if (slot.querySelector(`.${tipo}-icon.persistent-death-mark`)) return;
+
     let cross = document.createElement("div");
     cross.innerHTML = tipo === 'cross' ? "✝" : "💀";
     cross.className = `marcador-batalla ${tipo}-icon persistent-death-mark`; 
-    cross.style.cssText = `position:absolute; font-size:45px; z-index:90; pointer-events:none; opacity: 0; transition: opacity 2.5s ease-in; top: 50%; left: 50%; transform: translate(-50%, -50%);`;
+    
+    let fontSize = tipo === 'cross' ? '65px' : '20px';
+    let leftPos = tipo === 'cross' ? '50%' : '140%';
+
+    cross.style.cssText = `position:absolute; font-size:${fontSize}; z-index:1 !important; pointer-events:none; opacity: 1; top: 50%; left: ${leftPos}; transform: translate(-50%, -50%);`;
     
     if (tipo === 'cross') {
         cross.style.color = "#ffd700";
@@ -28,96 +61,96 @@ window.animarMuertePiquero = function(slot, tipo) {
         cross.style.textShadow = "0 0 15px #ff0000, 0 0 30px #ff0000, 0 0 45px #ff0000";
     }
     slot.appendChild(cross);
-
-    setTimeout(() => { cross.style.opacity = "0.95"; }, 100);
 };
+
+// =========================================================================
+// RENDERIZADOR TÁCTICO DE ENEMIGOS EN COMBATE (AHORA INFALIBLE)
+// =========================================================================
+window.actualizarGrillaEnemigosBosque = function(isAttacking) {
+    let zonaEne = document.getElementById("zona-enemiga-picas");
+    if (!zonaEne) return;
+    zonaEne.innerHTML = ""; 
+    
+    let gridEne = document.createElement("div");
+    gridEne.style.display = "grid";
+    gridEne.style.gridTemplateColumns = "repeat(3, 75px)";
+    gridEne.style.gridTemplateRows = "repeat(3, 75px)";
+    gridEne.style.gap = "5px 10px";
+    gridEne.style.direction = "ltr";
+
+    const ordenAsalto = [
+        {r: 1, c: 0}, {r: 0, c: 0}, {r: 2, c: 0}, 
+        {r: 1, c: 1}, {r: 0, c: 1}, {r: 2, c: 1}, 
+        {r: 1, c: 2}, {r: 0, c: 2}, {r: 2, c: 2}  
+    ];
+
+    let bajasBallestas = window.bajasBallesterosEsteTurno || 0;
+    
+    let muertosPicas = 0;
+    if (typeof EstadoBatalla !== 'undefined' && EstadoBatalla.enemigosCaidosEnMuro) {
+        muertosPicas = EstadoBatalla.enemigosCaidosEnMuro.length;
+    }
+    
+    let muertosOficiales = Math.min(9, bajasBallestas + muertosPicas);
+
+    let atacantes = isAttacking && EstadoBatalla.accionesPendientes ? EstadoBatalla.accionesPendientes.length : 0;
+    
+    for (let r = 0; r < 3; r++) {
+        for (let c = 0; c < 3; c++) {
+            let posIndex = ordenAsalto.findIndex(pos => pos.r === r && pos.c === c);
+            
+            let slotDiv = document.createElement("div");
+            slotDiv.style.width = "75px";
+            slotDiv.style.height = "75px";
+            slotDiv.style.boxSizing = "border-box";
+            slotDiv.style.borderRadius = "4px";
+            
+            if (posIndex >= muertosOficiales && posIndex < muertosOficiales + atacantes) {
+                // Hueco del atacante que saltó a golpear a tus piqueros
+                slotDiv.style.border = "1px dashed rgba(255, 76, 76, 0.4)";
+                slotDiv.style.background = "rgba(255, 0, 0, 0.05)";
+            } else if (posIndex >= muertosOficiales + atacantes) {
+                // Enemigo vivo esperando en la grilla
+                let imgE = (r + c) % 2 === 0 ? "enemigo_piquero.webp" : "enemigo.webp";
+                slotDiv.innerHTML = `<img src="assets/img/personajes/enemigos/${imgE}" style="width:100%;height:100%;object-fit:cover; transform:scaleX(-1); border-radius:2px;">`;
+                slotDiv.style.border = "2px solid #ff4c4c";
+                slotDiv.style.background = "#1a1a1a";
+                slotDiv.style.boxShadow = "-5px 0 15px rgba(255,0,0,0.3)";
+            }
+            
+            gridEne.appendChild(slotDiv);
+        }
+    }
+    zonaEne.appendChild(gridEne);
+};
+
+window.actualizarGrillaEnemigosPicas = window.actualizarGrillaEnemigosBosque;
 
 async function iniciarCombatePicasBosque(formacion, callbackFinalizar, metaPP, turnosFase) {
     EstadoBatalla.limpiar(); 
     EstadoBatalla.tipoCombate = "picas_bosque";
-    if (!window.marcadoresBatalla) window.marcadoresBatalla = []; // Inicializamos registro de cruces
+    
+    if (!window.marcadoresBosquePersistentes) window.marcadoresBosquePersistentes = []; 
+    
+    EstadoBatalla.caidosEnMuro = []; 
+    EstadoBatalla.enemigosCaidosEnMuro = []; 
+    EstadoBatalla.hordaMuertosActuales = 0; 
+    EstadoBatalla.bajasEnemigas = EstadoBatalla.bajasEnemigas || 0;
 
-    // =========================================================================
-    // INYECCIÓN DE CSS PARA LA ZONA DE CONTENCIÓN Y ENEMIGOS
-    // =========================================================================
-    let styleId = "picas-bosque-style";
+    let styleId = "picas-bosque-override";
     if (!document.getElementById(styleId)) {
         let style = document.createElement("style");
         style.id = styleId;
         style.innerHTML = `
-            /* EL TABLERO CONTENEDOR TIPO CINE */
-            #formacion-picas-tablero {
-                position: relative; 
-                overflow: hidden; 
-            }
-
-            /* LA ZONA DE BATALLA (CONTENCIÓN) */
-            .zona-batalla-picas-bosque-anim {
-                position: absolute; 
-                top: 50%; 
-                left: 0; 
-                width: 100%; 
-                height: 400px; 
-                transform: translateY(-50%); 
-                z-index: 150;
-                display: flex; 
-                align-items: center; 
-            }
-
-            /* LA CUADRÍCULA ALIADA (COMPACTADA) */
-            .modo-combate #zona-aliada-picas > div { 
-                display: grid !important; 
-                grid-template-columns: 75px !important; 
-                grid-template-rows: repeat(4, 75px) !important; 
-                gap: 5px !important; 
-                margin-bottom: 0 !important; 
-            }
-            .modo-combate #zona-aliada-picas .slot-formacion { transform: none !important; }
-            .modo-combate #zona-aliada-picas { 
-                margin-left: 80px !important; 
-                margin-right: 0 !important; 
-                z-index: 2; 
-                transform: scale(0.95); 
-            }
-
-            /* LA CUADRÍCULA DE RESERVAS (OCULTAS DURANTE COMBATE) */
-            .modo-combate #zona-reservas-picas { 
-                display: none !important; /* <--- FIX TÁCTICO: RESERVAS INVISIBLES */
-            }
-
-            /* LA CUADRÍCULA ENEMIGA (SEPARADA Y RETROCEDIDA) */
-            .modo-combate #zona-enemiga-picas { 
-                margin-left: 45px !important; /* <--- EMPUJE HACIA ATRÁS */
-                margin-right: 20px !important; 
-                z-index: 3; 
-                transform: scale(0.95); 
-            }
-            
-            .modo-combate #zona-enemiga-picas > div {
-                display: grid !important;
-                grid-template-columns: repeat(3, 75px) !important; /* <--- FUERZA COLUMNAS EXACTAS */
-                gap: 5px 20px !important; /* <--- SEPARACIÓN HORIZONTAL PARA NO ENCIMARSE */
-            }
-
-            /* TARJETAS ENEMIGAS EXACTAMENTE IGUALES A LAS ALIADAS */
-            .modo-combate #zona-enemiga-picas .enemigo-atacando-pica,
-            .modo-combate #zona-enemiga-picas > div > div {
-                width: 75px !important; 
-                height: 75px !important; 
-                box-sizing: border-box !important; 
-            }
-
-            /* PURGA DE LAS LÍNEAS ROJAS PUNTEADAS EN ENEMIGOS MUERTOS/VACÍOS */
-            .modo-combate #zona-enemiga-picas > div > div[style*="dashed"],
-            .modo-combate #zona-enemiga-picas > div > div:empty {
-                border: none !important;
-                background: transparent !important;
-                box-shadow: none !important;
-            }
+            .modo-combate #zona-reservas-picas { display: none !important; }
+            .zona-batalla-anim { display: flex !important; justify-content: center !important; align-items: center !important; gap: 80px !important; }
+            .modo-combate #zona-aliada-picas { position: absolute !important; left: 32% !important; margin: 0 !important; transform: scale(0.95) !important; }
+            .modo-combate #zona-enemiga-picas { position: absolute !important; right: 25% !important; margin: 0 !important; transform: scale(0.95) !important; }
+            .modo-combate #zona-enemiga-picas > div { display: grid !important; grid-template-columns: repeat(3, 75px) !important; grid-template-rows: repeat(3, 75px) !important; gap: 5px 10px !important; direction: ltr !important; }
+            .modo-combate #zona-enemiga-picas div[style*="dashed"]:empty, .modo-combate #zona-enemiga-picas .slot-formacion:empty { border: none !important; background: transparent !important; box-shadow: none !important; }
         `;
         document.head.appendChild(style);
     }
-    // =========================================================================
     
     EstadoBatalla.metaProgresoMuro = metaPP;
     EstadoBatalla.turnosFaseBosque = turnosFase;
@@ -135,28 +168,46 @@ async function iniciarCombatePicasBosque(formacion, callbackFinalizar, metaPP, t
     ];
 
     storyArea.innerHTML = "";
-    
     prepararBotonTurno();
     animarDialogoAvancePicasBosque();
 
-    setTimeout(() => { 
-        if(typeof storyArea !== 'undefined') storyArea.scrollTop = 0; 
-        window.scrollTo(0, 0); 
-    }, 50);
+    setTimeout(() => { if(typeof storyArea !== 'undefined') storyArea.scrollTop = 0; window.scrollTo(0, 0); }, 50);
 }
 
 async function animarDialogoAvancePicasBosque() {
+    jugador.tropas.forEach(t => {
+        if (t.hp > 0) {
+            let el = document.getElementById("drag-" + t.idUnico);
+            if (el) { el.style.filter = "none"; el.style.opacity = "1"; }
+        }
+    });
+
     let divDialogo = document.createElement("div");
     storyArea.appendChild(divDialogo);
 
-    await MotorDialogos.mostrarDialogoEnContenedor(divDialogo, {
-        personajeImg: "assets/img/personajes/aliados/lider_piqueros.webp", 
-        nombrePersonaje: "Conde JuanA", alineacion: "izq", 
-        bordeClase: "borde-aliado", nombreClase: "nombre-izq-align",
-        texto: `"¡CUBRID A LOS TIRADORES! Turno ${EstadoBatalla.turnoActual}... La horda acecha. ¡Firmeza ante todo!"`, 
-        claseTexto: "txt-lugarteniente"
-    });
+    let crucesMuro = window.marcadoresBosquePersistentes ? window.marcadoresBosquePersistentes.filter(m => m.tipo === 'cross').length : 0;
 
+    if (crucesMuro > 0 && EstadoBatalla.turnoActual > 1) {
+        let divSep = document.createElement("div");
+        divSep.innerHTML = "<div class='separador'>***</div><h4 class='txt-sagrado' style='text-align:center;'>RÉQUIEM EN LA LÍNEA</h4>";
+        storyArea.appendChild(divSep);
+
+        await MotorDialogos.mostrarDialogoEnContenedor(divDialogo, {
+            personajeImg: "assets/img/personajes/aliados/multipiq.webp", 
+            nombrePersonaje: "Hueste de Piqueros", alineacion: "izq", 
+            bordeClase: "borde-aliado", nombreClase: "nombre-izq-align",
+            texto: `"¡Requiem aeternam dona eis, Domine! ¡Ni un paso atrás! ¡Que la sangre de nuestros mártires ahogue a estos herejes!"`, 
+            claseTexto: "txt-multitud"
+        });
+    } else {
+        await MotorDialogos.mostrarDialogoEnContenedor(divDialogo, {
+            personajeImg: "assets/img/personajes/aliados/lider_piqueros.webp", 
+            nombrePersonaje: "Conde JuanA", alineacion: "izq", 
+            bordeClase: "borde-aliado", nombreClase: "nombre-izq-align",
+            texto: `"¡CUBRID A LOS TIRADORES! Turno ${EstadoBatalla.turnoActual}... La horda acecha. ¡Firmeza ante todo!"`, 
+            claseTexto: "txt-lugarteniente"
+        });
+    }
     animarAvancePicasBosque();
 }
 
@@ -165,29 +216,25 @@ function animarAvancePicasBosque() {
 
     requestAnimationFrame(() => {
         document.getElementById("formacion-overlay").style.display = "flex"; 
-        
         let tablero = document.getElementById("formacion-picas-tablero");
         tablero.style.display = "flex"; 
         tablero.classList.add("modo-combate");
-        
         tablero.style.backgroundImage = "linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('assets/img/fondos/puentepiso.webp')";
         tablero.style.backgroundSize = "160%";
         tablero.style.backgroundPosition = "left center";
 
-        let zonaBatalla = document.getElementById("zona-batalla-picas-bosque-anim");
+        let zonaBatalla = document.getElementById("zona-batalla-picas-anim");
         if (!zonaBatalla) {
             zonaBatalla = document.createElement("div");
-            zonaBatalla.id = "zona-batalla-picas-bosque-anim";
-            zonaBatalla.className = "zona-batalla-picas-bosque-anim";
-            
+            zonaBatalla.id = "zona-batalla-picas-anim";
+            zonaBatalla.className = "zona-batalla-anim";
             let zonaRes = document.getElementById("zona-reservas-picas");
             let zonaAli = document.getElementById("zona-aliada-picas");
             let zonaEne = document.getElementById("zona-enemiga-picas");
             
-            if (zonaRes) zonaBatalla.appendChild(zonaRes);
+            if (zonaRes) { zonaRes.style.setProperty("display", "none", "important"); zonaRes.innerHTML = ""; zonaBatalla.appendChild(zonaRes); }
             if (zonaAli) zonaBatalla.appendChild(zonaAli);
             if (zonaEne) zonaBatalla.appendChild(zonaEne);
-
             tablero.appendChild(zonaBatalla);
         }
 
@@ -205,16 +252,19 @@ function animarAvancePicasBosque() {
         document.getElementById("btn-iniciar-formacion-picas").style.display = "none";
         document.getElementById("btn-iniciar-formacion").style.display = "none"; 
         document.getElementById("btn-ver-reporte").style.display = "none";
-        
         document.getElementById("titulo-formacion").innerText = `🛡️ PROTEGIENDO RETAGUARDIA: TURNO ${EstadoBatalla.turnoActual} 🛡️`;
 
         restaurarVisualesCombate();
 
-        if(typeof actualizarGrillaEnemigosPicas === 'function') actualizarGrillaEnemigosPicas(true);
+        if (window.marcadoresBosquePersistentes && window.marcadoresBosquePersistentes.length > 0) {
+            window.marcadoresBosquePersistentes.forEach(m => {
+                let slotPica = document.getElementById(`pica-slot-${m.slotPos.split("-")[1]}`);
+                if(slotPica) window.dibujarMarcadorMuerte(slotPica, m.tipo);
+            });
+        }
 
         EstadoBatalla.logTurnoGlobal = [];
         EstadoBatalla.logTurnoGlobal.push(RenderCombate.htmlCabeceraTurno(EstadoBatalla.turnoActual));
-        
         EstadoBatalla.accionesPendientes = [];
 
         EstadoBatalla.tropasVivas.forEach(pos => {
@@ -237,8 +287,11 @@ function animarAvancePicasBosque() {
             }
         });
         
+        window.actualizarGrillaEnemigosBosque(true);
+        
         document.getElementById("btn-tirar-dados").onclick = resolverDadosVisualesPicasBosque;
         document.getElementById("btn-tirar-dados").style.display = "inline-block";
+        window.iniciarRadarTactico();
     });
 }
 
@@ -249,20 +302,17 @@ function resolverDadosVisualesPicasBosque() {
     let picasParticipantes = EstadoBatalla.accionesPendientes.length;
     let puntosGanados = {1:3, 2:6, 3:8, 4:12}[picasParticipantes] || 0;
     EstadoBatalla.progresoMuro += puntosGanados;
-
     let autoCombat = document.getElementById("ht-auto-combat")?.checked;
 
     EstadoBatalla.accionesPendientes.forEach(acc => {
         let { tropa, pos, enemigo } = acc;
-        let slotPicaId = `pica-slot-${pos.slotPos.split("-")[1]}`;
-        let slotPica = document.getElementById(slotPicaId);
         
-        let penalidad = (tropa.hp < 2) ? 1 : 0;
-        let stringHerido = penalidad > 0 ? ` <span class="txt-hereje">-1 (Herido)</span>` : "";
+        // FIX DOD: Evaluar Poder Tropa en lugar de matemáticas manuales
+        let poderDef = GestorEstado.evaluarPoderTropa(tropa, 'def');
         let dadoGracia = (jugador.liderazgo <= -50) ? 0 : tirarDado();
         let dadoFuria = (jugador.liderazgo >= 126) ? 0 : tirarDado();
         
-        let pDefAliado = (tropa.defMax - penalidad) + dadoGracia + infoFe.mod;
+        let pDefAliado = poderDef.neto + dadoGracia + infoFe.mod;
         let pAtkEnemigo = enemigo.atk + dadoFuria;
 
         let signoMod = (infoFe.mod >= 0) ? `+${infoFe.mod}` : `${infoFe.mod}`;
@@ -279,77 +329,69 @@ function resolverDadosVisualesPicasBosque() {
             phase1Cons = `<span class="mensaje-sistema">¡Muro Impenetrable! ${tropa.nombre} resiste y prepara contraataque.</span>`;
         } else {
             GestorEstado.recibirDano(tropa.idUnico, 1);
-            
             phase1Cons = `<span class="txt-hereje">¡Brecha en la guardia! El enemigo perfora y hiere a ${tropa.nombre}.</span>`;
             if(tropa.hp <= 0) {
                 phase1Cons += `<div class="separador txt-hereje">💀 ¡MÁRTIR EN EL MURO! ${tropa.nombre} ha caído.</div>`;
+                window.registrarMarcadorPersistente(pos.slotPos, 'cross', tropa.nombre);
                 
-                // FIX TÁCTICO: Registro persistente y Animación de Desvanecimiento + Cruz
-                window.marcadoresBatalla.push({tipo: 'cross', slotPos: pos.slotPos});
-                window.animarMuertePiquero(slotPica, 'cross');
+                if(!EstadoBatalla.caidosEnMuro) EstadoBatalla.caidosEnMuro = [];
+                if(!EstadoBatalla.caidosEnMuro.find(m => m.idUnico === tropa.idUnico)) {
+                    EstadoBatalla.caidosEnMuro.push({ idUnico: tropa.idUnico, img: tropa.img, nombre: tropa.nombre, clase: tropa.clase, slotPos: pos.slotPos });
+                }
             }
         }
 
-        let dataRender = {
-            posNombre: pos.posNombre, enemigoNombre: enemigo.nombre, tropaNombre: tropa.nombre,
-            defBase: tropa.defMax, stringHerido, dadoGracia, classMod, signoMod, infoFeNombre: infoFe.nombre, pDefAliado,
-            atkEnemigoBase: enemigo.atk, dadoFuria, pAtkEnemigo, phase1Cons, idBc, hasCounter, idBcCounter, autoCombat
+        // FIX TÁCTICO DOD: Inyectar tropaId
+        let dataRender = { 
+            tropaId: tropa.idUnico,
+            posNombre: pos.posNombre, enemigoNombre: enemigo.nombre, tropaNombre: tropa.nombre, 
+            defBase: poderDef.base, stringHerido: poderDef.stringEfectos, dadoGracia, classMod, signoMod, infoFeNombre: infoFe.nombre, pDefAliado, 
+            atkEnemigoBase: enemigo.atk, dadoFuria, pAtkEnemigo, phase1Cons, idBc, hasCounter, idBcCounter, autoCombat 
         };
-
         let logStr = RenderCombate.htmlAsaltoPicas(dataRender);
 
         if (hasCounter) {
+            let poderAtk = GestorEstado.evaluarPoderTropa(tropa, 'atk');
             let dadoGracia2 = (jugador.liderazgo <= -50) ? 0 : tirarDado();
             let dadoFuria2 = (jugador.liderazgo >= 126) ? 0 : tirarDado();
-            let pAtkAliado = (tropa.atkMax - penalidad) + dadoGracia2 + infoFe.mod;
+            let pAtkAliado = poderAtk.neto + dadoGracia2 + infoFe.mod;
             let pAtkEnemigo2 = enemigo.atk + dadoFuria2;
             let phase2Cons = "";
 
             if (pAtkAliado > pAtkEnemigo2) {
                 EstadoBatalla.bajasEnemigas++;
-                EstadoBatalla.hordaMuertosActuales++;
+                EstadoBatalla.hordaMuertosActuales++; 
                 phase2Cons = `<span class="mensaje-sistema">¡Infiel Ensartado! El asaltante muere en las lanzas.</span>`;
-                
-                // Animación de cráneo para el enemigo
-                window.marcadoresBatalla.push({tipo: 'skull', slotPos: pos.slotPos}); 
-                window.animarMuertePiquero(slotPica, 'skull');
+                window.registrarMarcadorPersistente(pos.slotPos, 'skull');
+
+                if(!EstadoBatalla.enemigosCaidosEnMuro) EstadoBatalla.enemigosCaidosEnMuro = [];
+                EstadoBatalla.enemigosCaidosEnMuro.push(pos.slotPos);
+
             } else {
                 GestorEstado.recibirDano(tropa.idUnico, 1);
-                
                 phase2Cons = `<span class="txt-hereje">¡Duelo sangriento! ${tropa.nombre} sufre una herida en la refriega.</span>`;
                 if(tropa.hp <= 0) {
                     phase2Cons += `<div class="separador txt-hereje">💀 ¡MÁRTIR EN EL MURO! ${tropa.nombre} ha caído.</div>`;
-                    
-                    // FIX TÁCTICO: Registro persistente y Animación de Desvanecimiento + Cruz
-                    window.marcadoresBatalla.push({tipo: 'cross', slotPos: pos.slotPos});
-                    window.animarMuertePiquero(slotPica, 'cross');
+                    window.registrarMarcadorPersistente(pos.slotPos, 'cross', tropa.nombre);
+
+                    if(!EstadoBatalla.caidosEnMuro) EstadoBatalla.caidosEnMuro = [];
+                    if(!EstadoBatalla.caidosEnMuro.find(m => m.idUnico === tropa.idUnico)) {
+                        EstadoBatalla.caidosEnMuro.push({ idUnico: tropa.idUnico, img: tropa.img, nombre: tropa.nombre, clase: tropa.clase, slotPos: pos.slotPos });
+                    }
                 }
             }
 
-            let dataCounter = {
-                tropaNombre: tropa.nombre, atkBase: tropa.atkMax, stringHerido, dadoGracia2, classMod, signoMod, infoFeNombre: infoFe.nombre, pAtkAliado,
-                enemigoNombre: enemigo.nombre, atkEnemigoBase: enemigo.atk, dadoFuria2, pAtkEnemigo2, phase2Cons, idBcCounter, autoCombat
+            // FIX TÁCTICO DOD: Inyectar tropaId
+            let dataCounter = { 
+                tropaId: tropa.idUnico,
+                tropaNombre: tropa.nombre, atkBase: poderAtk.base, stringHerido: poderAtk.stringEfectos, dadoGracia2, classMod, signoMod, infoFeNombre: infoFe.nombre, pAtkAliado, 
+                enemigoNombre: enemigo.nombre, atkEnemigoBase: enemigo.atk, dadoFuria2, pAtkEnemigo2, phase2Cons, idBcCounter, autoCombat 
             };
-
             logStr += RenderCombate.htmlContraataquePicas(dataCounter);
         }
         
         EstadoBatalla.logTurnoGlobal.push(logStr);
-
-        if(slotPica) {
-            let enemyVis = slotPica.querySelector(".enemigo-atacando-pica");
-            if(enemyVis) enemyVis.remove();
-            slotPica.classList.remove("en-combate");
-        }
     });
-
-    let vivosHorda = 9 - EstadoBatalla.hordaMuertosActuales;
-    if (vivosHorda <= 3) {
-        EstadoBatalla.hordaMuertosActuales = Math.max(0, EstadoBatalla.hordaMuertosActuales - 2);
-        EstadoBatalla.logTurnoGlobal.push(`<p class="txt-sagrado separador">¡La horda pagana se reagrupa! Nuevos herejes emergen de las sombras.</p>`);
-    }
-
-    if(typeof actualizarGrillaEnemigosPicas === 'function') actualizarGrillaEnemigosPicas(false);
 
     let metaDin = EstadoBatalla.metaProgresoMuro || 12;
     let avancePorc = Math.min(100, Math.round((EstadoBatalla.progresoMuro / metaDin) * 100));
@@ -357,7 +399,13 @@ function resolverDadosVisualesPicasBosque() {
     let displayStyle = autoCombat ? "block" : "none";
     EstadoBatalla.logTurnoGlobal.push(`<div class="resumen-turno-box resumen-oculto" style="display:${displayStyle};"><b>Progreso de Cobertura: ${avancePorc}%</b><br>Bajas enemigas trituradas: ${EstadoBatalla.bajasEnemigas}</div>`);
     
-    EstadoBatalla.turnoActual++;
-    
-    if(typeof cerrarMesaDeGuerra === 'function') cerrarMesaDeGuerra();
+    setTimeout(() => {
+        document.querySelectorAll(".enemigo-atacando-pica").forEach(e => e.remove());
+        document.querySelectorAll(".en-combate").forEach(e => e.classList.remove("en-combate"));
+
+        window.actualizarGrillaEnemigosBosque(false);
+        
+        EstadoBatalla.turnoActual++;
+        if(typeof cerrarMesaDeGuerra === 'function') cerrarMesaDeGuerra();
+    }, 400);
 }

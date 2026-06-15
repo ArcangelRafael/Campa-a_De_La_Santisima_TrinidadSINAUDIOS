@@ -128,3 +128,310 @@
     margin: 0;
     z-index: 60;
 }
+
+/*///PERTENECE A CINE_BOSQUE.JS*/
+
+@keyframes volarSaetaBosque {
+    0% { left: var(--sx); opacity: 0; transform: scale(0.8); }
+    10% { opacity: 1; transform: scale(1); }
+    90% { opacity: 1; }
+    100% { left: var(--ex); opacity: 0; }
+}
+
+.saeta-proyectil-css {
+    position: absolute !important;
+    width: 90px !important; 
+    height: auto !important;
+    z-index: 999999 !important; 
+    pointer-events: none;
+    display: block !important;
+    filter: drop-shadow(4px 4px 3px rgba(0, 0, 0, 0.85));
+    animation: volarSaetaBosque 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+.globo-requiem-cinematica {
+    position: absolute;
+    transform: translate(-50%, -100%);
+    background: rgba(0, 0, 0, 0.85);
+    border: 1px solid #ffaa00;
+    color: #fff;
+    padding: 6px 10px;
+    border-radius: 5px;
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    text-align: center;
+    z-index: 9999;
+    box-shadow: 0 0 10px rgba(255, 170, 0, 0.5);
+    opacity: 0;
+    transition: opacity 0.2s ease-in;
+    width: max-content;
+    max-width: 180px;
+    pointer-events: none;
+}
+
+.globo-requiem-cinematica b {
+    color: #ffaa00;
+}
+
+.titulo-cinematica-bosque {
+    position: absolute;
+    top: -40px;
+    width: 100%;
+    text-align: center;
+    margin: 0;
+    letter-spacing: 3px;
+    z-index: 300;
+    text-shadow: 0 0 10px #000;
+}
+
+.zona-batalla-cinematica-bosque {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 100%;
+    height: 400px;
+    transform: translateY(-50%);
+    z-index: 150;
+    overflow: visible;
+    clip-path: inset(-150px 0 -150px 0);
+}
+
+.niebla-cinematica-bosque {
+    z-index: 999;
+    pointer-events: none;
+    position: absolute;
+    top: -10%;
+    left: -10%;
+    width: 120%;
+    height: 120%;
+    opacity: 0.85;
+}
+
+.marcador-cinematica-bosque {
+    position: absolute;
+    z-index: 1 !important;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+    opacity: 1;
+}
+
+.cross-glow-bosque {
+    color: #ffd700 !important;
+    text-shadow: 0 0 15px #ffaa00, 0 0 40px #ffaa00, 0 0 60px #ffaa00 !important;
+}
+
+.skull-glow-bosque {
+    color: #ffffff !important;
+    text-shadow: 0 0 15px #ff0000, 0 0 30px #ff0000, 0 0 45px #ff0000 !important;
+}
+
+.skull-saeta-bosque {
+    position: absolute;
+    font-size: 20px;
+    z-index: 110 !important;
+    pointer-events: none;
+    color: #ffffff;
+    text-shadow: 0 0 15px #ff0000, 0 0 30px #ff0000, 0 0 45px #ff0000;
+    transform: translate(-50%, -50%);
+    opacity: 1;
+}
+
+.cross-muertos-bosque {
+    position: absolute;
+    font-size: 65px;
+    z-index: 9999 !important;
+    pointer-events: none;
+    color: #ffd700 !important;
+    text-shadow: 0 0 15px #ffaa00, 0 0 40px #ffaa00, 0 0 60px #ffaa00 !important;
+    transform: translate(-50%, -50%);
+    opacity: 0;
+    transition: opacity 2.5s ease-in;
+}
+
+.skull-caidos-bosque {
+    position: absolute;
+    font-size: 20px;
+    z-index: 9999 !important;
+    pointer-events: none;
+    color: #ffffff !important;
+    text-shadow: 0 0 15px #ff0000, 0 0 30px #ff0000, 0 0 45px #ff0000 !important;
+    transform: translate(-50%, -50%);
+    opacity: 0;
+    transition: opacity 2.5s ease-in;
+}
+
+.btn-continuar-bosque {
+    position: absolute;
+    bottom: -60px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 9999;
+}
+
+/*////AQUI TERMINAN LAS PROPIEDADES DE CINE_BOSQUE.JS*/
+
+/* === CINE VICTORIA: ESCENARIO === */
+.cine-victoria-outer {
+    width: 960px; background: #181818; border: 2px solid #333; border-radius: 8px;
+    padding: 20px; display: flex; flex-direction: column; align-items: center;
+    box-shadow: 0 0 50px rgba(0,0,0,0.9); margin: auto; position: relative; z-index: 100;
+}
+.cine-victoria-text {
+    color: #ffd700; font-family: 'Cinzel', serif; text-shadow: 0 0 15px #ffaa00;
+    margin: 0 0 15px 0; min-height: 35px; text-align: center; transition: opacity 0.5s;
+}
+.cine-victoria-container {
+    position: relative; width: 900px; height: 600px; overflow: hidden; border: 4px solid #b8860b;
+    box-shadow: 0 0 40px rgba(184, 134, 11, 0.5); background: #050505;
+}
+.cine-victoria-world {
+    position: absolute; width: 1800px; height: 100%; top: 0; left: 0;
+    background: linear-gradient(to right, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.8) 100%), url('../assets/img/fondos/puentepiso.webp') center left / auto 100%;
+    transition: transform 5s ease-in-out;
+}
+.cine-victoria-niebla {
+    position: absolute; width: 100%; height: 100%; top: 0; left: 0; pointer-events: none; z-index: 250; opacity: 0.8;
+}
+
+/* === CINE VICTORIA: UI Y BOTONES === */
+.cine-victoria-btn-container {
+    width: 100%; min-height: 60px; display: flex; justify-content: center; align-items: center; margin-top: 20px;
+}
+.cine-btn-wrapper {
+    position: absolute; bottom: 30px; left: 0; width: 100%; display: flex; justify-content: center; z-index: 300;
+}
+
+/* === CINE VICTORIA: MARCADORES (Tierra de Nadie) === */
+.cine-marcador-base {
+    position: absolute; z-index: 5; pointer-events: none; transform: translate(-50%, -50%); opacity: 0.65;
+}
+.cine-marcador-skull {
+    font-size: 30px; color: #ffffff !important; text-shadow: 0 0 15px #ff0000, 0 0 30px #ff0000 !important;
+}
+.cine-marcador-cross {
+    font-size: 45px; color: #ffd700 !important; text-shadow: 0 0 15px #ffaa00, 0 0 30px #ffaa00 !important;
+}
+
+/* === CINE VICTORIA: TROPAS === */
+.tropa-cine-victoria {
+    position: absolute; width: 75px; height: 95px; padding: 4px;
+    transition: all 2s cubic-bezier(0.25, 1, 0.5, 1); z-index: 10; box-sizing: border-box; overflow: hidden;
+}
+
+.tropa-cine-enemigo {
+    border-color: #555555 !important; box-shadow: 0 0 5px #000000 !important;
+}
+.tropa-cine-enemigo-boss {
+    border-color: #ff4c4c !important; box-shadow: 0 0 15px #ff4c4c !important; z-index: 20;
+}
+.tropa-cine-aliado-boss {
+    border-color: #4c88ff !important; box-shadow: 0 0 15px #4c88ff !important; z-index: 20;
+}
+.cine-cautivo {
+    border: 2px solid #ffffff !important; box-shadow: 0 0 15px #ffffff !important; background: #222; opacity: 0.9; z-index: 8;
+}
+.cine-label-base {
+    display: block; position: absolute; bottom: 0; left: 0; width: 100%; background: rgba(0,0,0,0.8);
+    padding: 2px 0; text-align: center; z-index: 200; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+}
+.cine-label-enemigo { color: #aaaaaa; font-size: 8px; }
+.cine-label-jefe { color: #ff4c4c; font-size: 8px; }
+.cine-label-aliado { color: #4c88ff; font-size: 8px; }
+.cine-label-cautivo { color: #ffffff; font-size: 9px; }
+
+
+/* ========================================================================= */
+/* === INICIA DISEÑO SACRIFICIO (CINE_SACRIFICIO.JS) ===                     */
+/* ========================================================================= */
+
+.sac-escenario-activo {
+    display: block !important;
+    background-image: url('../assets/img/fondos/puentepiso.webp') !important;
+    background-size: 160% !important;
+    background-position: left center !important;
+    overflow: visible !important;
+}
+
+.sac-escenario-reset {
+    display: none !important;
+    background-image: url('../assets/img/fondos/puente_fondo.webp') !important;
+    background-size: cover !important;
+    background-position: center bottom !important;
+}
+
+.sac-globo-base {
+    position: absolute !important;
+    z-index: 400 !important;
+    animation: none !important;
+    pointer-events: auto !important;
+}
+.sac-globo-lider { transform: translate(0%, -100%) !important; }
+.sac-globo-requiem { transform: translate(-50%, -100%) !important; }
+.sac-globo-opacity-0 { opacity: 0 !important; }
+
+.sac-globo-fade-in {
+    transition: opacity 0.4s ease-in !important;
+    opacity: 1 !important;
+}
+.sac-globo-vuelo {
+    transition: top 4s ease-out, opacity 3s ease-in 1s !important;
+    opacity: 0 !important;
+}
+.sac-globo-hover {
+    transition: none !important;
+    opacity: 1 !important;
+    z-index: 5000 !important;
+}
+
+.sac-cross-size { font-size: 65px !important; }
+.sac-skull-size { font-size: 20px !important; }
+
+.sac-z-100 { z-index: 100 !important; }
+.sac-z-150 { z-index: 150 !important; }
+
+.sac-img-espejo { transform: scaleX(-1) !important; }
+.sac-img-normal { transform: none !important; }
+
+.sac-trans-carga { transition: left 8.5s linear, opacity 0.4s ease-out, filter 0.4s ease-out !important; }
+.sac-trans-refuerzo { transition: left 6.5s linear !important; }
+.sac-trans-repliegue-enemigo-1 { transition: left 2s ease-in-out !important; }
+.sac-trans-repliegue-enemigo-2 { transition: left 3.5s ease-out !important; }
+
+.sac-fx-muerte-saeta {
+    opacity: 0 !important;
+    filter: brightness(0.1) grayscale(100%) !important;
+}
+
+.sac-fx-desenvaine {
+    transition: filter 0.2s ease-out, transform 0.2s ease-out !important;
+    filter: brightness(1.8) drop-shadow(0 0 5px #ffaa00) !important;
+}
+.sac-fx-desenvaine-reset { filter: none !important; }
+
+.sac-fx-muerte-desvanecer {
+    transition: opacity 2.5s ease-out, filter 2.5s ease-out !important;
+    filter: grayscale(100%) sepia(30%) brightness(0.4) !important;
+    opacity: 0 !important;
+}
+
+.sac-btn-estilo {
+    background: linear-gradient(to bottom, #5a0000, #3a0000) !important;
+    border-color: #ff4c4c !important;
+}
+
+/* TRANSICIONES DINÁMICAS (REEMPLAZO DE INLINE STYLES) */
+.sac-trans-left-08-inout { transition: left 0.8s ease-in-out !important; }
+.sac-trans-left-10-inout { transition: left 1s ease-in-out !important; }
+.sac-trans-left-15-inout { transition: left 1.5s ease-in-out !important; }
+.sac-trans-left-08-out { transition: left 0.8s ease-out !important; }
+.sac-trans-left-06-inout { transition: left 0.6s ease-in-out !important; }
+.sac-trans-left-12-inout { transition: left 1.2s ease-in-out !important; }
+
+.sac-trans-top-10-inout { transition: top 1s ease-in-out !important; }
+.sac-trans-top-08-inout { transition: top 0.8s ease-in-out !important; }
+.sac-trans-top-06-inout { transition: top 0.6s ease-in-out !important; }
+.sac-trans-top-08-out { transition: top 0.8s ease-out !important; }
+
+/* ========================================================================= */
+/* === TERMINA DISEÑO SACRIFICIO ===                                         */
+/* ========================================================================= */

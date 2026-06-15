@@ -178,6 +178,30 @@ const Cronicas = {
 
                 textoBatalla += `En cuanto a los siervos de la oscuridad, <b>${datos.enemigosCaidos} herejes</b> fueron pasados por el filo de nuestras espadas. Cayeron en su ciega soberbia, escupiendo al madero santo y rechazando el agua del bautismo. Sus almas impenitentes han descendido irremediablemente al fuego del infierno, donde su tormento no conocerá piedad ni fin.<br><br>`;
 
+                if (datos.huboParlamento) {
+                    textoBatalla += `<br><br><div class='separador'>***</div>En medio del espeso Bosque Negro, tras la refriega, la hueste detuvo sus espadas ante el líder pagano, un hereje de nombre JoanJoz. El hedor de la blasfemia brotaba de sus labios, insultando a la Cruz y mofándose de nuestra piedad. Mas el Comendador <b>${nombreComendador}</b> no se dejó arrastrar por la ira del demonio, recordando a los hombres que el Santo Deber de la Orden es, ante todo, la redención del cautivo.<br><br>
+                    El impío mercadeó con las vidas de cinco frailes ancianos de nuestra Orden, sobrevivientes de Hattin, exigiendo diez denarios de plata a cambio de sus demacradas almas.`;
+
+                    if (datos.pagoPlata) {
+                        textoBatalla += `<br><br><span style="color:#a3d9a5;"><i>Y así se hizo. El Comendador <b>${nombreComendador}</b> entregó la plata sin dudar, prefiriendo empobrecer las arcas terrenales antes que abandonar a los siervos de Dios en el yugo enemigo. El oro de la Orden ha cumplido hoy su propósito más sagrado. Los cinco frailes lloraron al ver nuestros estandartes, y el Reino de los Cielos se ha regocijado con este rescate.</i></span><br><br>`;
+                    } else {
+                        textoBatalla += `<br><br><span style="color:#ffd700;"><i>Mas el voto de extrema pobreza nos había dejado sin blanca. Fue entonces cuando Sir Alexandro, lugarteniente de la vanguardia, dio un paso al frente. Con el pecho henchido de valor, se despojó de sus armas y entregó su propia libertad a cambio de los ancianos frailes. Un martirio blanco y doloroso. Los herejes se llevaron al león encadenado entre escupitajos, dejando libres a las mansas ovejas. Dios anote este sacrificio supremo; juramos por la Trinidad que no descansaremos hasta rescatarle o vengar su sangre.</i></span><br><br>`;
+                    }
+                }
+                
+                // FIX TÁCTICO: Anexamos el nombre de los 5 mártires rescatados y la designación del nuevo lugarteniente
+                if (datos.nombresCautivos && datos.nombresCautivos.length > 0) {
+                    textoBatalla += `Anoto en este pergamino los nombres de los valientes Mártires Blancos que hoy vuelven al redil del Señor:<br>`;
+                    datos.nombresCautivos.forEach(nc => {
+                        textoBatalla += `• <span style="color:#ffffff;">${nc}</span><br>`;
+                    });
+                    textoBatalla += `<br>Que la Orden les provea pronto el alimento del cuerpo, pues del espíritu ya rebosan.<br><br>`;
+                }
+
+                if (datos.nuevoLugarteniente) {
+                    textoBatalla += `Tras el doloroso martirio en vida de Sir Alexandro, la vanguardia necesitaba urgentemente una espada noble y devota. Atestigüé el solemne nombramiento del caballero <b>${datos.nuevoLugarteniente}</b> como el nuevo Lugarteniente Interino de la Caballería. Que la pureza de sus intenciones y la fuerza de su brazo nos guíen sin vacilar por la senda de la victoria.`;
+                }
+
                 if (datos.botin > 0) {
                     textoBatalla += `De los pútridos despojos impíos se recabaron <b>${datos.botin} denarios</b> de botín. `;
                     if (datos.tercioRespetado) {
@@ -187,17 +211,6 @@ const Cronicas = {
                     }
                 } else {
                     textoBatalla += `No hubo oro ni riquezas terrenales que extraer de esta contienda, y es mejor así, pues la escoria de la codicia no ensuciará esta santa victoria.`;
-                }
-
-                if (datos.huboParlamento) {
-                    textoBatalla += `<br><br><div class='separador'>***</div>En medio del espeso Bosque Negro, tras la refriega, la hueste detuvo sus espadas ante el líder pagano, un hereje de nombre JoanJoz. El hedor de la blasfemia brotaba de sus labios, insultando a la Cruz y mofándose de nuestra piedad. Mas el Comendador <b>${nombreComendador}</b> no se dejó arrastrar por la ira del demonio, recordando a los hombres que el Santo Deber de la Orden es, ante todo, la redención del cautivo.<br><br>
-                    El impío mercadeó con las vidas de cinco frailes ancianos de nuestra Orden, sobrevivientes de Hattin, exigiendo diez denarios de plata a cambio de sus demacradas almas.`;
-
-                    if (datos.pagoPlata) {
-                        textoBatalla += `<br><br><span style="color:#a3d9a5;"><i>Y así se hizo. El Comendador <b>${nombreComendador}</b> entregó la plata sin dudar, prefiriendo empobrecer las arcas terrenales antes que abandonar a los siervos de Dios en el yugo enemigo. El oro de la Orden ha cumplido hoy su propósito más sagrado. Los cinco frailes lloraron al ver nuestros estandartes, y el Reino de los Cielos se ha regocijado con este rescate.</i></span>`;
-                    } else {
-                        textoBatalla += `<br><br><span style="color:#ffd700;"><i>Mas el voto de extrema pobreza nos había dejado sin blanca. Fue entonces cuando Sir Alexandro, lugarteniente de la vanguardia, dio un paso al frente. Con el pecho henchido de valor, se despojó de sus armas y entregó su propia libertad a cambio de los ancianos frailes. Un martirio blanco y doloroso. Los herejes se llevaron al león encadenado entre escupitajos, dejando libres a las mansas ovejas. Dios anote este sacrificio supremo; juramos por la Trinidad que no descansaremos hasta rescatarle o vengar su sangre.</i></span>`;
-                    }
                 }
 
                 textoLore = textoBatalla;
@@ -212,7 +225,6 @@ const Cronicas = {
         this.renderizarEstructura();
     },
 
-    // FIX TÁCTICO: Lógica pura y creación de nodos de interfaz, el CSS ha sido trasladado a modals.css
     renderizarEstructura: function() {
         let contenedor = document.getElementById("cronicas-contenido");
         if (!contenedor) return;

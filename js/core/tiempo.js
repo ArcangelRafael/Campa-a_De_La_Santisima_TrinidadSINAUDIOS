@@ -299,6 +299,8 @@ window.RelojDivino = {
         if (typeof jugador !== "undefined" && !htSinHambre && (horaActual === "Tercia" || horaActual === "Vísperas")) {
             let hambreAumentada = false;
             let muertesInanicion = [];
+            let desmayosInanicion = []; 
+            let alertDelayHambre = 0;
             
             let listas = [jugador.tropas, jugador.comandantes];
             listas.forEach(lista => {
@@ -314,6 +316,17 @@ window.RelojDivino = {
                                     t.hambre--;
                                     hambreAumentada = true;
                                     
+                                    // TÁCTICA: Alerta individual de Desmayo
+                                    if (t.hambre === 0) {
+                                        desmayosInanicion.push(t.nombre);
+                                        if (typeof window.mostrarNotificacionFlotante === 'function') {
+                                            setTimeout(() => {
+                                                window.mostrarNotificacionFlotante(`⚠️ ¡El hermano <b>${t.nombre}</b> se ha desmayado por hambre!`);
+                                            }, alertDelayHambre);
+                                            alertDelayHambre += 600; // Escalonamiento de alertas
+                                        }
+                                    }
+
                                     if (t.hambre <= -2) {
                                         let globalInmortal = document.getElementById("ht-sin-vidas-perdidas")?.checked;
                                         if (!t.hpInamovible && !globalInmortal) {
@@ -338,6 +351,10 @@ window.RelojDivino = {
             if (hambreAumentada && typeof agregarTexto === 'function' && !esInicio) {
                 agregarTexto(`<i class="txt-hereje">El estómago de la hueste ruge... Exigen provisiones.</i>`, "", true);
             }
+
+            if (desmayosInanicion.length > 0 && typeof agregarTexto === 'function' && !esInicio) {
+                agregarTexto(`<div class="mensaje-combate" style="border: 1px dashed #ffaa00; padding: 10px; margin: 10px 0; border-radius: 5px; color: #ffaa00;"><b>¡HOMBRES DESMAYADOS!</b><br>Las siguientes tropas han colapsado por hambre extrema y no podrán luchar: <span class="txt-sagrado">${desmayosInanicion.join(", ")}</span>.</div>`, "", true);
+            }
             
             if (muertesInanicion.length > 0 && typeof agregarTexto === 'function' && !esInicio) {
                 agregarTexto(`<div class="mensaje-combate" style="border: 1px solid #ff4c4c; padding: 10px; margin: 10px 0; border-radius: 5px;"><b>¡TRAGEDIA EN EL CAMPAMENTO!</b><br>Han perecido por inanición: <span class="txt-hereje">${muertesInanicion.map(m=>m.nombre).join(", ")}</span>. La falta de raciones los ha llevado a la tumba.</div>`, "", true);
@@ -354,6 +371,8 @@ window.RelojDivino = {
         // =========================================================================
         let sedAumentada = false;
         let muertesDeshidratacion = [];
+        let desmayosDeshidratacion = [];
+        let alertDelaySed = 0;
         let htSinSed = document.getElementById("ht-sin-sed")?.checked; 
 
         if (typeof jugador !== "undefined" && !htSinSed) {
@@ -371,6 +390,17 @@ window.RelojDivino = {
                                     if (t.sed === undefined) t.sed = 3;
                                     t.sed--;
                                     sedAumentada = true;
+
+                                    // TÁCTICA: Alerta individual de Desmayo
+                                    if (t.sed === 0) {
+                                        desmayosDeshidratacion.push(t.nombre);
+                                        if (typeof window.mostrarNotificacionFlotante === 'function') {
+                                            setTimeout(() => {
+                                                window.mostrarNotificacionFlotante(`⚠️ ¡El hermano <b>${t.nombre}</b> se ha desmayado por deshidratación!`);
+                                            }, alertDelaySed);
+                                            alertDelaySed += 600; // Escalonamiento de alertas
+                                        }
+                                    }
 
                                     if (t.sed <= -1) {
                                         let globalInmortal = document.getElementById("ht-sin-vidas-perdidas")?.checked;
@@ -396,6 +426,10 @@ window.RelojDivino = {
 
         if (sedAumentada && typeof agregarTexto === 'function' && !esInicio) {
             agregarTexto(`<i class="txt-hereje" style="color:#4c88ff;">El sofocante calor seca los gaznates... La hueste exige agua o cerveza.</i>`, "", true);
+        }
+
+        if (desmayosDeshidratacion.length > 0 && typeof agregarTexto === 'function' && !esInicio) {
+            agregarTexto(`<div class="mensaje-combate" style="border: 1px dashed #4c88ff; padding: 10px; margin: 10px 0; border-radius: 5px; color: #4c88ff;"><b>¡HOMBRES DESMAYADOS!</b><br>Las siguientes tropas han colapsado por deshidratación extrema y no podrán luchar: <span class="txt-sagrado">${desmayosDeshidratacion.join(", ")}</span>.</div>`, "", true);
         }
         
         if (muertesDeshidratacion.length > 0 && typeof agregarTexto === 'function' && !esInicio) {

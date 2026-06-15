@@ -131,16 +131,12 @@ function animarAvancePicas() {
         tablero.style.backgroundImage = "linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('assets/img/fondos/puente_fondo.webp')";
         tablero.style.backgroundSize = "cover"; tablero.style.backgroundPosition = "center bottom";
         
-        // =========================================================================
-        // INYECCIÓN DE LA ZONA DE BATALLA (CONTENCIÓN ESTILO CINE)
-        // =========================================================================
         let zonaBatalla = document.getElementById("zona-batalla-picas-anim");
         if (!zonaBatalla) {
             zonaBatalla = document.createElement("div");
             zonaBatalla.id = "zona-batalla-picas-anim";
             zonaBatalla.className = "zona-batalla-anim";
             
-            // Movemos las zonas existentes dentro del nuevo contenedor
             let zonaRes = document.getElementById("zona-reservas-picas");
             let zonaAli = document.getElementById("zona-aliada-picas");
             let zonaEne = document.getElementById("zona-enemiga-picas");
@@ -175,7 +171,6 @@ function animarAvancePicas() {
                     let slotPica = document.getElementById(`pica-slot-${pos.slotPos.split("-")[1]}`);
                     if(slotPica) {
                         let divEnemigo = document.createElement("div"); divEnemigo.className = "enemigo-atacando-pica";
-                        // FIX: Tamaño cuadrado 75x75
                         divEnemigo.style.cssText = "position:absolute; top:0px; right:-70px; width:75px; height:75px; border:2px solid #ff4c4c; background:#1a1a1a; z-index:150; transform:translateX(60px); transition:transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); border-radius:4px; box-shadow: -5px 0 15px rgba(255,0,0,0.8); display:flex; justify-content:center; align-items:center;";
                         divEnemigo.innerHTML = `<img src="assets/img/personajes/enemigos/enemigo.webp" style="width:100%;height:100%;object-fit:cover; transform:scaleX(-1); border-radius:2px;">`;
                         slotPica.appendChild(divEnemigo); setTimeout(() => divEnemigo.style.transform = "translateX(0)", 100);
@@ -199,9 +194,10 @@ function resolverDadosVisualesPicas() {
         let { tropa, pos, enemigo } = acc;
         let slotPicaId = `pica-slot-${pos.slotPos.split("-")[1]}`; let slotPica = document.getElementById(slotPicaId);
         
-        let penalidad = (tropa.hp < 2) ? 1 : 0; let stringHerido = penalidad > 0 ? ` <span class="txt-hereje">-1 (Herido)</span>` : "";
+        // FIX DOD: El combate ya calcula Atk/Def y Mochila gracias a GestorEstado.evaluarPoderTropa
+        let poderDef = GestorEstado.evaluarPoderTropa(tropa, 'def');
         let dadoGracia = (jugador.liderazgo <= -50) ? 0 : tirarDado(); let dadoFuria = (jugador.liderazgo >= 126) ? 0 : tirarDado();
-        let pDefAliado = (tropa.defMax - penalidad) + dadoGracia + infoFe.mod; let pAtkEnemigo = enemigo.atk + dadoFuria;
+        let pDefAliado = poderDef.neto + dadoGracia + infoFe.mod; let pAtkEnemigo = enemigo.atk + dadoFuria;
 
         let signoMod = (infoFe.mod >= 0) ? `+${infoFe.mod}` : `${infoFe.mod}`; let classMod = (infoFe.mod >= 0) ? "mensaje-sistema" : "txt-hereje";
         if (infoFe.mod === 0) classMod = "txt-sagrado";
@@ -217,34 +213,46 @@ function resolverDadosVisualesPicas() {
             if(tropa.hp <= 0) {
                 phase1Cons += `<div class="separador txt-hereje">💀 ¡MÁRTIR EN EL MURO! ${tropa.nombre} ha caído.</div>`;
                 window.marcadoresBatalla.push({tipo: 'cross', slotPos: pos.slotPos});
-                if(typeof window.dibujarMarcadorMuerte === 'function') window.dibujarMarcadorMuerte(slotPica, 'cross'); // INVOCACIÓN CENTRAL
+                if(typeof window.dibujarMarcadorMuerte === 'function') window.dibujarMarcadorMuerte(slotPica, 'cross'); 
             }
         }
 
-        let dataRender = { posNombre: pos.posNombre, enemigoNombre: enemigo.nombre, tropaNombre: tropa.nombre, defBase: tropa.defMax, stringHerido, dadoGracia, classMod, signoMod, infoFeNombre: infoFe.nombre, pDefAliado, atkEnemigoBase: enemigo.atk, dadoFuria, pAtkEnemigo, phase1Cons, idBc, hasCounter, idBcCounter, autoCombat };
+        // FIX TÁCTICO DOD: Inyectar tropaId
+        let dataRender = {
+            tropaId: tropa.idUnico,
+            posNombre: pos.posNombre, enemigoNombre: enemigo.nombre, tropaNombre: tropa.nombre,
+            defBase: poderDef.base, stringHerido: poderDef.stringEfectos, dadoGracia, classMod, signoMod, infoFeNombre: infoFe.nombre, pDefAliado,
+            atkEnemigoBase: enemigo.atk, dadoFuria, pAtkEnemigo, phase1Cons, idBc, hasCounter, idBcCounter, autoCombat
+        };
         let logStr = RenderCombate.htmlAsaltoPicas(dataRender);
 
         if (hasCounter) {
+            let poderAtk = GestorEstado.evaluarPoderTropa(tropa, 'atk');
             let dadoGracia2 = (jugador.liderazgo <= -50) ? 0 : tirarDado(); let dadoFuria2 = (jugador.liderazgo >= 126) ? 0 : tirarDado();
-            let pAtkAliado = (tropa.atkMax - penalidad) + dadoGracia2 + infoFe.mod; let pAtkEnemigo2 = enemigo.atk + dadoFuria2;
+            let pAtkAliado = poderAtk.neto + dadoGracia2 + infoFe.mod; let pAtkEnemigo2 = enemigo.atk + dadoFuria2;
             let phase2Cons = "";
 
             if (pAtkAliado > pAtkEnemigo2) {
                 EstadoBatalla.bajasEnemigas++; EstadoBatalla.hordaMuertosActuales++;
                 phase2Cons = `<span class="mensaje-sistema">¡Infiel Ensartado! El asaltante muere en las lanzas.</span>`;
                 window.marcadoresBatalla.push({tipo: 'skull', slotPos: pos.slotPos}); 
-                if(typeof window.dibujarMarcadorMuerte === 'function') window.dibujarMarcadorMuerte(slotPica, 'skull'); // INVOCACIÓN CENTRAL
+                if(typeof window.dibujarMarcadorMuerte === 'function') window.dibujarMarcadorMuerte(slotPica, 'skull'); 
             } else {
                 GestorEstado.recibirDano(tropa.idUnico, 1);
                 phase2Cons = `<span class="txt-hereje">¡Duelo sangriento! ${tropa.nombre} sufre una herida en la refriega.</span>`;
                 if(tropa.hp <= 0) {
                     phase2Cons += `<div class="separador txt-hereje">💀 ¡MÁRTIR EN EL MURO! ${tropa.nombre} ha caído.</div>`;
                     window.marcadoresBatalla.push({tipo: 'cross', slotPos: pos.slotPos});
-                    if(typeof window.dibujarMarcadorMuerte === 'function') window.dibujarMarcadorMuerte(slotPica, 'cross'); // INVOCACIÓN CENTRAL
+                    if(typeof window.dibujarMarcadorMuerte === 'function') window.dibujarMarcadorMuerte(slotPica, 'cross'); 
                 }
             }
 
-            let dataCounter = { tropaNombre: tropa.nombre, atkBase: tropa.atkMax, stringHerido, dadoGracia2, classMod, signoMod, infoFeNombre: infoFe.nombre, pAtkAliado, enemigoNombre: enemigo.nombre, atkEnemigoBase: enemigo.atk, dadoFuria2, pAtkEnemigo2, phase2Cons, idBcCounter, autoCombat };
+            // FIX TÁCTICO DOD: Inyectar tropaId
+            let dataCounter = { 
+                tropaId: tropa.idUnico,
+                tropaNombre: tropa.nombre, atkBase: poderAtk.base, stringHerido: poderAtk.stringEfectos, dadoGracia2, classMod, signoMod, infoFeNombre: infoFe.nombre, pAtkAliado, 
+                enemigoNombre: enemigo.nombre, atkEnemigoBase: enemigo.atk, dadoFuria2, pAtkEnemigo2, phase2Cons, idBcCounter, autoCombat 
+            };
             logStr += RenderCombate.htmlContraataquePicas(dataCounter);
         }
         

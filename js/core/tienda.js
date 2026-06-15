@@ -4,7 +4,7 @@ let faseReclutamientoInicial = false;
 let carritoMercenarios = {}; 
 let carritoObjetos = {}; 
 window.seccionTiendaActiva = null; 
-window.tiendaBloqueadaBosque = false; // Candado para impedir compras en el bosque
+window.tiendaBloqueadaBosque = false; 
 
 // --- SISTEMA DE EDICTOS (Alertas y Confirmaciones Personalizadas) ---
 window.mostrarAlertaCustom = function(mensaje) {
@@ -112,7 +112,7 @@ window.vaciarCarritoSeccion = function(seccion) {
     } else {
         for(let key in carritoObjetos) {
             let item = bdObjetos[key];
-            let itemSeccion = (item.categoria === "arma" || item.categoria === "armadura") ? "forja" : (item.categoria === "comida" ? "panadero" : "taberna");
+            let itemSeccion = (item.categoria === "arma" || item.categoria === "armadura" || item.categoria.startsWith("armadura_") || item.categoria === "escudo_roble") ? "forja" : (item.categoria === "medicina" ? "curandera" : (item.categoria === "comida" ? "panadero" : "taberna"));
             if (itemSeccion === seccion) {
                 delete carritoObjetos[key];
             }
@@ -155,6 +155,12 @@ function mostrarPlazaCentral() {
                 <h4 style="color:#ffaa00; font-family:'Cinzel', serif; margin:10px 0 5px 0; font-size:14px;">La Taberna</h4>
                 <p style="font-size:11px; color:#aaa; font-style:italic; line-height: 1.4;">Barriles de cerveza para aguantar la sed.</p>
             </div>
+
+            <div class="item-card" onclick="abrirSeccionTienda('curandera')" style="width:160px; padding:15px !important; border:2px solid #555;">
+                <img src="assets/img/ui/farmacia.webp" style="height:100px !important; width:100% !important; object-fit:cover !important; background:#000;">
+                <h4 style="color:#ffaa00; font-family:'Cinzel', serif; margin:10px 0 5px 0; font-size:14px;">La Curandera</h4>
+                <p style="font-size:11px; color:#aaa; font-style:italic; line-height: 1.4;">Bálsamos y ungüentos benditos para la carne herida.</p>
+            </div>
         </div>
     `;
     
@@ -164,13 +170,12 @@ function mostrarPlazaCentral() {
     let costoForja = calcularCostoCarritoObjetos("forja");
     let costoHorno = calcularCostoCarritoObjetos("panadero");
     let costoTaberna = calcularCostoCarritoObjetos("taberna");
+    let costoCurandera = calcularCostoCarritoObjetos("curandera");
     
-    let totalGeneral = costoMerc + costoForja + costoHorno + costoTaberna;
+    let totalGeneral = costoMerc + costoForja + costoHorno + costoTaberna + costoCurandera;
     
     if(totalGeneral > 0) {
         let divResumen = document.createElement("div");
-        
-        // Borde sólido en relieve, sin punteados feos, con banda roja eclesiástica
         divResumen.style.cssText = "background:#0a0a0a; padding: 20px; border-radius: 4px; border: 1px solid #333; border-top: 3px solid #8b0000; margin-top: 20px; text-align:left; box-shadow: inset 0 0 20px rgba(0,0,0,0.8), 0 5px 15px rgba(0,0,0,0.5);";
         
         let listasHtml = `<div style="display:flex; justify-content:center; gap:15px; margin-bottom:15px; flex-wrap:wrap;">`;
@@ -184,7 +189,7 @@ function mostrarPlazaCentral() {
             let html = "";
             for(let k in carritoObjetos) {
                 let item = bdObjetos[k];
-                if(carritoObjetos[k]>0 && (item.categoria==="arma"||item.categoria==="armadura")) {
+                if(carritoObjetos[k]>0 && (item.categoria==="arma"||item.categoria==="armadura"||item.categoria.startsWith("armadura_")||item.categoria==="escudo_roble")) {
                     html += `<li style="margin-bottom:3px;">${item.nombre} <b style="color:#fff;">x${carritoObjetos[k]}</b></li>`;
                 }
             }
@@ -210,6 +215,16 @@ function mostrarPlazaCentral() {
             }
             listasHtml += crearColumnaResumen("🍺 Taberna", costoTaberna, html, "#ffccff", "taberna", "Ir a la Taberna", "Descartar Pedido");
         }
+        if(costoCurandera > 0) {
+            let html = "";
+            for(let k in carritoObjetos) {
+                let item = bdObjetos[k];
+                if(carritoObjetos[k]>0 && item.categoria==="medicina") {
+                    html += `<li style="margin-bottom:3px;">${item.nombre} <b style="color:#fff;">x${carritoObjetos[k]}</b></li>`;
+                }
+            }
+            listasHtml += crearColumnaResumen("⚕️ Farmacia", costoCurandera, html, "#ff8888", "curandera", "Ir a la Curandera", "Descartar Pedido");
+        }
         
         listasHtml += `</div>`;
 
@@ -224,11 +239,6 @@ function mostrarPlazaCentral() {
         `;
         contenedor.appendChild(divResumen);
     }
-    
-    let hardcodedCart = document.getElementById("tienda-carrito");
-    if(hardcodedCart) hardcodedCart.style.display = "none";
-    let objCart = document.getElementById("carrito-objetos-container");
-    if(objCart) objCart.style.display = "none";
 }
 
 window.abrirSeccionTienda = function(seccion) {
@@ -239,6 +249,7 @@ window.abrirSeccionTienda = function(seccion) {
     if (seccion === "forja") titulo = "LA FORJA BÉLICA";
     if (seccion === "panadero") titulo = "EL HORNO MONÁSTICO";
     if (seccion === "taberna") titulo = "LA TABERNA LOCAL";
+    if (seccion === "curandera") titulo = "LA TIENDA DE BÁLSAMOS";
     
     document.getElementById("tienda-titulo").innerText = titulo;
 
@@ -312,7 +323,8 @@ function renderizarTiendaReclutamiento() {
     
     for(let key in bdTiposTropa) {
         let tropa = bdTiposTropa[key];
-        if(tropa.clase === "unico" || tropa.clase === "unico_random" || tropa.clase === "noble") continue; 
+        
+        if(tropa.clase === "unico" || tropa.clase === "unico_random" || tropa.clase === "noble" || tropa.tipoG === "cautivos") continue; 
 
         let card = document.createElement("div");
         card.className = `item-card tropa-mercenaria`;
@@ -335,7 +347,6 @@ function renderizarTiendaReclutamiento() {
 function agregarAlCarrito(idTropa) {
     if(!carritoMercenarios[idTropa]) carritoMercenarios[idTropa] = 0;
     
-    // El oro es compartido, calculamos TODO lo que debe
     let costoTotalGlobal = calcularCostoCarrito() + calcularCostoCarritoObjetos();
     let tropa = bdTiposTropa[idTropa];
     
@@ -494,12 +505,16 @@ function renderizarTiendaObjetos() {
     let hayObjetos = false;
 
     for (let key in bdObjetos) {
-        if(key === "pan_podrido" || key === "cerveza_agria") continue; 
+        // FILTROS TÁCTICOS: Ocultar basura con valor 0 o equipo irrelevante según tienda
+        if(key === "pan_podrido" || key === "cerveza_agria" || key === "manzana_fresca" || key === "manzana_podrida") continue; 
         
         let itemValido = false;
+        let objMeta = bdObjetos[key];
+
         if (seccion === "forja" && key === "espada_forjada") itemValido = true;
-        if (seccion === "panadero" && key === "pan_cevada") itemValido = true;
-        if (seccion === "taberna" && key === "cerveza_mesa") itemValido = true;
+        if (seccion === "panadero" && objMeta.categoria === "comida" && objMeta.precio > 0) itemValido = true;
+        if (seccion === "taberna" && objMeta.categoria === "bebida" && objMeta.precio > 0) itemValido = true;
+        if (seccion === "curandera" && objMeta.categoria === "medicina") itemValido = true;
         
         if (!itemValido) continue;
         
@@ -605,9 +620,10 @@ function calcularCostoCarritoObjetos(seccionFiltro = null) {
     for(let key in carritoObjetos) {
         let item = bdObjetos[key];
         let itemSeccion = "";
-        if(item.categoria === "arma" || item.categoria === "armadura") itemSeccion = "forja";
+        if(item.categoria === "arma" || item.categoria === "armadura" || item.categoria.startsWith("armadura_") || item.categoria === "escudo_roble") itemSeccion = "forja";
         else if(item.categoria === "comida") itemSeccion = "panadero";
         else if(item.categoria === "bebida") itemSeccion = "taberna";
+        else if(item.categoria === "medicina") itemSeccion = "curandera";
         
         if (!seccionFiltro || itemSeccion === seccionFiltro) {
             total += (item.precio * carritoObjetos[key]);
@@ -636,7 +652,7 @@ function renderizarCarritoObjetos() {
 
     for(let key in carritoObjetos) {
         let item = bdObjetos[key];
-        let itemSeccion = (item.categoria === "arma" || item.categoria === "armadura") ? "forja" : (item.categoria === "comida" ? "panadero" : "taberna");
+        let itemSeccion = (item.categoria === "arma" || item.categoria === "armadura" || item.categoria.startsWith("armadura_") || item.categoria === "escudo_roble") ? "forja" : (item.categoria === "medicina" ? "curandera" : (item.categoria === "comida" ? "panadero" : "taberna"));
         
         if(itemSeccion === seccionActual && carritoObjetos[key] > 0) {
             hayItems = true;
@@ -686,7 +702,7 @@ window.confirmarCompraObjetos = function() {
 
     for(let key in carritoObjetos) {
         let item = bdObjetos[key];
-        let itemSeccion = (item.categoria === "arma" || item.categoria === "armadura") ? "forja" : (item.categoria === "comida" ? "panadero" : "taberna");
+        let itemSeccion = (item.categoria === "arma" || item.categoria === "armadura" || item.categoria.startsWith("armadura_") || item.categoria === "escudo_roble") ? "forja" : (item.categoria === "medicina" ? "curandera" : (item.categoria === "comida" ? "panadero" : "taberna"));
         
         if (itemSeccion === seccion && carritoObjetos[key] > 0) {
             let cantidadComprada = carritoObjetos[key];

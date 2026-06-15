@@ -176,6 +176,7 @@ function reiniciarJugadorBase() {
     jugador.narrativaSacrificioVista = false; jugador.mercenarioRedimidoId = null;
     inventarioDesbloqueado = false; tiendaDesbloqueada = false; cronicasDesbloqueado = false;
     
+    // FIX TÁCTICO: ¡El Capellán ha vuelto! Restaurado a la plana mayor de comandantes.
     jugador.comandantes = [
         { idUnico: "cmd_player", idTipo: "comandante", nombre: "Comendador", img: "assets/img/personajes/aliados/jugador.webp", hp: 1, hpMax: 1, hambre: 5, sed: 3, saltoHambre: true, inicioSed: 0 },
         { idUnico: "cmd_alex", idTipo: "comandante", nombre: "Sir Alexandro", img: "assets/img/personajes/aliados/lider_caballeros.webp", hp: 1, hpMax: 1, hambre: 5, sed: 3, saltoHambre: true, inicioSed: 0 },
@@ -211,6 +212,12 @@ function actualizarHUD() {
         btnCronicas.style.display = cronicasDesbloqueado ? "block" : "none";
     }
 
+    // FIX DOD: En lugar de borrar comandantes, purgamos el "clon" de la lista de tropas (si se llegó a colar en tu partida guardada)
+    if (jugador.comandantes && jugador.tropas) {
+        let idsComandantes = jugador.comandantes.map(c => c.idTipo);
+        jugador.tropas = jugador.tropas.filter(t => !(t.clase === "unico" && idsComandantes.includes(t.idTipo)));
+    }
+
     if (!jugador.comandantes || jugador.comandantes.length === 0) {
         jugador.comandantes = [
             { idUnico: "cmd_player", idTipo: "comandante", nombre: "Comendador", img: "assets/img/personajes/aliados/jugador.webp", hp: 1, hpMax: 1, hambre: 5, sed: 3, saltoHambre: true, inicioSed: 0 },
@@ -243,6 +250,33 @@ if (iconoOrdenElem) {
 
 document.getElementById("stat-fe-container").onmouseover = () => { document.getElementById("fe-tooltip").style.display = "block"; };
 document.getElementById("stat-fe-container").onmouseout = () => { document.getElementById("fe-tooltip").style.display = "none"; };
+
+function obtenerEstadoFe() {
+    let f = jugador.liderazgo;
+    
+    if (f >= 126) return { nombre: "ESTADO DE GRACIA", efecto: "Anulas el dado del oponente", mod: 0, textoCombate: "¡Los ángeles descienden! La furia del enemigo es cegada por la Luz Sagrada." };
+    if (f >= 101) return { nombre: "FERVOR CELESTIAL", efecto: "+2 Ataque y Defensa", mod: 2, textoCombate: "Un aura sagrada envuelve vuestras armas. Sentís el poder del Altísimo guiando el golpe." };
+    if (f >= 76) return { nombre: "BENDICIÓN DIVINA", efecto: "+1 Ataque y Defensa", mod: 1, textoCombate: "El Señor observa vuestra devoción. Vuestros músculos se tensan con fuerza santa." };
+    if (f >= 0) return { nombre: "FE FIRME", efecto: "Fuerza normal, sin bonos ni penas", mod: 0, textoCombate: "Tu estado de FE es FIRME... Sin debilidad en el espíritu, librando la batalla con temple mortal, pero aguardando el favor divino." };
+    
+    let penalizador = 0;
+    if (f <= -1 && f >= -25) {
+        penalizador = -1;
+    } else if (f <= -26 && f >= -50) {
+        penalizador = -2;
+    } else if (f <= -51) {
+        penalizador = -2; 
+    }
+
+    if (f <= -51) return { nombre: "NOCHE OSCURA DEL ALMA", efecto: "Pierdes derecho a dado", mod: penalizador, textoCombate: "Dios parece haber apartado la mirada. La total desesperanza paraliza vuestras almas en combate." };
+    
+    return { nombre: "INCERTIDUMBRE", efecto: penalizador + " Ataque/Defensa", mod: penalizador, textoCombate: "Las dudas carcomen la mente de tus hombres. Los brazos pesan y los golpes titubean en el barro." };
+}
+
+function actualizarTooltipFe() {
+    const infoFe = obtenerEstadoFe(); const tooltip = document.getElementById("fe-tooltip");
+    if(tooltip) { tooltip.innerHTML = `<b class='txt-sagrado'>${infoFe.nombre}</b><hr style='border-color:#555; margin: 5px 0;'/><i>Efecto: ${infoFe.efecto}</i>`; }
+}
 
 async function mostrarAvisoFe(infoFe) {
     let skipPopups = document.getElementById("ht-disable-popups")?.checked;
@@ -343,6 +377,13 @@ function agregarTropa(idTipo, cantidad) {
     let tipo = bdTiposTropa[idTipo];
     let horaRelojBase = (typeof RelojDivino !== 'undefined' && RelojDivino.indiceActual !== -1) ? RelojDivino.indiceActual : 0;
     
+    // FIX DOD: El "Escudo Anti-Clones". Evita agregar a la hueste tropas únicas que ya viven en los comandantes
+    if (tipo.clase === "unico" || tipo.clase === "unico_random") {
+        let existeCmd = jugador.comandantes && jugador.comandantes.some(c => c.idTipo === idTipo);
+        let existeTropa = jugador.tropas && jugador.tropas.some(t => t.idTipo === idTipo);
+        if (existeCmd || existeTropa) return; // Si ya existe, ignoramos y no creamos el clon
+    }
+    
     for(let i=0; i<cantidad; i++){
         let nomFinal = "Soldado";
         if(tipo.clase === "unico") {
@@ -373,24 +414,6 @@ function agregarTropa(idTipo, cantidad) {
 
         mostrarNotificacionFlotante(`Hey! el ${tipoDisplay} <b>${nomFinal}</b> se ha unido al estandarte DEUS LO VULT !!`);
     }
-}
-
-function obtenerEstadoFe() {
-    let f = jugador.liderazgo;
-    if (f >= 126) return { nombre: "ESTADO DE GRACIA", efecto: "Anulas el dado del oponente", mod: 0, textoCombate: "¡Los ángeles descienden! La furia del enemigo es cegada por la Luz Sagrada." };
-    if (f >= 101) return { nombre: "FERVOR CELESTIAL", efecto: "+2 Ataque y Defensa", mod: 2, textoCombate: "Un aura sagrada envuelve vuestras armas. Sentís el poder del Altísimo guiando el golpe." };
-    if (f >= 76) return { nombre: "BENDICIÓN DIVINA", efecto: "+1 Ataque y Defensa", mod: 1, textoCombate: "El Señor observa vuestra devoción. Vuestros músculos se tensan con fuerza santa." };
-    if (f >= 0) return { nombre: "FE FIRME", efecto: "Fuerza normal, sin bonos ni penas", mod: 0, textoCombate: "Tu estado de FE es FIRME... Sin debilidad en el espíritu, librando la batalla con temple mortal, pero aguardando el favor divino." };
-    
-    let nivelNegativo = Math.ceil(Math.abs(f) / 10); 
-    let penalizador = -nivelNegativo;
-    if (f <= -50) return { nombre: "NOCHE OSCURA DEL ALMA", efecto: "Pierdes derecho a dado", mod: penalizador, textoCombate: "Dios parece haber apartado la mirada. La total desesperanza paraliza vuestras almas en combate." };
-    return { nombre: "INCERTIDUMBRE", efecto: penalizador + " Ataque/Defensa", mod: penalizador, textoCombate: "Las dudas carcomen la mente de tus hombres. Los brazos pesan y los golpes titubean en el barro." };
-}
-
-function actualizarTooltipFe() {
-    const infoFe = obtenerEstadoFe(); const tooltip = document.getElementById("fe-tooltip");
-    if(tooltip) { tooltip.innerHTML = `<b class='txt-sagrado'>${infoFe.nombre}</b><hr style='border-color:#555; margin: 5px 0;'/><i>Efecto: ${infoFe.efecto}</i>`; }
 }
 
 async function dispararTribulacionAleatoria(callbackContinuar) {
@@ -481,19 +504,14 @@ async function dispararTribulacionAleatoria(callbackContinuar) {
     if(callbackContinuar) callbackContinuar();
 }
 
-// =========================================================================
-// SISTEMA CENTRAL DE MÁRTIRES Y CAÍDOS (HALOS VISUALES)
-// =========================================================================
 window.crearMarcadorMuerteDOM = function(tipo) {
     let mk = document.createElement("div");
     mk.className = tipo === 'skull' ? "marcador-batalla skull-icon" : "marcador-batalla cross-icon";
     mk.innerHTML = tipo === 'skull' ? "☠️" : "✝";
     
-    // Inyección de CSS agresivo inline para que ningún contenedor lo sobreescriba
     if (tipo === 'skull') {
         mk.style.cssText = "position:absolute; font-size:45px; z-index:250; pointer-events:none; top:50%; left:50%; transform:translate(-50%, -50%); opacity: 0.95; color: #ffffff !important; text-shadow: 0 0 15px #ff0000, 0 0 30px #ff0000, 0 0 40px #ff0000 !important;";
     } else {
-        // Posicionamiento neutral base
         mk.style.cssText = "position:absolute; font-size:45px; z-index:250; pointer-events:none; top:50%; left:50%; transform:translate(-50%, -50%); opacity: 0.95; color: #ffd700 !important; text-shadow: 0 0 15px #ffaa00, 0 0 30px #ffaa00, 0 0 40px #ffaa00 !important;";
     }
     return mk;
@@ -502,7 +520,6 @@ window.crearMarcadorMuerteDOM = function(tipo) {
 window.dibujarMarcadorMuerte = function(slotElement, tipo) {
     if (!slotElement) return null;
     
-    // Purga de marcadores previos para evitar doble icono
     let existente = slotElement.querySelector('.marcador-batalla');
     if (existente) existente.remove();
 

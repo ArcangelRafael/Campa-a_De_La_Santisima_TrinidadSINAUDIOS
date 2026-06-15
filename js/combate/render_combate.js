@@ -20,7 +20,10 @@ const RenderCombate = {
                 <div style="margin-top:5px;">${d.phase1Cons}</div>
             </div>`;
         } else {
-            return `<div class="bloque-combate pendiente-dados" id="${d.idBc}" ${d.hasMelee ? `data-next-block="${d.idBcMelee}"` : ''}>
+            // FIX TÁCTICO DOD: Si hay Melee, NO ponemos el desgaste en este primer bloque para evitar el cobro doble.
+            let desgasteAttr = (d.tropaId && !d.hasMelee) ? `data-tropa-id="${d.tropaId}"` : "";
+            
+            return `<div class="bloque-combate pendiente-dados" id="${d.idBc}" ${desgasteAttr} ${d.hasMelee ? `data-next-block="${d.idBcMelee}"` : ''}>
                 <b class="txt-sagrado">Choque en ${d.posNombre}:</b><br>${d.tropaNombre} vs ${d.enemigoNombre}
                 <div class="math-log">
                     ⚔️ ATAQUE de ${d.tropaNombre}: ${d.atkBase} (Base)${d.stringHerido} + <span class="dado-hide al-dado" data-val="${d.dadoGracia}">__</span> (Gracia) <span class="${d.classMod}">${d.signoMod} (${d.infoFeNombre})</span> = <b class="total-hide" data-val="${d.pAtk}">??</b><br>
@@ -42,7 +45,10 @@ const RenderCombate = {
                 <div style="margin-top:5px;">${d.phase2Cons}</div>
             </div>`;
         } else {
-            return `<div class="bloque-combate pendiente-dados" id="${d.idBcMelee}" style="display:none; margin-top:10px; border-left:4px solid #ffaa00; padding-left:10px;">
+            // FIX TÁCTICO DOD: Como este es el final del choque con este enemigo, aquí SÍ cobramos el turno del equipo.
+            let desgasteAttr = d.tropaId ? `data-tropa-id="${d.tropaId}"` : "";
+            
+            return `<div class="bloque-combate pendiente-dados" id="${d.idBcMelee}" ${desgasteAttr} style="display:none; margin-top:10px; border-left:4px solid #ffaa00; padding-left:10px;">
                 <div class="math-log">
                     ⚔️ RESPUESTA de ${d.tropaNombre}: ${d.atkBase} (Base)${d.stringHerido} + <span class="dado-hide al-dado" data-val="${d.dadoGracia2}">__</span> (Gracia) <span class="${d.classMod}">${d.signoMod} (${d.infoFeNombre})</span> = <b class="total-hide" data-val="${d.pAtk2}">??</b><br>
                     🗡️ ATAQUE de ${d.enemigoNombre}: ${d.atkEnemigoBase} (Base) + <span class="dado-hide en-dado" data-val="${d.dadoFuria2}">__</span> (Furia) = <b class="total-hide" data-val="${d.pAtkEnemigo}">??</b>
@@ -63,7 +69,9 @@ const RenderCombate = {
                 <div style="margin-top:5px;">${d.phase1Cons}</div>
             </div>`;
         } else {
-            return `<div class="bloque-combate pendiente-dados" id="${d.idBc}" ${d.hasCounter ? `data-next-block="${d.idBcCounter}"` : ''}>
+            let desgasteAttr = (d.tropaId && !d.hasCounter) ? `data-tropa-id="${d.tropaId}"` : "";
+            
+            return `<div class="bloque-combate pendiente-dados" id="${d.idBc}" ${desgasteAttr} ${d.hasCounter ? `data-next-block="${d.idBcCounter}"` : ''}>
                 <b class="txt-comendador">Asalto en ${d.posNombre}:</b><br>${d.enemigoNombre} embiste a ${d.tropaNombre}
                 <div class="math-log">
                     🛡️ DEFENSA de ${d.tropaNombre}: ${d.defBase} (Base)${d.stringHerido} + <span class="dado-hide al-dado" data-val="${d.dadoGracia}">__</span> (Gracia) <span class="${d.classMod}">${d.signoMod} (${d.infoFeNombre})</span> = <b class="total-hide" data-val="${d.pDefAliado}">??</b><br>
@@ -85,7 +93,9 @@ const RenderCombate = {
                 <div style="margin-top:5px;">${d.phase2Cons}</div>
             </div>`;
         } else {
-            return `<div class="bloque-combate pendiente-dados" id="${d.idBcCounter}" style="display:none; margin-top:10px; border-left:4px solid #88ff88; padding-left:10px;">
+            let desgasteAttr = d.tropaId ? `data-tropa-id="${d.tropaId}"` : "";
+            
+            return `<div class="bloque-combate pendiente-dados" id="${d.idBcCounter}" ${desgasteAttr} style="display:none; margin-top:10px; border-left:4px solid #88ff88; padding-left:10px;">
                 <div class="math-log">
                     ⚔️ ATAQUE de ${d.tropaNombre}: ${d.atkBase} (Base)${d.stringHerido} + <span class="dado-hide al-dado" data-val="${d.dadoGracia2}">__</span> (Gracia) <span class="${d.classMod}">${d.signoMod} (${d.infoFeNombre})</span> = <b class="total-hide" data-val="${d.pAtkAliado}">??</b><br>
                     🗡️ ATAQUE de ${d.enemigoNombre}: ${d.atkEnemigoBase} (Base) + <span class="dado-hide en-dado" data-val="${d.dadoFuria2}">__</span> (Furia) = <b class="total-hide" data-val="${d.pAtkEnemigo2}">??</b>
@@ -106,7 +116,9 @@ const RenderCombate = {
                 <div style='margin-top:5px;'>${d.phase1Cons}</div>
             </div>`;
         } else {
-            return `<div class='bloque-combate pendiente-dados' id='${d.idBc}'>
+            let desgasteAttr = d.tropaId ? `data-tropa-id="${d.tropaId}"` : "";
+            
+            return `<div class='bloque-combate pendiente-dados' id='${d.idBc}' ${desgasteAttr}>
                 <b class='txt-hereje'>Duelo a Muerte en ${d.posNombre}:</b><br>${d.tropaNombre} vs ${d.enemigoNombre}
                 <div class='math-log'>
                     ⚔️ ATAQUE de ${d.tropaNombre}: ${d.atkBase} (Base)${d.stringHerido} + <span class='dado-hide al-dado' data-val='${d.dadoGracia}'>__</span> (Gracia) <span class='${d.classMod}'>${d.signoMod} (${d.infoFeNombre})</span> = <b class='total-hide' data-val='${d.pAtkAliado}'>??</b><br>
@@ -136,7 +148,9 @@ const RenderCombate = {
                     <p style="font-size:11px; margin:5px 0; border-top:1px solid #444;">${d.textoDado}<br>${d.resultadoTexto}</p>
                 </div>`;
             } else {
-                return `<div class="item-card-desplegado ${d.claseBorde} pendiente-dados" id="${d.idBc}" style="position:relative; overflow:hidden;">
+                let desgasteAttr = d.tropaId ? `data-tropa-id="${d.tropaId}"` : "";
+                
+                return `<div class="item-card-desplegado ${d.claseBorde} pendiente-dados" id="${d.idBc}" ${desgasteAttr} style="position:relative; overflow:hidden;">
                     <img src="${d.img}">
                     <div class="unidad-nombre-aleatorio">${d.nombre}</div>
                     <p style="font-size:11px; margin:5px 0; border-top:1px solid #444; position:relative; z-index:2;">
@@ -158,7 +172,6 @@ const RenderCombate = {
         return `<div class="enemigo-hp-combate" style="display:block;">🤍</div><img class="enemigo-img" src="assets/img/personajes/enemigos/enemigo.webp" style="width:100%;height:100%;object-fit:cover; border-radius:3px;">`;
     },
 
-    // FIX TÁCTICO - GLOBALIZACIÓN DRY: Lee la vida de Database.js
     htmlFichaCinematica: function(tr) {
         let dbKey = tr.tipoGeneral.replace(/s$/, '') + '_' + (tr.clase === 'mercenaria' ? 'mercenario' : tr.clase);
         if (tr.clase === 'unico') dbKey = 'sacerdote_unico';
@@ -174,9 +187,7 @@ const RenderCombate = {
         let hpStars = "❤️".repeat(Math.max(0, tr.hp)) + "🖤".repeat(Math.max(0, maxVida - Math.max(0, tr.hp)));
         let etiqueta = tr.clase === 'noble' ? "<span class='txt-sagrado' style='font-size:9px;'>(N)</span>" : "";
         
-        return `<img src="${tr.img}">
-                <div class="unidad-hp-combate" style="display:block !important; z-index:200;">${hpStars}</div>
-                <div class="unidad-nombre-aleatorio" style="display:block; position:absolute; bottom:0; left:0; width:100%; background:rgba(0,0,0,0.75); color:#fff; font-size:8px; padding:2px 0; z-index:200; text-align:center;">${tr.nombre} <br>${etiqueta}</div>`;
+        return `<img src="${tr.img}"><div class="unidad-hp-combate">${hpStars}</div><div class="unidad-nombre-aleatorio">${tr.nombre} <br>${etiqueta}</div>`;
     },
 
     htmlFichaTropaInner: function(tr) {
@@ -209,5 +220,46 @@ const RenderCombate = {
 
     htmlCierreSinRefuerzos: function(jugadorNombre) {
         return `<p class='txt-comendador'><b>${jugadorNombre}:</b> "Cerraremos filas con los que quedamos, el Señor es nuestro escudo."</p>`;
+    },
+
+    htmlCineEstructuraGlobal: function() {
+        return `
+        <div id="cine-victoria-outer" class="cine-victoria-outer">
+            <h2 id="cine-victoria-text" class="cine-victoria-text"></h2>
+            <div id="cine-victoria-container" class="cine-victoria-container">
+                <div id="cine-victoria-world" class="cine-victoria-world"></div>
+                <div class="efecto-neblina cine-victoria-niebla"></div>
+            </div>
+            <div id="cine-victoria-btn-container" class="cine-victoria-btn-container"></div>
+        </div>`;
+    },
+
+    htmlCineMarcador: function(tipo, leftPx, topPx) {
+        let icono = tipo === 'skull' ? "☠️" : "✝";
+        let clase = tipo === 'skull' ? "cine-marcador-skull" : "cine-marcador-cross";
+        return `<div class="cine-marcador-base ${clase}" style="top:${topPx}px; left:${leftPx}px;">${icono}</div>`;
+    },
+
+    htmlCineEnemigo: function(imgSource, imgTransform, label, isBoss) {
+        let claseLabel = isBoss ? "cine-label-jefe" : "cine-label-enemigo";
+        let labelHtml = label ? `<div class="unidad-nombre-aleatorio cine-label-base ${claseLabel}">${label}</div>` : '';
+        return `<img src="${imgSource}" style="width:100%; height:100%; object-fit:cover; ${imgTransform}">${labelHtml}`;
+    },
+
+    htmlCineAliadoBoss: function(imgSource, nombre, flipImg = false) {
+        let transform = flipImg ? 'transform:scale(1.35) scaleX(-1);' : 'transform:scale(1.35);';
+        return `<img src="${imgSource}" style="width:100%; height:100%; object-fit:cover; ${transform}">
+                <div class="unidad-nombre-aleatorio cine-label-base cine-label-aliado">${nombre}</div>`;
+    },
+
+    htmlCineCautivo: function() {
+        return `<img src="assets/img/personajes/aliados/cautivo.webp" style="width:100%; height:100%; object-fit:cover; transform:scaleX(-1);">
+                <div class="unidad-nombre-aleatorio cine-label-base cine-label-cautivo">CAUTIVO</div>`;
+    },
+
+    htmlCineBotonVictoria: function() {
+        return `<div class="cine-btn-wrapper">
+                    <button id="cine-btn-deus-vult" class="txt-animado-salto impacto-divino-btn" style="position:relative; left:0; transform:none; bottom:0;">⚔️ DEUS VULT !</button>
+                </div>`;
     }
 };

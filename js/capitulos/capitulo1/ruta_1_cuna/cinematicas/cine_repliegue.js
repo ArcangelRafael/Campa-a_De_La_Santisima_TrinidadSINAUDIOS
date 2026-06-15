@@ -116,9 +116,7 @@ function playCinematicaRepliegue(callbackFinal) {
     animCaja.appendChild(titulo);
 
     // =========================================================================
-    // ZONA DE BATALLA (CON TIJERAS LATERALES MAGNÉTICAS | | )
-    // clip-path: inset() recorta los bordes. Usamos valores negativos arriba y abajo
-    // para NO cortar las cabezas ni los pies, pero un 0 a los lados para ocultarlos.
+    // ZONA DE BATALLA
     // =========================================================================
     let zonaBatalla = document.createElement("div");
     zonaBatalla.id = "zona-batalla-anim";
@@ -127,7 +125,7 @@ function playCinematicaRepliegue(callbackFinal) {
 
     if (typeof window.forzarHalosCinematicas === 'function') window.forzarHalosCinematicas(zonaBatalla);
 
-    // NIEBLA DE GUERRA (SOBRE LAS UNIDADES)
+    // NIEBLA DE GUERRA
     let niebla = document.createElement("div");
     niebla.className = "efecto-neblina";
     niebla.style.cssText = "z-index: 999; pointer-events: none; position: absolute; top: -10%; left: 0%; width: 100%; height: 120%; opacity: 0.85;";
@@ -157,7 +155,7 @@ function playCinematicaRepliegue(callbackFinal) {
     });
 
     // =========================================================================
-    // 2. PIQUEROS (Estrategia Compactada, Aparecen de la derecha y marchan)
+    // 2. PIQUEROS (Estrategia Compactada, Aparecen de la derecha y marchan en L)
     // =========================================================================
     let picaVanguardiaIds = [];
     if (typeof EstadoBatalla !== 'undefined' && EstadoBatalla.tropasVivas) {
@@ -205,22 +203,32 @@ function playCinematicaRepliegue(callbackFinal) {
         zonaBatalla.appendChild(card);
         card.getBoundingClientRect(); 
 
+        // Fase 0: Llegan al centro marchando hacia atrás desde el frente
         setTimeout(() => {
             card.style.transition = `left 3.9s linear`;
             card.style.left = `${initialLeft - 55}%`; 
         }, 100);
 
+        // =====================================================================
+        // ANIMACIÓN DE DIVISIÓN EN "L"
+        // =====================================================================
         setTimeout(() => {
-            card.style.transition = `left 2.5s ease-out, top 2.5s ease-out`;
             let colDescanso = posIndex % 5;
             let depthDescanso = Math.floor(posIndex / 5);
             
             let finalLeft = 48 - (colDescanso * 8) - (depthDescanso * 3);
-            // Empujados más abajo (de 82 a 92) para dejar completamente libres a los ballesteros
             let finalTop = gridItem.isTop ? 2 - (depthDescanso * 3) : 92 + (depthDescanso * 3); 
-            
-            card.style.left = `${finalLeft}%`;
+
+            // FASE 1: Se desplazan verticalmente hacia el nivel del flanco (suben o bajan)
+            card.style.transition = `top 1.5s ease-in-out`;
             card.style.top = `${finalTop}%`;
+
+            // FASE 2: Se mueven horizontalmente hacia atrás para guardarse en el bosque
+            setTimeout(() => {
+                card.style.transition = `top 1.5s ease-in-out, left 1.5s ease-out`;
+                card.style.left = `${finalLeft}%`;
+            }, 1500);
+
         }, 4000); 
     });
 
@@ -259,7 +267,7 @@ function playCinematicaRepliegue(callbackFinal) {
     }, 3500); 
 
     // =========================================================================
-    // BOTÓN DE CONTINUAR (EN LA ZONA GRIS INFERIOR)
+    // BOTÓN DE CONTINUAR (Aparece 1 segundo antes de que los enemigos terminen)
     // =========================================================================
     setTimeout(() => {
         let impactBtn = document.createElement('button');
@@ -274,5 +282,5 @@ function playCinematicaRepliegue(callbackFinal) {
             if(callbackFinal) callbackFinal(); 
         };
         animCaja.appendChild(impactBtn);
-    }, 8500); 
+    }, 7000); 
 }

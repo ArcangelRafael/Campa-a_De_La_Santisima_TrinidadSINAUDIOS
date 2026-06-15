@@ -26,6 +26,63 @@ window.DirectorCinematico = {
         return animCaja;
     },
 
+    // HELPER UNIVERSAL: Limpia y asigna transiciones sin estorbar (Traído de Sacrificio)
+    setTransition: function(element, transitionClass) {
+        if (!element) return;
+        let classesToRemove = [];
+        Array.from(element.classList).forEach(c => {
+            if (c.startsWith('sac-trans-') || c.startsWith('cine-trans-')) classesToRemove.push(c);
+        });
+        classesToRemove.forEach(c => element.classList.remove(c));
+        if (transitionClass) element.classList.add(transitionClass);
+    },
+
+    // HELPER UNIVERSAL: Fábrica de globos de diálogo (Reemplaza a Lugarteniente y Requiem)
+    lanzarGlobo: function(zonaBatalla, textoHTML, left, top, claseExtra = "") {
+        let globo = document.createElement("div");
+        globo.className = `in-board-requiem sac-globo-base sac-globo-opacity-0 ${claseExtra}`;
+        globo.innerHTML = textoHTML;
+        if(left) globo.style.left = left;
+        if(top) globo.style.top = top;
+
+        zonaBatalla.appendChild(globo);
+
+        setTimeout(() => {
+            globo.classList.remove("sac-globo-opacity-0");
+            globo.classList.add("sac-globo-fade-in");
+        }, 20);
+
+        let isHovered = false;
+        let removeTimer;
+
+        let iniciarVuelo = () => {
+            globo.classList.remove("sac-globo-fade-in");
+            globo.classList.add("sac-globo-vuelo");
+            let cTop = globo.style.top ? parseFloat(globo.style.top) : parseFloat(top || 20);
+            globo.style.top = `${cTop - 15}%`; 
+            
+            removeTimer = setTimeout(() => {
+                if (!isHovered && globo.parentNode) globo.parentNode.removeChild(globo);
+            }, 4000);
+        };
+
+        globo.onmouseenter = () => {
+            isHovered = true;
+            clearTimeout(removeTimer);
+            globo.classList.add("sac-globo-hover");
+        };
+
+        globo.onmouseleave = () => {
+            isHovered = false;
+            globo.classList.remove("sac-globo-hover");
+            iniciarVuelo(); 
+        };
+
+        setTimeout(() => {
+            if (!isHovered) iniciarVuelo();
+        }, 3500); 
+    },
+
     renderizarMarcadores: function(animCaja) {
         if (!window.marcadoresBatalla) return;
         
@@ -105,10 +162,11 @@ window.DirectorCinematico = {
         return enemyCardsFront;
     },
 
-    crearBotonContinuar: function(animCaja, textoBtn, delay, callbackFinal, btnStyle = {}) {
+    crearBotonContinuar: function(animCaja, textoBtn, delay, callbackFinal, btnStyle = {}, extraClasses = "") {
         setTimeout(() => {
+            if (!animCaja || !animCaja.parentNode) return;
             let impactBtn = document.createElement('button');
-            impactBtn.className = "impacto-divino-btn"; 
+            impactBtn.className = `impacto-divino-btn ${extraClasses}`; 
             impactBtn.innerText = textoBtn;
             impactBtn.style.bottom = "10px";
             
@@ -121,11 +179,17 @@ window.DirectorCinematico = {
                     delete animCaja.dataset.blinkInterval;
                 }
                 impactBtn.style.display = "none"; 
-                animCaja.style.display = "none";
+                
+                if (animCaja.classList.contains("sac-escenario-activo")) {
+                    animCaja.classList.remove("sac-escenario-activo");
+                    animCaja.classList.add("sac-escenario-reset");
+                } else {
+                    animCaja.style.display = "none";
+                    animCaja.style.backgroundImage = "url('assets/img/fondos/puente_fondo.webp')";
+                    animCaja.style.backgroundSize = "cover";
+                    animCaja.style.backgroundPosition = "center bottom";
+                }
                 animCaja.innerHTML = "";
-                animCaja.style.backgroundImage = "url('assets/img/fondos/puente_fondo.webp')";
-                animCaja.style.backgroundSize = "cover";
-                animCaja.style.backgroundPosition = "center bottom";
                 if(callbackFinal) callbackFinal(); 
             };
             animCaja.appendChild(impactBtn);
@@ -228,7 +292,6 @@ window.DirectorCinematico = {
                 return;
             }
 
-            // FIX TÁCTICO: Guardamos la función original para curar la amnesia del botón
             let btnNativo = document.getElementById("btn-iniciar-formacion");
             if (btnNativo) {
                 let onclickOriginal = btnNativo.onclick;
@@ -238,7 +301,6 @@ window.DirectorCinematico = {
                 
                 btnNativo.onclick = () => {
                     btnNativo.style.display = "none";
-                    // Le restauramos su memoria original para que en el próximo turno vuelva a cerrar el panel de tropas
                     btnNativo.onclick = onclickOriginal;
                     
                     clonesStaying.forEach(item => {

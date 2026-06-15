@@ -139,8 +139,20 @@ async function animarDialogoAvanceCuna() {
     let divDialogo = document.createElement("div"); divDialogo.id = `ancla-turno-${EstadoBatalla.turnoActual}`; storyArea.appendChild(divDialogo);
     setTimeout(() => { divDialogo.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 100);
 
+    // FIX LORE: Actualización para respetar si Sir Alexandro está vivo o si hay un Lugarteniente Interino
+    let liderCaballeria = "Un valiente jinete";
+    let imgLider = "assets/img/personajes/aliados/lider_caballeros.webp";
+    
+    if (jugador.comandantes && jugador.comandantes.some(c => c.idUnico === "cmd_alex" && c.hp > 0 && (!window.parlamento_resuelto_cap1 || window.pagoPlata_cap1 !== false))) {
+        liderCaballeria = "Sir Alexandro";
+        imgLider = "assets/img/personajes/aliados/lider_caballeromontado.webp";
+    } else if (jugador.nuevoLiderCaballeros) {
+        liderCaballeria = jugador.nuevoLiderCaballeros.nombre;
+        imgLider = "assets/img/personajes/aliados/lug_cab2.webp";
+    }
+
     await MotorDialogos.mostrarDialogoEnContenedor(divDialogo, {
-        personajeImg: "assets/img/personajes/aliados/lider_caballeromontado.webp", nombrePersonaje: "Sir Alexandro", alineacion: "izq", bordeClase: "borde-aliado", nombreClase: "nombre-izq-align",
+        personajeImg: imgLider, nombrePersonaje: liderCaballeria, alineacion: "izq", bordeClase: "borde-aliado", nombreClase: "nombre-izq-align",
         texto: `"¡El clamor de las trompetas nos llama a la gloria! ¡Turno ${EstadoBatalla.turnoActual}! ¡A LA CARGA!"`, claseTexto: "txt-lugarteniente"
     });
     animarAvanceCuna();
@@ -162,8 +174,18 @@ function animarAvanceCuna(esVictoriaFinal = false) {
         if (esVictoriaFinal) {
             document.getElementById("titulo-formacion").innerText = `⚔️ VICTORIA: LA LÍNEA HA CAÍDO ⚔️`;
             let divDialogo = document.createElement("div"); storyArea.appendChild(divDialogo);
+            
+            let liderCaballeria = "Un jinete triunfante";
+            let imgLider = "assets/img/personajes/aliados/lider_caballeros.webp";
+            
+            if (jugador.comandantes && jugador.comandantes.some(c => c.idUnico === "cmd_alex" && c.hp > 0 && (!window.parlamento_resuelto_cap1 || window.pagoPlata_cap1 !== false))) {
+                liderCaballeria = "Sir Alexandro"; imgLider = "assets/img/personajes/aliados/lider_caballeromontado.webp";
+            } else if (jugador.nuevoLiderCaballeros) {
+                liderCaballeria = jugador.nuevoLiderCaballeros.nombre; imgLider = "assets/img/personajes/aliados/lug_cab2.webp";
+            }
+
             MotorDialogos.mostrarDialogoEnContenedor(divDialogo, {
-                personajeImg: "assets/img/personajes/aliados/lider_caballeromontado.webp", nombrePersonaje: "Sir Alexandro", alineacion: "izq", bordeClase: "borde-aliado", nombreClase: "nombre-izq-align",
+                personajeImg: imgLider, nombrePersonaje: liderCaballeria, alineacion: "izq", bordeClase: "borde-aliado", nombreClase: "nombre-izq-align",
                 texto: `"¡ESTÁN ROTOS! ¡PASEN POR ENCIMA DE ELLOS! ¡HACIA EL HORIZONTE!"`, claseTexto: "txt-lugarteniente"
             });
             storyArea.scrollTop = storyArea.scrollHeight;
@@ -259,7 +281,6 @@ function resolverDadosVisualesCuna() {
         let targetSlotId = `enemigo-${pos.row}-${visualCol}`;
         let targetSlot = document.getElementById(targetSlotId); 
 
-        // CASILLA DE ORIGEN ALIADA (Aquí dejaremos la cruz para no tapar al enemigo)
         let allySlotId = `aliado-${pos.row}-${pos.col}`;
         let allySlot = document.getElementById(allySlotId);
 
@@ -267,6 +288,7 @@ function resolverDadosVisualesCuna() {
             huboCombates = true;
             if(allySlot) allySlot.classList.remove("en-combate"); 
             
+            // FIX DOD: El combate ya calcula Atk/Def y Mochila gracias a GestorEstado.evaluarPoderTropa
             let poderAtk = GestorEstado.evaluarPoderTropa(tropa, 'atk');
             let dadoGracia = (jugador.liderazgo <= -50) ? 0 : tirarDado();
             let dadoFuria = (jugador.liderazgo >= 126) ? 0 : tirarDado();
@@ -289,7 +311,9 @@ function resolverDadosVisualesCuna() {
                 hasMelee = true; phase1Cons = `<span class="txt-hereje">¡Resistencia enemiga! Duelo cuerpo a cuerpo inminente.</span>`;
             }
 
+            // FIX TÁCTICO FUNDAMENTAL: Inyectar "tropaId" para que el renderizador DOD escriba la etiqueta "data-tropa-id"
             let dataRender = {
+                tropaId: tropa.idUnico, 
                 posNombre: pos.posNombre, tropaNombre: tropa.nombre, enemigoNombre: enemigo.nombre,
                 atkBase: poderAtk.base, stringHerido: poderAtk.stringEfectos, dadoGracia, classMod, signoMod, infoFeNombre: infoFe.nombre, pAtk,
                 defBase: enemigo.def, dadoFuria, pDef, phase1Cons, idBc, hasMelee, idBcMelee, autoCombat
@@ -314,15 +338,13 @@ function resolverDadosVisualesCuna() {
                     if(tropa.hp <= 0) {
                         phase2Cons += `<div class="separador txt-hereje">💀 ¡MÁRTIR EN EL CAMPO! ${tropa.nombre} ha muerto.</div>`;
                         
-                        // FIX DEFINITIVO DE TIERRA DE NADIE: 
-                        // Registramos y dibujamos la cruz en la casilla ALIADA de origen (pos.col)
-                        // Así el motor no borrará la imagen del enemigo al redibujar el tablero
                         window.marcadoresBatalla.push({tipo: 'cross', row: pos.row, col: pos.col}); 
                         if(typeof window.dibujarMarcadorMuerte === 'function') window.dibujarMarcadorMuerte(allySlot, 'cross'); 
                     }
                 }
 
-                let dataMelee = { tropaNombre: tropa.nombre, atkBase: poderAtk.base, stringHerido: poderAtk.stringEfectos, dadoGracia2, classMod, signoMod, infoFeNombre: infoFe.nombre, pAtk2, enemigoNombre: enemigo.nombre, atkEnemigoBase: enemigo.atk, dadoFuria2, pAtkEnemigo, phase2Cons, idBcMelee, autoCombat };
+                // FIX TÁCTICO: Inyectar "tropaId" a la melee también por si es necesario
+                let dataMelee = { tropaId: tropa.idUnico, tropaNombre: tropa.nombre, atkBase: poderAtk.base, stringHerido: poderAtk.stringEfectos, dadoGracia2, classMod, signoMod, infoFeNombre: infoFe.nombre, pAtk2, enemigoNombre: enemigo.nombre, atkEnemigoBase: enemigo.atk, dadoFuria2, pAtkEnemigo, phase2Cons, idBcMelee, autoCombat };
                 logStr += RenderCombate.htmlMeleeCuna(dataMelee);
             }
             EstadoBatalla.logTurnoGlobal.push(logStr);
